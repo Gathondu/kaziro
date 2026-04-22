@@ -1,0 +1,81 @@
+# =============================================================================
+# Kaziro — root .gitignore
+# =============================================================================
+# Workspace-specific patterns are layered on top via backend/.gitignore and
+# frontend/.gitignore. Keep this file focused on cross-cutting noise.
+
+# ----- Secrets ---------------------------------------------------------------
+# Never commit real env files; commit .env.example only.
+.env
+.env.*
+!.env.example
+!*.env.example
+
+# Anything that smells like a key
+*.pem
+*.key
+*.crt
+*.pfx
+secrets.*
+
+# ----- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env.local
+.python-version.local
+
+# Test / coverage
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+test-reports/
+backend/test-reports/
+
+# ----- Node / Vite / SvelteKit ----------------------------------------------
+node_modules/
+.pnpm-store/
+.svelte-kit/
+.vercel/
+build-frontend/
+dist-frontend/
+.vite/
+
+# ----- IDE / OS noise --------------------------------------------------------
+.idea/
+.vscode/
+!.vscode/settings.example.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- Tooling caches --------------------------------------------------------
+.uv-cache/
+.pnpm-debug.log*
+.npm/
+.cache/
+
+# ----- Logs ------------------------------------------------------------------
+*.log
+logs/
+
+# ----- Local docker-compose overrides ---------------------------------------
+docker-compose.override.yml
+docker-compose.local.yml
+
+# ----- Generated artefacts ---------------------------------------------------
+*.pdf-debug
+*.profile
+prof/

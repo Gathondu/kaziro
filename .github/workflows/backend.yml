@@ -1,0 +1,110 @@
+name: backend
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: lint + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: kaziro
+          POSTGRES_PASSWORD: kaziro
+          POSTGRES_DB: kaziro_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kaziro -d kaziro_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      APP_ENV: test
+      LOG_FORMAT: console
+      DATABASE_URL: postgresql+asyncpg://kaziro:kaziro@localhost:5432/kaziro_test
+      DATABASE_URL_SYNC: postgresql://kaziro:kaziro@localhost:5432/kaziro_test
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      CELERY_RESULT_BACKEND: redis://localhost:6379/2
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_ANON_KEY: ci-anon-key
+      SUPABASE_SERVICE_KEY: ci-service-key
+      SUPABASE_JWT_SECRET: ci-jwt-secret
+      OPENAI_API_KEY: ci-openai-key
+      RAPIDAPI_KEY: ci-rapidapi-key
+      RAPIDAPI_HOST: jsearch.p.rapidapi.com
+      FIRECRAWL_API_KEY: ci-firecrawl-key
+      CORS_ORIGINS: http://localhost:5173
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.6"
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Set up Python
+        run: uv python install 3.12
+        working-directory: backend
+
+      - name: Install dependencies
+        run: uv sync --frozen --all-extras
+        working-directory: backend
+
+      - name: Ruff lint
+        run: uv run ruff check .
+        working-directory: backend
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+        working-directory: backend
+
+      - name: mypy
+        run: uv run mypy .
+        working-directory: backend
+
+      - name: pytest
+        run: uv run pytest --cov=backend --cov-report=term-missing --cov-report=xml --cov-fail-under=80
+        working-directory: backend
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          if-no-files-found: ignore

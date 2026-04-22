@@ -1,0 +1,20 @@
+node_modules
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Build output
+.svelte-kit
+build
+dist
+.vercel
+
+# Test artefacts
+coverage
+playwright-report
+test-results
+
+# Editor
+.vscode
+.idea

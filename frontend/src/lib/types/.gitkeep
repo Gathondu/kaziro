@@ -1,0 +1,2 @@
+# Placeholder so git tracks the empty `types/` folder.
+# TS interfaces mirror backend Pydantic schemas.

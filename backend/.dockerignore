@@ -1,0 +1,21 @@
+# Backend-specific ignore — keeps the build context lean.
+**/.git
+**/.gitignore
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.coverage
+**/.env
+**/.env.*
+**/.venv
+**/node_modules
+**/build
+**/dist
+**/coverage
+**/htmlcov
+docs/**
+frontend/**
+PLAN.md
+README.md
+**/*.log

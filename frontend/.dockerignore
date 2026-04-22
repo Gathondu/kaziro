@@ -1,0 +1,21 @@
+# Frontend-specific ignore — keeps the build context lean.
+**/.git
+**/.gitignore
+**/.idea
+**/.vscode
+**/.DS_Store
+**/.env
+**/.env.*
+**/node_modules
+**/.svelte-kit
+**/.vercel
+**/build
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+backend/**
+docs/**
+PLAN.md
+README.md
+**/*.log

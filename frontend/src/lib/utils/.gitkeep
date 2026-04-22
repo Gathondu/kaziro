@@ -1,0 +1,2 @@
+# Placeholder so git tracks the empty `utils/` folder.
+# Pure helpers — no SvelteKit / framework imports.

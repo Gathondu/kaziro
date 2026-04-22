@@ -1,0 +1,30 @@
+# Shared dockerignore reused by every service-level Dockerfile via the
+# ``ignorefile`` Buildx feature. Kept in sync with the per-service
+# ignores below for clarity.
+
+**/.git
+**/.gitignore
+**/.idea
+**/.vscode
+**/.DS_Store
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.tox
+**/.coverage
+**/.env
+**/.env.*
+**/node_modules
+**/.svelte-kit
+**/.vercel
+**/build
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+**/*.log
+docs/**
+PLAN.md
+README.md
+agents/**

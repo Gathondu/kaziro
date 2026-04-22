@@ -1,0 +1,2 @@
+# Placeholder so git tracks the empty `api/` folder.
+# One file per backend resource (jobs.ts, applications.ts, …).

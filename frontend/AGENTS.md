@@ -37,7 +37,8 @@ frontend/
 ```
 
 Detail: [`docs/architecture/05-frontend-architecture.md`](../docs/architecture/05-frontend-architecture.md)
-+ [`docs/design/frontend/`](../docs/design/frontend/).
+
+- [`docs/design/frontend/`](../docs/design/frontend/).
 
 ## Stack reminders
 

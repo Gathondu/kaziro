@@ -78,19 +78,19 @@ flowchart LR
 
 ## Progress dashboard
 
-Update the counts as tasks flip to `[x]`. Last refreshed when this file
-was created.
+Update the counts as tasks flip to `[x]`. Last refreshed at the end of
+Phase 0.
 
 | Phase                                  | Done | Total | %    |
 | -------------------------------------- | ---- | ----- | ---- |
-| Phase 0 — Foundation                   | 0    | 9     | 0%   |
+| Phase 0 — Foundation                   | 9    | 9     | 100% |
 | Phase 1 — Backend skeleton & data      | 0    | 12    | 0%   |
 | Phase 2 — Agentic core                 | 0    | 10    | 0%   |
 | Phase 3 — API surface                  | 0    | 12    | 0%   |
 | Phase 4 — Frontend MVP                 | 0    | 13    | 0%   |
 | Phase 5 — Production hardening         | 0    | 10    | 0%   |
 | Phase 6 — Public launch                | 0    | 6     | 0%   |
-| **Total**                              | 0    | 72    | 0%   |
+| **Total**                              | 9    | 72    | 13%  |
 
 ---
 
@@ -101,7 +101,7 @@ writing code. See [`docs/design/roadmap.md#phase-0--foundation`](docs/design/roa
 
 ### T0.1 — Backend `pyproject.toml` + `uv.lock`
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: none
@@ -119,13 +119,13 @@ reproducible `uv.lock`.
 - `backend/.python-version` (`3.12`)
 
 **Acceptance criteria**
-- [ ] `cd backend && uv sync` installs cleanly on a fresh checkout.
-- [ ] `uv run ruff check .` and `uv run ruff format --check .` exit 0
+- [x] `cd backend && uv sync` installs cleanly on a fresh checkout.
+- [x] `uv run ruff check .` and `uv run ruff format --check .` exit 0
       on a noop tree.
-- [ ] `uv run mypy backend` exits 0 on a noop tree (allow empty package).
-- [ ] All deps from [`docs/reference/dependencies.md`](docs/reference/dependencies.md)
+- [x] `uv run mypy backend` exits 0 on a noop tree (allow empty package).
+- [x] All deps from [`docs/reference/dependencies.md`](docs/reference/dependencies.md)
       present at the documented version range.
-- [ ] `tool.ruff.line-length = 100`, `tool.mypy.strict = true`.
+- [x] `tool.ruff.line-length = 100`, `tool.mypy.strict = true`.
 
 **References**
 - [`docs/reference/dependencies.md`](docs/reference/dependencies.md)
@@ -134,7 +134,7 @@ reproducible `uv.lock`.
 
 ### T0.2 — Frontend SvelteKit scaffold
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: none
@@ -161,15 +161,15 @@ folder layout from [`frontend/AGENTS.md`](frontend/AGENTS.md).
 - `frontend/.gitignore`
 
 **Acceptance criteria**
-- [ ] `cd frontend && pnpm install && pnpm dev` serves on `:5173` with
+- [x] `cd frontend && pnpm install && pnpm dev` serves on `:5173` with
       a placeholder home page.
-- [ ] `pnpm build` produces a successful SvelteKit production build.
-- [ ] `pnpm lint` (ESLint + svelte-check) and `pnpm format`
+- [x] `pnpm build` produces a successful SvelteKit production build.
+- [x] `pnpm lint` (ESLint + svelte-check) and `pnpm format`
       (prettier --check) exit 0.
-- [ ] `pnpm test` (Vitest) runs an empty suite and exits 0.
-- [ ] Tailwind, DaisyUI, and TanStack Query installed at versions in
+- [x] `pnpm test` (Vitest) runs an empty suite and exits 0.
+- [x] Tailwind, DaisyUI, and TanStack Query installed at versions in
       [`docs/reference/dependencies.md`](docs/reference/dependencies.md).
-- [ ] Folder structure matches [`frontend/AGENTS.md`](frontend/AGENTS.md).
+- [x] Folder structure matches [`frontend/AGENTS.md`](frontend/AGENTS.md).
 
 **References**
 - [`docs/architecture/05-frontend-architecture.md`](docs/architecture/05-frontend-architecture.md)
@@ -179,7 +179,7 @@ folder layout from [`frontend/AGENTS.md`](frontend/AGENTS.md).
 
 ### T0.3 — `backend/config.py` Pydantic Settings
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T0.1
@@ -196,13 +196,13 @@ missing.
 - `backend/__init__.py`
 
 **Acceptance criteria**
-- [ ] All vars from [`docs/reference/env-vars.md`](docs/reference/env-vars.md)
+- [x] All vars from [`docs/reference/env-vars.md`](docs/reference/env-vars.md)
       represented with proper types.
-- [ ] `from backend.config import settings` returns a singleton
+- [x] `from backend.config import settings` returns a singleton
       instance.
-- [ ] Boot fails with a clear `ValidationError` if any required var
+- [x] Boot fails with a clear `ValidationError` if any required var
       is missing.
-- [ ] Unit test exercises the failure mode and a happy boot.
+- [x] Unit test exercises the failure mode and a happy boot.
 
 **References**
 - [`docs/reference/env-vars.md`](docs/reference/env-vars.md)
@@ -210,7 +210,7 @@ missing.
 
 ### T0.4 — `.env.example`
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T0.3
@@ -225,18 +225,18 @@ Use clearly fake values for secrets (`changeme`, `xxx`).
 - `.env.example`
 
 **Acceptance criteria**
-- [ ] Every required and optional env var present.
-- [ ] No real credentials checked in.
-- [ ] Comments group vars by section (App / DB / Supabase / Redis /
+- [x] Every required and optional env var present.
+- [x] No real credentials checked in.
+- [x] Comments group vars by section (App / DB / Supabase / Redis /
       Celery / OpenAI / Integrations / Observability / Frontend).
-- [ ] `.gitignore` updated so real `.env` files cannot be committed.
+- [x] `.gitignore` updated so real `.env` files cannot be committed.
 
 **References**
 - [`docs/reference/env-vars.md`](docs/reference/env-vars.md)
 
 ### T0.5 — Root `Makefile`
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P1
 - **Depends on**: T0.1, T0.2
@@ -251,12 +251,12 @@ invocations. Targets wrap `uv`, `pnpm`, `docker compose`, and
 - `Makefile`
 
 **Acceptance criteria**
-- [ ] Targets: `dev`, `dev-backend`, `dev-frontend`, `dev-worker`,
+- [x] Targets: `dev`, `dev-backend`, `dev-frontend`, `dev-worker`,
       `dev-beat`, `test`, `test-backend`, `test-frontend`, `lint`,
       `format`, `migrate`, `migration`, `seed`, `clean`, `down`,
       `logs`.
-- [ ] `make help` lists every target with a one-line description.
-- [ ] `make dev` boots the docker-compose stack from T0.6.
+- [x] `make help` lists every target with a one-line description.
+- [x] `make dev` boots the docker-compose stack from T0.6.
 
 **References**
 - [`AGENTS.md`](AGENTS.md) "Where to run what"
@@ -264,7 +264,7 @@ invocations. Targets wrap `uv`, `pnpm`, `docker compose`, and
 
 ### T0.6 — Root `docker-compose.yml`
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T0.1, T0.2, T0.3
@@ -283,19 +283,19 @@ Local-dev orchestration of `postgres` (with `pgvector`), `redis`,
 - `infra/docker/.dockerignore`
 
 **Acceptance criteria**
-- [ ] `docker compose up` brings all services to `healthy` within 60s.
-- [ ] Postgres exposes `5432`, Redis `6379`, backend `8000`, frontend
+- [x] `docker compose up` brings all services to `healthy` within 60s.
+- [x] Postgres exposes `5432`, Redis `6379`, backend `8000`, frontend
       `5173`.
-- [ ] `pgvector` extension is created automatically on first boot.
-- [ ] `docker compose down -v` cleans up volumes.
-- [ ] Backend container reads from a mounted `.env`.
+- [x] `pgvector` extension is created automatically on first boot.
+- [x] `docker compose down -v` cleans up volumes.
+- [x] Backend container reads from a mounted `.env`.
 
 **References**
 - [`docs/architecture/08-deployment.md`](docs/architecture/08-deployment.md)
 
 ### T0.7 — Structlog + Prometheus scaffolding
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T0.3
@@ -312,11 +312,11 @@ startup. Define the metric registry in `backend/metrics.py` per
 - `backend/main.py` (initial app factory)
 
 **Acceptance criteria**
-- [ ] `from backend import logger` returns a configured structlog
+- [x] `from backend import logger` returns a configured structlog
       bound logger.
-- [ ] Logs render as JSON when `APP_ENV=production`, console-pretty
+- [x] Logs render as JSON when `APP_ENV=production`, console-pretty
       otherwise.
-- [ ] `backend/metrics.py` defines the catalog from
+- [x] `backend/metrics.py` defines the catalog from
       [`docs/architecture/06-observability.md`](docs/architecture/06-observability.md):
       `kaziro_pipeline_jobs_total`, `kaziro_agent_duration_seconds`,
       `kaziro_evaluation_classification_total`,
@@ -325,7 +325,7 @@ startup. Define the metric registry in `backend/metrics.py` per
       `kaziro_celery_queue_depth`,
       `kaziro_external_api_calls_total`,
       `kaziro_active_pipeline_tasks`.
-- [ ] Sensitive-field redaction processor configured.
+- [x] Sensitive-field redaction processor configured.
 
 **References**
 - [`docs/architecture/06-observability.md`](docs/architecture/06-observability.md)
@@ -333,7 +333,7 @@ startup. Define the metric registry in `backend/metrics.py` per
 
 ### T0.8 — `/health` and `/metrics` routes
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T0.7
@@ -349,20 +349,20 @@ health, and Prometheus metrics endpoint.
 - `backend/main.py` (register routers)
 
 **Acceptance criteria**
-- [ ] `GET /health` returns `200` with `{"status": "ok"}`.
-- [ ] `GET /health/ready` checks DB + Redis connectivity; returns
+- [x] `GET /health` returns `200` with `{"status": "ok"}`.
+- [x] `GET /health/ready` checks DB + Redis connectivity; returns
       `503` if either is down.
-- [ ] `GET /health/detailed` returns per-component status JSON for
+- [x] `GET /health/detailed` returns per-component status JSON for
       monitoring dashboards.
-- [ ] `GET /metrics` returns Prometheus exposition format.
-- [ ] Integration tests cover happy + degraded for `ready`.
+- [x] `GET /metrics` returns Prometheus exposition format.
+- [x] Integration tests cover happy + degraded for `ready`.
 
 **References**
 - [`docs/architecture/06-observability.md`](docs/architecture/06-observability.md#health-checks)
 
 ### T0.9 — GitHub Actions CI
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T0.1, T0.2
@@ -380,13 +380,13 @@ backend-only PRs do not run frontend jobs and vice versa. Caches
 - `.github/dependabot.yml`
 
 **Acceptance criteria**
-- [ ] Backend job runs `ruff check`, `ruff format --check`, `mypy`,
+- [x] Backend job runs `ruff check`, `ruff format --check`, `mypy`,
       `pytest --cov=backend --cov-fail-under=80`.
-- [ ] Frontend job runs `pnpm lint`, `pnpm test`, `pnpm build`.
-- [ ] Docs job runs markdown-lint + a link checker on `docs/`.
-- [ ] Path filters scoped per workflow.
-- [ ] `uv` and `pnpm` caches keyed on lockfile hashes.
-- [ ] All three workflows green on a noop PR.
+- [x] Frontend job runs `pnpm lint`, `pnpm test`, `pnpm build`.
+- [x] Docs job runs markdown-lint + a link checker on `docs/`.
+- [x] Path filters scoped per workflow.
+- [x] `uv` and `pnpm` caches keyed on lockfile hashes.
+- [x] All three workflows green on a noop PR.
 
 **References**
 - [`docs/architecture/08-deployment.md`](docs/architecture/08-deployment.md)
