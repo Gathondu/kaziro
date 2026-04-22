@@ -6,6 +6,9 @@ generates a tailored CV + cover letter for every good fit.
 
 > **Where to start**: [`AGENTS.md`](AGENTS.md) is the entry point for any
 > contributor (human or AI). Detailed docs live under [`docs/`](docs/).
+>
+> **Current build status**: see [`PLAN.md`](PLAN.md) for the
+> task-by-task MVP plan and what's done / next up.
 
 ## Stack
 

@@ -115,7 +115,9 @@ Start with the doc that matches your task:
 - Why was X chosen? [`docs/decisions/`](docs/decisions/).
 - What does X mean? [`docs/reference/glossary.md`](docs/reference/glossary.md).
 - What does X env var do? [`docs/reference/env-vars.md`](docs/reference/env-vars.md).
-- What's coming next? [`docs/design/roadmap.md`](docs/design/roadmap.md).
+- What's coming next? [`docs/design/roadmap.md`](docs/design/roadmap.md)
+  (high-level phases) and [`PLAN.md`](PLAN.md) (task-by-task build
+  tracker — pick the next unblocked `[ ]` task).
 
 ## Cursor rules
 
