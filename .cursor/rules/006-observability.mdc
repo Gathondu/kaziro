@@ -1,0 +1,135 @@
+---
+alwaysApply: true
+---
+
+# Kaziro — Observability Rules
+
+# ==============================
+
+# Applies to: all Python files in backend/
+
+## Logging with structlog
+
+### Setup (backend/logging_config.py)
+
+- Configure structlog once at app startup in `main.py`.
+- Use JSON renderer in production, ConsoleRenderer in development.
+- Every module gets its logger via: `logger = structlog.get_logger(__name__)`.
+- Never use `logging.getLogger()` — always `structlog.get_logger()`.
+
+### Mandatory Context Fields
+
+Every log call must include ALL relevant context for the operation:
+
+| Context Field       | When to include                      |
+| ------------------- | ------------------------------------ |
+| `user_id`           | Any user-scoped operation            |
+| `job_posting_id`    | Any job-related operation            |
+| `job_evaluation_id` | Any evaluation-related operation     |
+| `agent_name`        | Any agent node log                   |
+| `node`              | Inside every agent node function     |
+| `stage`             | Inside pipeline orchestrator         |
+| `task_id`           | Inside every Celery task             |
+| `duration_ms`       | At completion of any timed operation |
+| `error`             | On every ERROR/WARNING log           |
+
+### Binding Context
+
+- Bind context at the start of each function using `logger.bind(...)`:
+  ```python
+  log = logger.bind(user_id=user_id, job_posting_id=job_id, node="parse_node")
+  log.info("parser.start")
+  # ... work ...
+  log.info("parser.complete", duration_ms=elapsed)
+  ```
+- Use the bound logger (`log`) for all subsequent calls in that scope.
+
+### Log Level Guidelines
+
+- `DEBUG`: Raw payloads, SQL queries, LLM prompt/response pairs — dev only, NEVER in prod.
+- `INFO`: Every pipeline stage start/complete, every user action, every external API call.
+- `WARNING`: Retries, cache misses, degraded-but-functional states, non-fatal errors.
+- `ERROR`: Any exception caught in a try/except, failed operations that affect the user.
+- `CRITICAL`: System-level failures: DB unreachable, Redis down, auth service unavailable.
+
+### What NEVER to log
+
+- ❌ API keys, secrets, tokens (partial or full)
+- ❌ Full CV text or cover letter content
+- ❌ User email addresses in DEBUG/INFO (only in CRITICAL when needed)
+- ❌ Full LLM prompts in production (too large, may contain PII)
+- ❌ Full scraped website content
+
+## Metrics with Prometheus
+
+### Instrument (backend/metrics.py)
+
+Define all metrics in a single file and import where needed:
+
+```python
+from prometheus_client import Counter, Histogram, Gauge
+
+pipeline_jobs_total = Counter(
+    "kaziro_pipeline_jobs_total",
+    "Total jobs processed by the pipeline",
+    ["stage", "status"],   # labels
+)
+
+agent_duration_seconds = Histogram(
+    "kaziro_agent_duration_seconds",
+    "Agent execution duration",
+    ["agent_name"],
+    buckets=[1, 5, 15, 30, 60, 120, 300],
+)
+
+active_pipeline_tasks = Gauge(
+    "kaziro_active_pipeline_tasks",
+    "Currently running pipeline tasks",
+)
+```
+
+### Instrumentation Rules
+
+- Wrap every agent entry point with the duration histogram:
+  ```python
+  with agent_duration_seconds.labels(agent_name="evaluator").time():
+      result = await evaluator_graph.ainvoke(initial)
+  ```
+- Increment `pipeline_jobs_total` at each stage with `status="success"` or `status="error"`.
+- Use `active_pipeline_tasks.inc()` / `.dec()` around Celery task execution.
+- Expose metrics at `/metrics` endpoint (FastAPI route, Prometheus format).
+
+### Key Metrics to Track
+
+| Metric                                   | Type      | Labels                         |
+| ---------------------------------------- | --------- | ------------------------------ |
+| `kaziro_pipeline_jobs_total`             | Counter   | `stage`, `status`              |
+| `kaziro_agent_duration_seconds`          | Histogram | `agent_name`                   |
+| `kaziro_evaluation_classification_total` | Counter   | `classification`               |
+| `kaziro_llm_tokens_used_total`           | Counter   | `agent_name`, `model`, `type`  |
+| `kaziro_api_request_duration_seconds`    | Histogram | `method`, `endpoint`, `status` |
+| `kaziro_celery_queue_depth`              | Gauge     | `queue_name`                   |
+| `kaziro_external_api_calls_total`        | Counter   | `service`, `status`            |
+| `kaziro_active_pipeline_tasks`           | Gauge     | —                              |
+
+## Distributed Tracing
+
+- Use OpenTelemetry for trace correlation across FastAPI ↔ Celery ↔ agents.
+- Propagate `trace_id` in Celery task headers and structlog context.
+- Every log entry must include `trace_id` when available.
+- Traces are exported to Grafana Tempo (or Jaeger in local dev).
+
+## Alerting Rules (Grafana / Alertmanager)
+
+- Define alert rules in `monitoring/alerts.yaml`.
+- Every new metric that represents a failure mode should have a corresponding alert.
+- Alert naming: `KaziroAgentHighErrorRate`, `KazirocCeleryQueueBacklog`, etc.
+- All alerts must have: `summary`, `description`, `severity` (critical/warning), `runbook_url`.
+- Runbooks live in `docs/runbooks/<alert_name>.md`.
+
+## Health Checks
+
+- `GET /health` — basic liveness check (returns 200 if app is running).
+- `GET /health/ready` — readiness check (checks DB connection, Redis connection).
+- `GET /health/detailed` — returns component status for monitoring dashboards.
+- Celery workers expose health via Flower (`celery flower`).

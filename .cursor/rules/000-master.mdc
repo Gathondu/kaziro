@@ -1,0 +1,78 @@
+---
+alwaysApply: true
+---
+
+# Kaziro — Master Cursor Rules
+
+# ==============================
+
+# These rules apply to the entire Kaziro codebase.
+
+# More specific rules are in sub-files per domain.
+
+## Project Identity
+
+- Project name: Kaziro
+- Description: AI-powered agentic job recommendation and application system
+- Stack: Python 3.12 · FastAPI · LangGraph · OpenAI SDK · Svelte 5 · PostgreSQL + pgvector · Supabase · Celery · Redis
+
+## Code Style — Python
+
+- Use Python 3.12+ features. Prefer `str | None` over `Optional[str]`.
+- Always use `from __future__ import annotations` at the top of every Python file.
+- Use Pydantic v2 BaseModel for all data schemas. Never use dataclasses for API/agent schemas.
+- All async functions must use `async def` and be properly awaited. Never mix sync and async DB calls.
+- Use `structlog` for all logging. Never use `print()` or the stdlib `logging` module directly.
+- Every log call must include relevant context fields: `user_id`, `job_posting_id`, `agent_name`, etc.
+- Type-annotate every function signature — parameters and return types. No implicit `Any`.
+- Keep functions under 50 lines. Extract helpers aggressively.
+- Never use `# type: ignore` — fix the type error properly.
+- Use `ruff` for linting and formatting. Max line length: 100.
+- refer to `@python.mdc` and `@fastapi.mdc` rules in addition to these
+
+## Code Style — Svelte / TypeScript
+
+- Use Svelte 5 with runes ($state, $derived, $effect) — NOT Svelte 4 stores.
+- All components must be TypeScript (`.svelte` files with `<script lang="ts">`).
+- Use TailwindCSS utility classes. No inline styles. No separate CSS files per component.
+- Use TanStack Query for all server state (fetching, caching, mutations).
+- Never use `any` in TypeScript. Define proper interfaces for all API responses.
+- Component files: PascalCase (`JobCard.svelte`). Route files: lowercase (`+page.svelte`).
+- refer to `@svelte.mdc` rules in addition to these
+
+## Architecture Rules
+
+- All business logic lives in `backend/services/`. FastAPI routes are thin — they validate input, call a service, and return the response.
+- Agent logic lives exclusively in `backend/agents/`. Never put LangGraph code in routes or services.
+- Database queries live in `backend/db/repositories/`. Never write raw SQL in routes or agents.
+- Configuration comes from `backend/config.py` (Pydantic Settings). Never hardcode secrets or URLs.
+- All environment variables are documented in `.env.example`. Required vars have no default; optional ones do.
+
+## Error Handling
+
+- Every agent node must have a try/except and update `state.error` on failure.
+- API routes must return structured errors: `{"error": {"code": "...", "message": "..."}}`.
+- Celery tasks must use `autoretry_for` with exponential backoff for transient failures.
+- Never swallow exceptions silently. Log them at ERROR level with full context.
+
+## Security
+
+- Never log sensitive data: API keys, CV content, passwords, email bodies.
+- All user data access must go through the repository layer which enforces `user_id` scoping.
+- Never construct SQL strings manually — always use SQLAlchemy ORM or parameterised queries.
+- Validate all external data (RapidAPI responses, scraped content) with Pydantic before use.
+
+## Testing
+
+- Every agent must have a corresponding test file: `backend/tests/agents/test_<agent_name>.py`.
+- Use `pytest-asyncio` for async tests. Mark async tests with `@pytest.mark.asyncio`.
+- Mock LLM calls in tests using VCR.py cassettes — never make live API calls in tests.
+- Every new API endpoint must have at least one happy-path and one error-path integration test.
+- Test files follow the same directory structure as source files.
+
+## Git Conventions
+
+- Branch naming: `feat/<ticket-id>-short-description`, `fix/<ticket-id>-description`
+- Commit messages: Conventional Commits format — `feat(evaluator): add 3-pass critic node`
+- Never commit `.env` files. Always use `.env.example` with placeholder values.
+- PRs must pass all CI checks (ruff, mypy, pytest) before merge.

@@ -1,0 +1,103 @@
+---
+alwaysApply: false
+description: when working on backend files
+---
+
+# Kaziro — FastAPI Backend Rules
+
+# ================================
+
+# Applies to: backend/api/**/\*.py, backend/services/**/_.py, backend/db/\*\*/_.py
+
+## API Routes (backend/api/routes/)
+
+### Route Structure
+
+- Every router file covers one resource: `jobs.py`, `applications.py`, `profile.py`, etc.
+- Register all routers in `backend/api/router.py` with consistent `/api/v1/` prefix.
+- Routes must be thin: validate input → call service → return response. Max 20 lines per route.
+- Use Pydantic v2 models for all request bodies and response schemas.
+- Never access the DB directly from a route — always via a service or repository function.
+
+### Authentication
+
+- Every protected route must use: `current_user: User = Depends(get_current_user)`.
+- The `get_current_user` dependency validates the Supabase JWT and returns a User object.
+- Never trust user-provided `user_id` in request bodies — always use `current_user.id`.
+- Admin routes must also use: `_: None = Depends(require_admin_role)`.
+
+### Request / Response Schemas
+
+- Every route has a corresponding schema file in `backend/api/schemas/<resource>.py`.
+- Request schemas: `<Resource>CreateRequest`, `<Resource>UpdateRequest`.
+- Response schemas: `<Resource>Response`, `<Resource>ListResponse`.
+- All response schemas must include `id: uuid.UUID` and `created_at: datetime`.
+- Use `model_config = ConfigDict(from_attributes=True)` on all response schemas (ORM mode).
+
+### Error Responses
+
+- Use FastAPI's `HTTPException` for all error responses.
+- Standard error codes:
+  - `400` — Bad request / validation error
+  - `401` — Not authenticated
+  - `403` — Forbidden (wrong user)
+  - `404` — Resource not found
+  - `409` — Conflict (e.g., duplicate)
+  - `422` — Unprocessable entity (Pydantic catches this automatically)
+  - `500` — Internal server error (log before raising)
+- Never expose internal error messages or stack traces in 500 responses.
+
+### Pagination
+
+- All list endpoints must support cursor-based pagination.
+- Query params: `cursor: str | None = None`, `limit: int = Query(default=20, le=100)`.
+- Response includes: `data: list[...]`, `next_cursor: str | None`, `total: int | None`.
+
+## Services (backend/services/)
+
+- Services are async functions, not classes. Use module-level functions.
+- Services orchestrate: call repositories, call external APIs, publish events.
+- Services must not contain SQL — delegate to repositories.
+- Services that call external APIs must handle rate limits and timeouts explicitly.
+- Service files are named by domain: `job_fetcher.py`, `notifications.py`, `storage.py`.
+
+## Database (backend/db/)
+
+### Models (backend/db/models.py)
+
+- All models inherit from `Base` (SQLAlchemy DeclarativeBase).
+- Every model must have: `id: Mapped[uuid.UUID]` as PK with `default=uuid.uuid4`.
+- Every model must have: `created_at: Mapped[datetime]` with `default=datetime.now(timezone.utc)`.
+- Use `Mapped[T]` annotations — never the legacy Column() style.
+- Foreign keys must include `ondelete="CASCADE"` where appropriate.
+- Add `__table_args__` with explicit indexes for all frequently queried columns.
+
+### Repositories (backend/db/repositories/)
+
+- One repository per model: `job_repository.py`, `user_repository.py`, etc.
+- Repository functions take a `session: AsyncSession` parameter — never create their own session.
+- Sessions are created by the caller (route / service) using `get_async_session()` context manager.
+- Always use `select()` with explicit `.where()` clauses — never load all rows and filter in Python.
+- Always scope queries by `user_id` to enforce multi-tenant data isolation.
+
+### Migrations (backend/alembic/)
+
+- Every schema change requires a new Alembic migration: `alembic revision --autogenerate -m "description"`.
+- Never modify existing migration files — always create a new one.
+- Migration descriptions use snake_case: `add_quality_notes_to_application_docs`.
+- Test migrations both up and down before committing.
+
+## Celery Tasks (backend/tasks/)
+
+- Every Celery task is a thin wrapper: parse args → call async orchestrator → handle result.
+- Use `celery_app.task(bind=True, autoretry_for=(Exception,), retry_backoff=True, max_retries=3)`.
+- Use `asyncio.run()` to bridge sync Celery with async agent code.
+- Log task start, completion, and failure at appropriate levels.
+- Task names must be explicit strings: `@celery_app.task(name="backend.tasks.run_pipeline")`.
+
+## Configuration (backend/config.py)
+
+- All settings use Pydantic `BaseSettings` with `model_config = SettingsConfigDict(env_file=".env")`.
+- Group settings: database, openai, supabase, celery, firecrawl, app.
+- Required settings have no default. Optional ones have sensible defaults.
+- Expose a single `settings` singleton imported everywhere: `from backend.config import settings`.

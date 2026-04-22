@@ -1,0 +1,82 @@
+---
+alwaysApply: true
+---
+
+# Kaziro — Agent Rules
+
+# =====================
+
+# Applies to: backend/agents/\*_/_.py
+
+# These rules govern how LangGraph agents are written in the Kaziro codebase.
+
+## Agent Architecture
+
+### Every agent file must contain exactly these sections (in order):
+
+1. Module docstring explaining the agent's responsibility, framework, and model choice.
+2. LLM / embedder initialisation (module-level singletons, not instantiated per call).
+3. Pydantic state class (inherits from `BaseModel`, named `<AgentName>State`).
+4. Node functions (one `async def <name>_node(state: ...) -> ...` per logical step).
+5. Routing functions (one `def route_after_<step>(state: ...) -> str` per conditional edge).
+6. Graph builder function (`def build_<agent_name>_graph() -> Any`).
+7. Compiled graph singleton (`<agent_name>_graph = build_<agent_name>_graph()`).
+8. Public entry point (`async def run_<agent_name>_agent(...) -> <AgentName>State`).
+
+### State Rules
+
+- All state classes must inherit from `pydantic.BaseModel`, NOT TypedDict.
+- State must always include an `error: str | None = None` field.
+- State fields must have clear default values — state must be constructible with minimal args.
+- Never mutate state in-place. Always use `state.model_copy(update={...})`.
+- State fields that are loaded from DB in a `load_data` node should default to empty string / empty list.
+
+### Node Rules
+
+- Every node must be an `async def` function.
+- Every node must start with: `log = logger.bind(<relevant_ids>, node="<node_name>")`.
+- Every node must log at `INFO` level at start and completion.
+- Every node must wrap its core logic in try/except and update `state.error` on exception.
+- Nodes must never call other agents directly — only the orchestrator chains agents.
+- Never hardcode prompts outside of the node that uses them. Prompts stay with their node.
+- Never make DB calls inside LLM prompt construction — load data first in a `load_data` node.
+
+### LLM Prompt Rules
+
+- Every LLM prompt must explicitly state the format of expected output (JSON schema or prose).
+- If JSON output is expected, strip markdown fences before `json.loads()`.
+- Always set `temperature=0` for structured extraction tasks (parser, evaluator scores).
+- Use `temperature=0.3–0.5` for generative tasks (cover letter, CV tailoring).
+- Include a "IMPORTANT RULES" section in prompts for document generation to prevent hallucination.
+- Prompts that expect JSON must include a "Respond in this exact JSON format:" section.
+
+### Graph Rules
+
+- Always use `StateGraph`, not `MessageGraph`.
+- The graph must have a single entry point set via `graph.set_entry_point(...)`.
+- Error paths must route to `END` not to a dead loop.
+- The compiled graph must be a module-level singleton (built once at import time).
+- Include an `"error_end"` no-op node as a named terminal for error routing.
+
+### Model Selection
+
+- Structured extraction (parsing, scoring): `settings.OPENAI_MODEL_PARSER` (default: gpt-4o-mini)
+- Quality-critical reasoning (evaluation, documents): `settings.OPENAI_MODEL_EVALUATOR` (default: gpt-4o)
+- Never hardcode model strings in agent files — always use settings.
+
+## Naming Conventions
+
+- Agent files: `<role>_agent.py` (e.g., `evaluator_agent.py`)
+- State classes: `<Role>State` (e.g., `EvaluatorState`)
+- Node functions: `<step>_node` (e.g., `pass1_draft_node`)
+- Routing functions: `route_after_<step>` (e.g., `route_after_parse`)
+- Entry point: `run_<role>_agent` (e.g., `run_evaluator_agent`)
+
+## What NOT to do in agent files
+
+- ❌ Never import FastAPI, APIRouter, or any HTTP framework
+- ❌ Never call other agents — use the pipeline orchestrator
+- ❌ Never use `print()` — always `structlog`
+- ❌ Never hardcode user_id, job_id, or any IDs as literals
+- ❌ Never write async code without proper `await` (no fire-and-forget unless intentional)
+- ❌ Never put business logic in routing functions — routing is pure state inspection

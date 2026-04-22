@@ -1,0 +1,153 @@
+# Frontend Routes
+
+**Status**: Active
+**Last updated**: 2026-04-22
+**Source**: Section 7.1 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
+**Related**: [`../../architecture/05-frontend-architecture.md`](../../architecture/05-frontend-architecture.md)
+
+SvelteKit file-based routing tree under `frontend/src/routes/`.
+
+## Tree
+
+```
+src/routes/
+├── +layout.svelte                 # Auth gate, top nav, toast container
+├── +layout.ts                     # Server-side auth check + Supabase client
+├── +error.svelte                  # Global error fallback
+├── +page.svelte                   # Marketing landing (unauth) → redirects to /dashboard if authed
+├── login/
+│   └── +page.svelte
+├── signup/
+│   └── +page.svelte
+├── onboarding/
+│   ├── +page.svelte               # Step 1 — basic profile
+│   ├── upload-cv/+page.svelte     # Step 2 — CV upload
+│   └── preferences/+page.svelte   # Step 3 — first job-search config
+├── (app)/                         # Auth-gated route group
+│   ├── +layout.svelte             # Sidebar nav, WS subscription mount
+│   ├── dashboard/
+│   │   └── +page.svelte           # KPIs + activity feed
+│   ├── jobs/
+│   │   ├── +page.svelte           # Filterable list
+│   │   ├── +page.ts               # initial load: list jobs
+│   │   └── [id]/
+│   │       ├── +page.svelte       # Detail: job + evaluation + company brief
+│   │       ├── +page.ts
+│   │       └── apply/
+│   │           ├── +page.svelte   # Editor for tailored CV + cover letter
+│   │           └── +page.ts
+│   ├── applications/
+│   │   ├── +page.svelte           # Kanban or list view
+│   │   └── [id]/+page.svelte      # Detail with status timeline + downloads
+│   └── settings/
+│       ├── +page.svelte           # Profile + job configs + notifications
+│       └── account/+page.svelte   # Subscription, account deletion
+└── api/                           # SvelteKit server endpoints (proxy / BFF if needed)
+```
+
+## Route specs
+
+### `/` (landing)
+
+- Public marketing page.
+- If session detected, redirect to `/dashboard` server-side in `+page.ts`
+  `load`.
+
+### `/login` & `/signup`
+
+- Forms posting to Supabase Auth via `@supabase/supabase-js`.
+- After success, redirect target is `?redirect=...` query param or
+  `/dashboard`.
+
+### `/onboarding/*`
+
+- 3-step wizard. Each step's `+page.ts` `load` checks profile completeness
+  and skips ahead if already filled.
+- Final step submits the first `job_search_config` and redirects to
+  `/dashboard`.
+
+### `/(app)/dashboard`
+
+- Stats bar: `New jobs`, `Good fits`, `Applications sent`, `Pending review`.
+- Activity feed: last 20 events from `application_events` + recent
+  evaluations (server-rendered via `+page.ts` `load`).
+- Live counter updates via WebSocket `evaluation_complete` events.
+
+### `/(app)/jobs`
+
+- Filter chips: classification, remote-only, score range.
+- Search bar: full-text + semantic (calls `GET /jobs?q=...`).
+- Cursor-paginated infinite scroll.
+- Job card click → `/(app)/jobs/[id]`.
+
+### `/(app)/jobs/[id]`
+
+- Tabs:
+  - **Overview** — title, company, location, salary, full description.
+  - **Why this match** — `pass1_scores`, `pass2_critique`,
+    `final_feedback` from `job_evaluations`.
+  - **About the company** — content from `company_summaries`.
+- CTA: "Generate documents" (if not yet generated) or "Open editor".
+
+### `/(app)/jobs/[id]/apply`
+
+- Two-column editor: tailored CV (TipTap) on the left, cover letter
+  (TipTap) on the right.
+- Right rail: PDF preview (lazy-loaded `pdfjs-dist`).
+- Save button persists changes via `PUT /applications/{id}/docs`.
+- "Mark as sent" button transitions to `SENT` and redirects to the
+  application detail page.
+
+### `/(app)/applications`
+
+- Toggle between **Kanban** (columns by status) and **List** view.
+- Kanban columns: DRAFT, SENT, INTERVIEWING, OFFERED, REJECTED, WITHDRAWN.
+- Drag-and-drop status changes hit `PUT /applications/{id}/status` —
+  invalid transitions surface a toast on 409.
+
+### `/(app)/applications/[id]`
+
+- Status timeline (chronological `application_events`).
+- Downloads: tailored CV PDF, cover letter PDF (signed-URL redirect).
+- Notes editor.
+- Status updater (validates transitions client-side first).
+
+### `/(app)/settings`
+
+- Profile editor (full name, summary, skills, experience, domain, values).
+- Job-search-config CRUD (keywords, location, schedule, salary range).
+- Notification preferences (toggle email, in-app toasts).
+
+### `/(app)/settings/account`
+
+- Subscription tier display.
+- Account deletion (double-confirm + email confirmation).
+
+## Layout responsibilities
+
+| Layout                | Loads / wires up                                                          |
+| --------------------- | ------------------------------------------------------------------------- |
+| Root `+layout`        | Supabase client, auth state, global toast container, light/dark theme    |
+| `(app)/+layout`       | Sidebar nav, WebSocket connect (`notifications.connect(token)`), TanStack QueryProvider |
+
+## Loading & error UX
+
+- `+page.ts` `load` returns a streamed `Promise` for any data over 200 ms;
+  `+page.svelte` shows a skeleton placeholder.
+- Errors during `load` render `+error.svelte` with a `Retry` button that
+  invokes SvelteKit's `invalidate()`.
+
+## SEO & meta
+
+- `<svelte:head>` per page sets `title`, `description`, and `og:image`.
+- `robots: noindex` on every authenticated route.
+
+## Adding a new route — checklist
+
+1. Create the file under `src/routes/(app)/<resource>/...`.
+2. Add a `+page.ts` `load` if the page needs server data — keep server
+   logic minimal, prefer TanStack Query hooks in the component.
+3. If the route is auth-required, place under `(app)/` so the layout's
+   guard catches it.
+4. Add a sidebar entry if user-facing.
+5. Update this doc.

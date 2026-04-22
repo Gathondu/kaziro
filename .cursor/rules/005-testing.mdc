@@ -1,0 +1,144 @@
+---
+alwaysApply: true
+---
+
+# Kaziro — Testing Rules
+
+# ========================
+
+# Applies to: backend/tests/\*_/_.py and frontend/tests/\*_/_.ts
+
+## Test Structure (backend)
+
+```
+backend/tests/
+├── conftest.py                    # Shared fixtures (DB, auth, async)
+├── agents/
+│   ├── test_parser_agent.py
+│   ├── test_evaluator_agent.py
+│   ├── test_research_agent.py
+│   └── test_document_agent.py
+├── api/
+│   ├── test_jobs.py
+│   ├── test_applications.py
+│   └── test_profile.py
+├── services/
+│   ├── test_job_fetcher.py
+│   └── test_notifications.py
+└── db/
+    └── test_repositories.py
+
+frontend/tests/
+├── unit/                          # vitest + @testing-library/svelte
+└── e2e/                           # Playwright (separate runner)
+    └── test_application_flow.spec.ts
+```
+
+## Fixtures (conftest.py)
+
+- `async_session`: async DB session scoped to the test — rolls back after each test.
+- `test_user`: a pre-created User with full profile, scoped to test.
+- `test_job_posting`: a pre-parsed JobPosting for the test user's domain.
+- `test_evaluation`: a GOOD_FIT evaluation for `test_job_posting` and `test_user`.
+- `mock_llm`: patches `ChatOpenAI` to return pre-recorded responses from fixtures/llm/.
+- `mock_firecrawl`: patches `firecrawl_scrape` to return fixture HTML content.
+- `authenticated_client`: `AsyncClient` with valid JWT headers for the test user.
+
+## Agent Tests
+
+### What to test per agent:
+
+- **Happy path**: valid input → expected state fields populated, no `state.error`.
+- **Error handling**: simulate LLM exception → `state.error` is set, no crash.
+- **DB persistence**: assert the correct rows were created/updated in the test DB.
+- **Classification logic** (evaluator only): scores in each bucket produce correct classification.
+
+### LLM Mocking
+
+- Use VCR.py cassettes for LLM calls. Store cassettes in `backend/tests/cassettes/`.
+- Never make live API calls in tests. Set `OPENAI_API_KEY=test` in test env.
+- Cassette naming: `<agent>_<scenario>.yaml` e.g., `evaluator_good_fit.yaml`.
+- Record cassettes once with: `pytest --vcr-record=new_episodes`.
+
+### Example agent test pattern:
+
+```python
+@pytest.mark.asyncio
+@pytest.mark.vcr("parser_happy_path.yaml")
+async def test_parser_agent_happy_path(test_raw_job, async_session):
+    result = await run_parser_agent(
+        raw_job_id=str(test_raw_job.id),
+        raw_payload=test_raw_job.raw_payload,
+    )
+    assert result.error is None
+    assert result.parsed is not None
+    assert result.parsed.title != ""
+    assert result.embedding is not None and len(result.embedding) == 1536
+    # Assert DB row created
+    posting = await async_session.get(JobPosting, ...)
+    assert posting is not None
+```
+
+## API Tests
+
+### What to test per endpoint:
+
+- Happy path with valid auth and valid input.
+- 401 response when no auth token provided.
+- 403 response when accessing another user's resource.
+- 404 response when resource doesn't exist.
+- 422 response when request body is invalid.
+
+### Client pattern:
+
+```python
+async def test_get_jobs_authenticated(authenticated_client, test_job_posting):
+    response = await authenticated_client.get("/api/v1/jobs")
+    assert response.status_code == 200
+    data = response.json()
+    assert "data" in data
+    assert len(data["data"]) >= 1
+
+async def test_get_jobs_unauthenticated(async_client):
+    response = await async_client.get("/api/v1/jobs")
+    assert response.status_code == 401
+```
+
+## Coverage Requirements
+
+- Minimum overall coverage: 80%
+- Agent files: 90% minimum (critical business logic)
+- API routes: 85% minimum
+- Services: 80% minimum
+- Run coverage: `pytest --cov=backend --cov-report=html`
+- CI fails if coverage drops below thresholds
+
+## Test Data
+
+- Test data factories live in `backend/tests/factories.py`.
+- Use `factory_boy` for creating test model instances.
+- Never use production data in tests.
+- Test user profiles cover at least 3 domains: software, healthcare, design.
+
+## What NOT to Test
+
+- ❌ Don't test Pydantic validation directly — it's tested by Pydantic's own suite.
+- ❌ Don't test SQLAlchemy query construction — test the repository output instead.
+- ❌ Don't write tests that depend on test execution order.
+- ❌ Don't use `time.sleep()` in tests — use `pytest-asyncio` timeouts.
+
+## CI Test Run
+
+```bash
+# Run all backend unit + integration tests
+pytest backend/tests/ -v --timeout=30
+
+# Run with coverage
+pytest backend/tests/ --cov=backend --cov-fail-under=80
+
+# Run only agent tests
+pytest backend/tests/agents/ -v
+
+# Run E2E (separate, requires running server + frontend)
+pnpm --dir frontend e2e
+```
