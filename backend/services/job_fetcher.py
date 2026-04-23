@@ -104,15 +104,11 @@ async def _request_page(
 
     if resp.status_code in RETRYABLE_STATUS:
         external_api_calls_total.labels(service="rapidapi", status=str(resp.status_code)).inc()
-        raise _RetryableUpstream(
-            f"upstream returned retryable status {resp.status_code}"
-        )
+        raise _RetryableUpstream(f"upstream returned retryable status {resp.status_code}")
 
     if resp.status_code >= 400:
         external_api_calls_total.labels(service="rapidapi", status=str(resp.status_code)).inc()
-        raise JobFetchError(
-            f"rapidapi returned {resp.status_code}: {resp.text[:200]}"
-        )
+        raise JobFetchError(f"rapidapi returned {resp.status_code}: {resp.text[:200]}")
 
     external_api_calls_total.labels(service="rapidapi", status="200").inc()
     body = resp.json()
@@ -137,9 +133,7 @@ async def _fetch_with_retry(
         reraise=True,
     ):
         with attempt:
-            return await _request_page(
-                client, query=query, page=page, remote_only=remote_only
-            )
+            return await _request_page(client, query=query, page=page, remote_only=remote_only)
     return []
 
 
@@ -159,7 +153,9 @@ async def fetch_jobs_for_config(
     async with async_session_factory() as session:
         config = await job_config_repository.get_by_id_unscoped(session, config_uuid)
         if config is None or not config.is_active:
-            log_ctx.warning("job_fetcher.config_unavailable", active=getattr(config, "is_active", None))
+            log_ctx.warning(
+                "job_fetcher.config_unavailable", active=getattr(config, "is_active", None)
+            )
             return []
 
         query = _build_query(keywords=config.keywords, location=config.location)

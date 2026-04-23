@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models.enums import SubscriptionTier
 from backend.db.models.user import User
+from backend.db.pagination import Page, paginate
 
 
 async def get_by_id(session: AsyncSession, user_id: uuid.UUID) -> User | None:
@@ -59,6 +60,24 @@ async def upsert_from_supabase(
     return user
 
 
+async def list_all(
+    session: AsyncSession,
+    *,
+    cursor: str | None = None,
+    limit: int = 20,
+) -> Page[User]:
+    """Admin-only cursor pagination over all users (newest first)."""
+    stmt = select(User)
+    return await paginate(
+        session,
+        stmt,
+        cursor=cursor,
+        limit=limit,
+        order_column=User.created_at,
+        id_column=User.id,
+    )
+
+
 async def set_active(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -77,6 +96,7 @@ async def set_active(
 __all__ = [
     "get_by_email",
     "get_by_id",
+    "list_all",
     "set_active",
     "upsert_from_supabase",
 ]

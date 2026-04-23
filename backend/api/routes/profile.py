@@ -26,9 +26,7 @@ router: Final[APIRouter] = APIRouter(prefix="/profile", tags=["profile"])
     response_model=Envelope[ProfileResponse],
     summary="Get the authenticated user's profile",
 )
-async def get_profile(
-    session: SessionDep, current_user: CurrentUser
-) -> Envelope[ProfileResponse]:
+async def get_profile(session: SessionDep, current_user: CurrentUser) -> Envelope[ProfileResponse]:
     profile = await profile_repository.get_by_user_id(session, current_user.id)
     if profile is None:
         raise NotFoundError(
@@ -82,9 +80,7 @@ async def upsert_profile(
 async def upload_master_cv(
     session: SessionDep,
     current_user: CurrentUser,
-    file: UploadFile = File(
-        ..., description="PDF up to 10 MB."
-    ),
+    file: UploadFile = File(..., description="PDF up to 10 MB."),
 ) -> Envelope[CvUploadResponse]:
     """Validate, store, parse, and embed the user's master CV."""
     payload = await file.read()

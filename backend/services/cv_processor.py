@@ -175,9 +175,7 @@ async def process_cv_upload(
         storage_path=path,
         extracted_text=text,
     )
-    await profile_repository.update_embedding(
-        session, user_id, embedding=embedding
-    )
+    await profile_repository.update_embedding(session, user_id, embedding=embedding)
 
     signed_url = await storage_service.create_signed_url(path)
 
@@ -244,8 +242,7 @@ def _extract_text(payload: bytes) -> str:
             reader.decrypt("")
         except Exception as exc:  # pragma: no cover - depends on file
             raise CvUploadError(
-                "Encrypted PDFs are not supported — remove the password "
-                "before uploading.",
+                "Encrypted PDFs are not supported — remove the password before uploading.",
                 code="cv_pdf_encrypted",
             ) from exc
 

@@ -23,6 +23,7 @@ from backend.logging_config import get_logger
 log = get_logger(__name__)
 
 _USER_CHANNEL_PREFIX: Final[str] = "user"
+_NOTIFICATIONS_SUFFIX: Final[str] = ":notifications"
 
 _redis_client: aioredis.Redis | None = None
 
@@ -60,8 +61,8 @@ async def reset_for_tests() -> None:
 
 
 def channel_for_user(user_id: str | uuid.UUID) -> str:
-    """Canonical Pub/Sub channel name for ``user_id``."""
-    return f"{_USER_CHANNEL_PREFIX}:{user_id}"
+    """Canonical Pub/Sub channel name for ``user_id`` (matches WS subscribe)."""
+    return f"{_USER_CHANNEL_PREFIX}:{user_id}{_NOTIFICATIONS_SUFFIX}"
 
 
 async def notify_user(user_id: str | uuid.UUID, payload: dict[str, Any]) -> int:

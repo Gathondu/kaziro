@@ -17,7 +17,9 @@ backend/
 ├── config.py                  ← Pydantic Settings — env-driven config
 ├── api/                       ← FastAPI routers (thin controllers)
 │   ├── deps.py                ← shared deps (auth, db session, current_user)
-│   └── v1/                    ← versioned routes
+│   ├── middleware/            ← request-id, rate-limit, error-envelope wiring
+│   ├── schemas/               ← Pydantic request/response models per resource
+│   └── routes/                ← ``/api/v1/*`` routers (jobs, applications, admin, …)
 ├── services/                  ← business logic (stateless, async)
 ├── db/
 │   ├── base.py                ← SQLAlchemy declarative Base

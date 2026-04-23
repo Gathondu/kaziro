@@ -76,9 +76,7 @@ async def update_config(
     current_user: CurrentUser,
 ) -> Envelope[JobConfigResponse]:
     fields = payload.model_dump(exclude_unset=True)
-    config = await job_config_repository.update(
-        session, current_user.id, config_id, **fields
-    )
+    config = await job_config_repository.update(session, current_user.id, config_id, **fields)
     if config is None:
         raise NotFoundError("job config not found", code="job_config_not_found")
     await session.commit()

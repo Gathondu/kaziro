@@ -199,8 +199,9 @@ Inbound messages: none (server → client only). Outbound message shapes:
 { "type": "fetch_complete",      "config_id": "...", "new_jobs": 4 }
 ```
 
-The WS hub subscribes to a Redis channel `user:{user_id}:notifications`;
-agents publish to that channel via `backend/services/notifications.notify_user`.
+The WS hub subscribes to a Redis channel `user:{user_id}:notifications`
+(the same channel ``notify_user`` in ``backend/services/notifications.py``
+publishes to).
 
 ### 3.7 Health
 

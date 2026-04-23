@@ -130,9 +130,7 @@ def _is_admin_payload(payload: dict[str, object], role: str) -> bool:
 
 async def get_current_claims(
     request: Request,
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
-    ],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> AuthClaims:
     """Decode + verify the JWT once per request, caching on ``request.state``.
@@ -166,9 +164,7 @@ async def get_current_user(
     )
     if not user.is_active:
         log.warning("auth.user_deactivated", user_id=str(user.id))
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="user is deactivated"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="user is deactivated")
     return user
 
 
@@ -179,9 +175,7 @@ async def require_admin(
     """Reject non-admin callers with ``403``."""
     if not claims.is_admin:
         log.warning("auth.admin_required", user_id=str(user.id))
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="admin role required"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="admin role required")
     return user
 
 

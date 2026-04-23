@@ -54,10 +54,12 @@ async def _post(
         async with _client(settings) as client:
             resp = await client.post(path, json=payload)
     except (TimeoutError, httpx.TimeoutException) as exc:
-        log.warning("auth.upstream_timeout", endpoint=path, event=auth_event)
+        log.warning("auth.upstream_timeout", endpoint=path, auth_op=auth_event)
         raise UpstreamError("authentication service is unreachable") from exc
     except httpx.HTTPError as exc:
-        log.error("auth.upstream_error", endpoint=path, event=auth_event, error=str(exc))
+        log.error(
+            "auth.upstream_error", endpoint=path, auth_op=auth_event, error=str(exc)
+        )
         raise UpstreamError("authentication service error") from exc
 
     return _parse_response(resp, auth_event=auth_event)
@@ -69,14 +71,14 @@ def _parse_response(resp: httpx.Response, *, auth_event: str) -> dict[str, Any]:
         try:
             return resp.json()
         except ValueError as exc:
-            log.error("auth.bad_response_json", event=auth_event)
+            log.error("auth.bad_response_json", auth_op=auth_event)
             raise UpstreamError("invalid response from authentication service") from exc
 
     body = _safe_json(resp)
     message = body.get("msg") or body.get("error_description") or body.get("error") or resp.text
     log.info(
         "auth.upstream_rejected",
-        event=auth_event,
+        auth_op=auth_event,
         status=resp.status_code,
         gotrue_code=body.get("error_code"),
         gotrue_message=message,
@@ -125,9 +127,7 @@ def _extract_user_id(user: object) -> str | None:
     return None
 
 
-async def register(
-    request: RegisterRequest, settings: Settings | None = None
-) -> RegisterResponse:
+async def register(request: RegisterRequest, settings: Settings | None = None) -> RegisterResponse:
     """Sign up a new user via the GoTrue ``/auth/v1/signup`` endpoint."""
     settings = settings or get_settings()
     payload: dict[str, Any] = {
@@ -174,6 +174,57 @@ async def login(request: LoginRequest, settings: Settings | None = None) -> Toke
     return _token_from_session(body)
 
 
+async def logout(access_token: str, settings: Settings | None = None) -> None:
+    """Revoke the current session via GoTrue ``/auth/v1/logout``."""
+    settings = settings or get_settings()
+    try:
+        async with httpx.AsyncClient(
+            base_url=str(settings.SUPABASE_URL).rstrip("/"),
+            headers={
+                "apikey": settings.SUPABASE_ANON_KEY.get_secret_value(),
+                "Authorization": f"Bearer {access_token}",
+            },
+            timeout=_DEFAULT_TIMEOUT,
+        ) as client:
+            resp = await client.post("/auth/v1/logout", json={})
+    except (TimeoutError, httpx.TimeoutException) as exc:
+        log.warning("auth.logout_timeout", error=str(exc))
+        raise UpstreamError("authentication service is unreachable") from exc
+    except httpx.HTTPError as exc:
+        log.error("auth.logout_error", error=str(exc))
+        raise UpstreamError("authentication service error") from exc
+
+    if resp.status_code not in (200, 204):
+        _parse_response(resp, auth_event="logout")
+
+
+async def forgot_password(email: str, settings: Settings | None = None) -> None:
+    """Request a recovery email — always succeeds with ``204`` semantics upstream."""
+    settings = settings or get_settings()
+    try:
+        async with httpx.AsyncClient(
+            base_url=str(settings.SUPABASE_URL).rstrip("/"),
+            headers={
+                "apikey": settings.SUPABASE_ANON_KEY.get_secret_value(),
+                "Content-Type": "application/json",
+            },
+            timeout=_DEFAULT_TIMEOUT,
+        ) as client:
+            resp = await client.post(
+                "/auth/v1/recover",
+                json={"email": email},
+            )
+    except (TimeoutError, httpx.TimeoutException) as exc:
+        log.warning("auth.recover_timeout", error=str(exc))
+        raise UpstreamError("authentication service is unreachable") from exc
+    except httpx.HTTPError as exc:
+        log.error("auth.recover_error", error=str(exc))
+        raise UpstreamError("authentication service error") from exc
+
+    if not resp.is_success and resp.status_code not in (200, 204):
+        _parse_response(resp, auth_event="forgot_password")
+
+
 async def refresh(request: RefreshRequest, settings: Settings | None = None) -> TokenResponse:
     """Refresh an expired access token via ``grant_type=refresh_token``."""
     settings = settings or get_settings()
@@ -186,4 +237,4 @@ async def refresh(request: RefreshRequest, settings: Settings | None = None) -> 
     return _token_from_session(body)
 
 
-__all__ = ["login", "refresh", "register"]
+__all__ = ["forgot_password", "login", "logout", "refresh", "register"]

@@ -55,9 +55,7 @@ TASK_ROUTES: Final[dict[str, dict[str, str]]] = {
     "backend.tasks.run_pipeline_for_config": {"queue": QUEUE_DEFAULT},
     "backend.tasks.run_pipeline_for_single_job": {"queue": QUEUE_DEFAULT},
     "backend.tasks.enqueue_active_pipelines": {"queue": QUEUE_DEFAULT},
-    "backend.tasks.purge_expired_company_summaries": {
-        "queue": QUEUE_MAINTENANCE
-    },
+    "backend.tasks.purge_expired_company_summaries": {"queue": QUEUE_MAINTENANCE},
 }
 
 
@@ -111,11 +109,12 @@ def create_celery_app(settings: Settings | None = None) -> Celery:
         beat_schedule=_build_beat_schedule(),
     )
 
+    import backend.services.celery_signals  # noqa: F401 — register Celery signal handlers
+
     return app
 
 
 celery_app: Final[Celery] = create_celery_app()
-
 
 __all__ = [
     "ALL_QUEUES",

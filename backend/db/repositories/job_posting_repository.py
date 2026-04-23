@@ -22,16 +22,12 @@ from backend.db.models.job_posting import JobPosting
 from backend.db.pagination import Page, paginate
 
 
-async def get_by_id(
-    session: AsyncSession, posting_id: uuid.UUID
-) -> JobPosting | None:
+async def get_by_id(session: AsyncSession, posting_id: uuid.UUID) -> JobPosting | None:
     """Fetch a posting by primary key."""
     return await session.get(JobPosting, posting_id)
 
 
-async def get_by_external_id(
-    session: AsyncSession, external_job_id: str
-) -> JobPosting | None:
+async def get_by_external_id(session: AsyncSession, external_job_id: str) -> JobPosting | None:
     """Fetch the posting parsed from a given upstream id (idempotency)."""
     stmt = select(JobPosting).where(JobPosting.external_job_id == external_job_id)
     return (await session.execute(stmt)).scalar_one_or_none()
@@ -72,6 +68,9 @@ async def list_for_user(
     cursor: str | None = None,
     limit: int = 20,
     classification: Classification | None = None,
+    classifications: list[Classification] | None = None,
+    min_score: float | None = None,
+    remote_only: bool | None = None,
     posted_after: date | None = None,
     keyword: str | None = None,
 ) -> Page[JobPosting]:
@@ -86,16 +85,19 @@ async def list_for_user(
         .join(JobEvaluation, JobEvaluation.job_posting_id == JobPosting.id)
         .where(JobEvaluation.user_id == user_id)
     )
-    if classification is not None:
+    if classifications:
+        stmt = stmt.where(JobEvaluation.final_classification.in_(classifications))
+    elif classification is not None:
         stmt = stmt.where(JobEvaluation.final_classification == classification)
+    if min_score is not None:
+        stmt = stmt.where(JobEvaluation.overall_score >= min_score)
+    if remote_only is True:
+        stmt = stmt.where(JobPosting.remote_flag.is_(True))
     if posted_after is not None:
         stmt = stmt.where(JobPosting.posted_date >= posted_after)
     if keyword:
         like = f"%{keyword.lower()}%"
-        stmt = stmt.where(
-            (JobPosting.title.ilike(like))
-            | (JobPosting.company_name.ilike(like))
-        )
+        stmt = stmt.where((JobPosting.title.ilike(like)) | (JobPosting.company_name.ilike(like)))
     return await paginate(
         session,
         stmt,

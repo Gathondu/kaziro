@@ -86,11 +86,11 @@ Phase 0.
 | Phase 0 — Foundation                   | 9    | 9     | 100% |
 | Phase 1 — Backend skeleton & data      | 12   | 12    | 100% |
 | Phase 2 — Agentic core                 | 10   | 12    | 83%  |
-| Phase 3 — API surface                  | 0    | 16    | 0%   |
+| Phase 3 — API surface                  | 14   | 16    | 88%  |
 | Phase 4 — Frontend MVP                 | 0    | 13    | 0%   |
 | Phase 5 — Production hardening         | 0    | 11    | 0%   |
 | Phase 6 — Public launch                | 0    | 6     | 0%   |
-| **Total**                              | 31   | 79    | 39%  |
+| **Total**                              | 45   | 79    | 57%  |
 
 ---
 
@@ -1198,7 +1198,7 @@ implemented, documented, and tested.
 
 ### T3.1 — `/jobs` list, `/jobs/{id}`, `/jobs/{id}/evaluation`
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.11, T2.10
@@ -1222,7 +1222,7 @@ evaluation for the current user.
 
 ### T3.2 — `/jobs/{id}/trigger-evaluation`
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T3.1
@@ -1245,7 +1245,7 @@ Manual single-job pipeline trigger from the UI. Idempotent — returns
 
 ### T3.3 — `/applications` full CRUD
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: L
 - **Priority**: P0
 - **Depends on**: T3.1
@@ -1268,7 +1268,7 @@ embedded latest evaluation + doc references.
 
 ### T3.4 — Application state-machine validation
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T3.3
@@ -1296,7 +1296,7 @@ Reject illegal transitions with `409`. Write an
 
 ### T3.5 — `/applications/{id}/cv.pdf` and `cover-letter.pdf`
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T3.3
@@ -1323,7 +1323,7 @@ Auth-checked: only the owning user (or admin) can request.
 
 ### T3.6 — WebSocket `/ws/notifications` + Redis Pub/Sub bridge
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: L
 - **Priority**: P0
 - **Depends on**: T2.10
@@ -1354,7 +1354,7 @@ fans out to connected sockets. JWT auth on connect.
 
 ### T3.7 — Admin endpoints + role check
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P1
 - **Depends on**: T1.9
@@ -1376,7 +1376,7 @@ by `Depends(require_admin)`.
 
 ### T3.8 — Sliding-window rate limiter (Redis)
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.9
@@ -1402,7 +1402,7 @@ Returns `429` with `Retry-After` header.
 
 ### T3.9 — Error envelope middleware
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T1.10
@@ -1430,7 +1430,7 @@ Stack traces never leave the server.
 
 ### T3.10 — OpenAPI gating
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P1
 - **Depends on**: T0.8
@@ -1450,7 +1450,7 @@ Stack traces never leave the server.
 
 ### T3.11 — Request-id middleware + log propagation
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T0.7
@@ -1477,7 +1477,7 @@ it. Forward into Celery task headers for trace correlation.
 
 ### T3.12 — Audit-event writes for state transitions
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T3.4, T3.6
@@ -1499,7 +1499,7 @@ by the state machine.
 
 ### T3.13 — `/auth/*` HTTP integration tests (mock GoTrue)
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T1.10, T3.9
@@ -1589,7 +1589,7 @@ for the frontend client generator. Carved out of T1.11.
 
 ### T3.16 — `/auth/logout` and `/auth/forgot-password` proxy routes
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P1
 - **Depends on**: T1.10

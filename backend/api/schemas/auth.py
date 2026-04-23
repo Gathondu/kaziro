@@ -7,11 +7,23 @@ proxy layer can pass them through with minimal translation.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
 
 
 class RegisterRequest(BaseModel):
     """Sign-up payload."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "email": "candidate@example.com",
+                    "password": "hunter2hunter2",
+                    "full_name": "Jamie Candidate",
+                }
+            ]
+        }
+    )
 
     email: EmailStr
     password: SecretStr = Field(min_length=8, max_length=128)
@@ -23,12 +35,30 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"email": "candidate@example.com", "password": "hunter2hunter2"}
+            ]
+        }
+    )
+
     email: EmailStr
     password: SecretStr = Field(min_length=1, max_length=128)
 
 
 class RefreshRequest(BaseModel):
     refresh_token: str = Field(min_length=1)
+
+
+class ForgotPasswordRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [{"email": "candidate@example.com"}]
+        }
+    )
+
+    email: EmailStr
 
 
 class TokenResponse(BaseModel):
@@ -61,6 +91,7 @@ class RegisterResponse(BaseModel):
 
 
 __all__ = [
+    "ForgotPasswordRequest",
     "LoginRequest",
     "RefreshRequest",
     "RegisterRequest",

@@ -110,9 +110,7 @@ async def download_text(storage_path: str, encoding: str = "utf-8") -> str:
     return payload.decode(encoding, errors="ignore")
 
 
-async def create_signed_url(
-    storage_path: str, *, ttl_seconds: int = DEFAULT_SIGNED_URL_TTL
-) -> str:
+async def create_signed_url(storage_path: str, *, ttl_seconds: int = DEFAULT_SIGNED_URL_TTL) -> str:
     """Return a short-lived signed URL for the object at ``storage_path``."""
     import asyncio
 

@@ -62,6 +62,7 @@ Versioning policy:
 | `pytest-asyncio`        | `>=0.24` | Async test support.                                   |
 | `pytest-cov`            | `>=5.0` | Coverage reporting.                                    |
 | `pytest-mock`           | `>=3.14` | Mock fixtures.                                        |
+| `respx`                 | `>=0.21` | Stub ``httpx`` calls (GoTrue proxy tests).             |
 | `vcrpy`                 | `>=6.0` | Record/replay HTTP cassettes (LLM, Firecrawl).         |
 | `factory-boy`           | `>=3.3` | Test factories for models.                             |
 | `freezegun`             | `>=1.5` | Freeze time in tests.                                  |

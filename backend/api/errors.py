@@ -96,9 +96,7 @@ async def api_error_handler(request: Request, exc: ApiError) -> JSONResponse:
     return JSONResponse(status_code=exc.status_code, content=body, headers=exc.headers)
 
 
-async def http_exception_handler(
-    request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """Format Starlette/FastAPI ``HTTPException`` consistently with our envelope."""
     if isinstance(exc, ApiError):
         return await api_error_handler(request, exc)
@@ -123,14 +121,10 @@ async def validation_exception_handler(
         "Request validation failed.",
     ).model_dump()
     body["error"]["details"] = exc.errors()
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, content=_jsonify(body)
-    )
+    return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, content=_jsonify(body))
 
 
-async def unhandled_exception_handler(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Last-resort 500 handler.
 
     Per ``docs/architecture/07-security.md`` §1.4 we **must not** leak

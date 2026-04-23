@@ -21,13 +21,16 @@ from backend.db.models.company_summary import (
 DEFAULT_TTL_DAYS: int = 30
 
 
+async def get_by_id(session: AsyncSession, summary_id: uuid.UUID) -> CompanySummary | None:
+    """Fetch a company summary row by primary key."""
+    return await session.get(CompanySummary, summary_id)
+
+
 async def get_for_posting(
     session: AsyncSession, job_posting_id: uuid.UUID
 ) -> CompanySummary | None:
     """Return the (possibly-expired) cached summary, or ``None``."""
-    stmt = select(CompanySummary).where(
-        CompanySummary.job_posting_id == job_posting_id
-    )
+    stmt = select(CompanySummary).where(CompanySummary.job_posting_id == job_posting_id)
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
@@ -83,9 +86,7 @@ async def upsert(
     return summary
 
 
-async def expire_now(
-    session: AsyncSession, job_posting_id: uuid.UUID
-) -> bool:
+async def expire_now(session: AsyncSession, job_posting_id: uuid.UUID) -> bool:
     """Force a cached row to expire (admin endpoint). Returns success."""
     summary = await get_for_posting(session, job_posting_id)
     if summary is None:
@@ -95,9 +96,17 @@ async def expire_now(
     return True
 
 
-async def purge_expired(
-    session: AsyncSession, *, now: datetime | None = None
-) -> int:
+async def expire_by_id(session: AsyncSession, summary_id: uuid.UUID) -> bool:
+    """Force-expire a summary by its primary key (admin)."""
+    summary = await get_by_id(session, summary_id)
+    if summary is None:
+        return False
+    summary.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    summary.updated_at = datetime.now(UTC)
+    return True
+
+
+async def purge_expired(session: AsyncSession, *, now: datetime | None = None) -> int:
     """Bulk-delete expired rows. Returns the number removed."""
     moment = now or datetime.now(UTC)
     stmt = (
@@ -119,8 +128,10 @@ def _truncate(text: str) -> str:
 
 __all__ = [
     "DEFAULT_TTL_DAYS",
+    "expire_by_id",
     "expire_now",
     "get_active_for_posting",
+    "get_by_id",
     "get_for_posting",
     "purge_expired",
     "upsert",

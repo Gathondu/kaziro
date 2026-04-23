@@ -34,8 +34,7 @@ class JobConfigBase(BaseModel):
     def _validate_cron(cls, value: str) -> str:
         if not _CRON_RE.match(value):
             raise ValueError(
-                "fetch_schedule_cron must be a 5-field cron expression "
-                "(e.g., '0 */6 * * *')"
+                "fetch_schedule_cron must be a 5-field cron expression (e.g., '0 */6 * * *')"
             )
         return value
 

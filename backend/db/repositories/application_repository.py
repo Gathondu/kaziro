@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models.application import Application
@@ -80,6 +80,22 @@ async def create(
     return application
 
 
+async def delete_by_id(
+    session: AsyncSession, user_id: uuid.UUID, application_id: uuid.UUID
+) -> bool:
+    """Hard-delete an application row (events cascade). Returns whether removed."""
+    stmt = (
+        delete(Application)
+        .where(
+            Application.id == application_id,
+            Application.user_id == user_id,
+        )
+        .returning(Application.id)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none() is not None
+
+
 async def update_status(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -122,6 +138,7 @@ async def update_fields(
 
 __all__ = [
     "create",
+    "delete_by_id",
     "get_by_id",
     "get_by_user_posting",
     "list_for_user",

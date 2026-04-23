@@ -10,11 +10,13 @@ Routes deliberately stay under 20 lines (see
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Annotated, Final
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, Response, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend.api.schemas.auth import (
+    ForgotPasswordRequest,
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
@@ -22,9 +24,12 @@ from backend.api.schemas.auth import (
     TokenResponse,
 )
 from backend.api.schemas.common import Envelope, envelope
+from backend.logging_config import get_logger
 from backend.services import supabase_auth
 
 router: Final[APIRouter] = APIRouter(prefix="/auth", tags=["auth"])
+_bearer = HTTPBearer(auto_error=True)
+log = get_logger(__name__)
 
 
 @router.post(
@@ -56,6 +61,31 @@ async def login(payload: LoginRequest) -> Envelope[TokenResponse]:
 async def refresh(payload: RefreshRequest) -> Envelope[TokenResponse]:
     token = await supabase_auth.refresh(payload)
     return envelope(token)
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Revoke the current Supabase session",
+)
+async def logout(
+    creds: Annotated[HTTPAuthorizationCredentials, Depends(_bearer)],
+) -> Response:
+    await supabase_auth.logout(creds.credentials)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Request a password recovery email (no enumeration)",
+)
+async def forgot_password(payload: ForgotPasswordRequest) -> Response:
+    try:
+        await supabase_auth.forgot_password(str(payload.email))
+    except Exception:
+        log.warning("auth.forgot_password_upstream_failed", exc_info=True)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 __all__ = ["router"]

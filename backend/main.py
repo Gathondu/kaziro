@@ -17,6 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api import health as health_routes
 from backend.api import metrics as metrics_routes
 from backend.api.errors import register_exception_handlers
+from backend.api.middleware.rate_limit import RateLimitMiddleware
+from backend.api.middleware.request_id import RequestIdMiddleware
 from backend.api.router import api_v1_router, auth_router
 from backend.config import Settings, get_settings
 from backend.logging_config import configure_logging, get_logger
@@ -60,8 +62,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
-            expose_headers=["X-Request-Id"],
+            expose_headers=["X-Request-Id", "Retry-After"],
         )
+
+    app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(RequestIdMiddleware)
 
     register_exception_handlers(app)
 
