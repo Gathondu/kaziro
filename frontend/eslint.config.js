@@ -28,6 +28,43 @@ export default [
 		}
 	},
 	{
+		files: ['src/**/*.{js,ts}'],
+		ignores: ['src/**/*.svelte.js', 'src/**/*.svelte.ts'],
+		rules: {
+			'no-restricted-globals': [
+				'error',
+				{
+					name: '$state',
+					message: 'Use $state only in .svelte, .svelte.js, or .svelte.ts files.'
+				},
+				{
+					name: '$derived',
+					message: 'Use $derived only in .svelte, .svelte.js, or .svelte.ts files.'
+				},
+				{
+					name: '$effect',
+					message: 'Use $effect only in .svelte, .svelte.js, or .svelte.ts files.'
+				},
+				{
+					name: '$props',
+					message: 'Use $props only in .svelte files.'
+				},
+				{
+					name: '$bindable',
+					message: 'Use $bindable only in .svelte files.'
+				},
+				{
+					name: '$inspect',
+					message: 'Use $inspect only in .svelte, .svelte.js, or .svelte.ts files.'
+				},
+				{
+					name: '$host',
+					message: 'Use $host only in .svelte files.'
+				}
+			]
+		}
+	},
+	{
 		ignores: [
 			'build/**',
 			'.svelte-kit/**',
