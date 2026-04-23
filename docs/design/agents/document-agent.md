@@ -18,7 +18,7 @@ paths are persisted to `application_docs`.
 | Aspect          | Value                                                  |
 | --------------- | ------------------------------------------------------ |
 | Framework       | LangGraph (5 functional nodes + error sink)            |
-| LLM             | `settings.OPENAI_MODEL_EVALUATOR` (default `gpt-4o`)   |
+| LLM             | `settings.LLM_MODEL_DOCUMENT` (default `openai/gpt-4o`) |
 | Temperature     | 0.4 (more creative for cover letter copy)              |
 | PDF renderer    | `backend/services/pdf_renderer.render_pdf` (WeasyPrint or similar) |
 | Storage         | Supabase Storage bucket `documents/{user_id}/...`       |

@@ -7,7 +7,7 @@ Three endpoints, three audiences:
 * ``GET /health/ready`` — readiness probe; verifies that we can talk to
   Postgres and Redis. A 503 here pulls the pod out of rotation.
 * ``GET /health/detailed`` — per-component status JSON for the on-call
-  dashboard. Adds Supabase, OpenAI, and Firecrawl status as best-effort
+  dashboard. Adds Supabase, OpenRouter, and Firecrawl status as best-effort
   reachability checks.
 
 Reference: ``docs/architecture/06-observability.md`` §5 (Health checks).
@@ -85,7 +85,7 @@ async def detailed() -> JSONResponse:
         _check_postgres(settings),
         _check_redis(settings),
         _check_supabase(settings),
-        _check_openai(settings),
+        _check_openrouter(settings),
         _check_firecrawl(settings),
     )
     overall_ok = all(c.status in {"ok", "skipped"} for c in components)
@@ -162,19 +162,18 @@ async def _check_supabase(settings: Settings) -> ComponentStatus:
     return await _timed("supabase", probe)
 
 
-async def _check_openai(_settings: Settings) -> ComponentStatus:
-    # An auth probe would charge a token request; a TCP reachability check
-    # is enough to surface a routing / DNS outage.
+async def _check_openrouter(_settings: Settings) -> ComponentStatus:
+    # Avoid a paid chat/embed probe; a lightweight HTTP check suffices for DNS / routing.
     async def probe() -> ComponentStatus:
         async with httpx.AsyncClient(timeout=2.0) as client:
-            resp = await client.get("https://api.openai.com/v1")
+            resp = await client.get("https://openrouter.ai/api/v1/models")
         return ComponentStatus(
-            name="openai",
+            name="openrouter",
             status="ok" if resp.status_code < 500 else "degraded",
             detail=f"HTTP {resp.status_code}",
         )
 
-    return await _timed("openai", probe)
+    return await _timed("openrouter", probe)
 
 
 async def _check_firecrawl(settings: Settings) -> ComponentStatus:

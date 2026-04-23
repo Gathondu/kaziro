@@ -62,7 +62,7 @@ backend/tests/
 | `sample_user`     | function | Authenticated `User` row for tenant scoping tests          |
 | `sample_profile`  | function | Filled `UserProfile` for the `sample_user`                 |
 | `sample_job`      | function | Pre-parsed `JobPosting` for evaluation tests               |
-| `mock_openai`     | function | Mock `ChatOpenAI` and `OpenAIEmbeddings` via VCR           |
+| `mock_llm`        | function | Mock `ChatOpenRouter` and `OpenAIEmbeddings` via VCR      |
 | `mock_firecrawl`  | function | `respx` route returning canned markdown                    |
 | `auth_headers`    | function | `{ Authorization: Bearer <fake JWT> }` for `sample_user`   |
 
@@ -87,7 +87,7 @@ Each node function tested in isolation with a hand-crafted state and a
 mocked LLM response.
 
 ```python
-async def test_pass1_draft_node_scores_within_range(mock_openai):
+async def test_pass1_draft_node_scores_within_range(mock_llm):
     state = EvaluatorState(job_posting_id="...", user_id="...", job_title="Senior Engineer", ...)
     result = await pass1_draft_node(state)
     assert result.pass1_scores is not None
@@ -225,7 +225,7 @@ test_evaluator_classifies_as_reject_when_skills_dont_match
 
 Tests **never** call live external services. Always mock:
 
-- OpenAI calls — VCR cassettes (or `pytest-mock` for unit tests).
+- OpenRouter / embedding calls — VCR cassettes (or `pytest-mock` for unit tests).
 - Firecrawl — `respx` route fixtures.
 - RapidAPI — `respx` route fixtures.
 - Supabase Storage — local stub or mocked S3 (`moto`).

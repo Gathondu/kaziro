@@ -113,17 +113,27 @@ class Settings(BaseSettings):
     CELERY_TASK_TIME_LIMIT: int = 1800
     CELERY_TASK_SOFT_TIME_LIMIT: int = 1500
 
-    # -- OpenAI / LLM ------------------------------------------------------
-    OPENAI_API_KEY: SecretStr = Field(..., description="OpenAI API key.")
-    OPENAI_ORG_ID: str | None = None
-    OPENAI_BASE_URL: AnyHttpUrl | None = None
-    OPENAI_TIMEOUT_SECONDS: int = 60
-    OPENAI_MAX_RETRIES: int = 3
-    LLM_MODEL_PARSER: str = "gpt-4o-mini"
-    LLM_MODEL_EVALUATOR: str = "gpt-4o"
-    LLM_MODEL_RESEARCH: str = "gpt-4o"
-    LLM_MODEL_DOCUMENT: str = "gpt-4o"
-    LLM_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    # -- OpenRouter / LLM --------------------------------------------------
+    OPENROUTER_API_KEY: SecretStr = Field(..., description="OpenRouter API key.")
+    OPENROUTER_API_BASE: AnyHttpUrl | None = Field(
+        default=None,
+        description="Override OpenRouter API base URL (default: https://openrouter.ai/api/v1).",
+    )
+    OPENROUTER_APP_URL: AnyHttpUrl | None = Field(
+        default=None,
+        description="HTTP Referer sent to OpenRouter for attribution (recommended in production).",
+    )
+    OPENROUTER_APP_TITLE: str | None = Field(
+        default=None,
+        description="App title (X-Title) sent to OpenRouter for attribution.",
+    )
+    OPENROUTER_TIMEOUT_SECONDS: int = 60
+    OPENROUTER_MAX_RETRIES: int = 3
+    LLM_MODEL_PARSER: str = "openai/gpt-4o-mini"
+    LLM_MODEL_EVALUATOR: str = "openai/gpt-4o"
+    LLM_MODEL_RESEARCH: str = "openai/gpt-4o"
+    LLM_MODEL_DOCUMENT: str = "openai/gpt-4o"
+    LLM_EMBEDDING_MODEL: str = "openai/text-embedding-3-small"
 
     # -- External integrations --------------------------------------------
     RAPIDAPI_KEY: SecretStr = Field(..., description="RapidAPI job-search key.")

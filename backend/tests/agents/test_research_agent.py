@@ -144,7 +144,7 @@ async def test_research_brief_failure_no_persist(test_user_id: uuid.UUID) -> Non
 
     class _BadLLM:
         async def ainvoke(self, prompt: str) -> object:
-            raise RuntimeError("OpenAI down")
+            raise RuntimeError("LLM down")
 
     set_firecrawl_client_for_tests(_Fc())
     set_llm_for_tests(_BadLLM())

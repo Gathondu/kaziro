@@ -11,7 +11,7 @@
   system. Kaziro fetches job postings, evaluates fit per user, gathers
   company context, and generates a tailored CV + cover letter for every
   good fit.
-- **Stack**: Python 3.12 · FastAPI · LangGraph · OpenAI · PostgreSQL +
+- **Stack**: Python 3.12 · FastAPI · LangGraph · OpenRouter · PostgreSQL +
   pgvector · Supabase · Celery · Redis · SvelteKit · Svelte 5 · Tailwind ·
   TanStack Query.
 

@@ -131,7 +131,7 @@ Read the rule itself for full detail.
 - LLM and Firecrawl calls **always** mocked via VCR cassettes — no live
   external calls in CI.
 - Required fixtures live in `backend/tests/conftest.py`: `db_session`,
-  `client`, `auth_user`, `mock_openai`, `vcr_cassette`.
+  `client`, `auth_user`, `mock_llm`, `vcr_cassette`.
 - Detail: [`docs/design/testing-strategy.md`](../docs/design/testing-strategy.md)
   + [`.cursor/rules/005-testing.mdc`](../.cursor/rules/005-testing.mdc).
 
@@ -157,7 +157,7 @@ Read the rule itself for full detail.
 - ❌ DB queries in agents (load via repository in a `load_data` node).
 - ❌ Sync DB calls in async paths.
 - ❌ Mixing requests-level and task-level sessions.
-- ❌ Hardcoded model strings (`"gpt-4o"`) — always
-  `settings.OPENAI_MODEL_*`.
+- ❌ Hardcoded model strings — always `settings.LLM_MODEL_*` /
+  `settings.LLM_EMBEDDING_MODEL`.
 - ❌ Logging sensitive content (CV bodies, email contents, API keys).
 - ❌ `# type: ignore` to silence mypy. Fix the type properly.

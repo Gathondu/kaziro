@@ -14,7 +14,7 @@ alwaysApply: true
 
 - Project name: Kaziro
 - Description: AI-powered agentic job recommendation and application system
-- Stack: Python 3.12 · FastAPI · LangGraph · OpenAI SDK · Svelte 5 · PostgreSQL + pgvector · Supabase · Celery · Redis
+- Stack: Python 3.12 · FastAPI · LangGraph · OpenRouter (langchain-openrouter) · Svelte 5 · PostgreSQL + pgvector · Supabase · Celery · Redis
 
 ## Code Style — Python
 

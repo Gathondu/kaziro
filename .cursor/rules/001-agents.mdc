@@ -60,8 +60,8 @@ alwaysApply: true
 
 ### Model Selection
 
-- Structured extraction (parsing, scoring): `settings.OPENAI_MODEL_PARSER` (default: gpt-4o-mini)
-- Quality-critical reasoning (evaluation, documents): `settings.OPENAI_MODEL_EVALUATOR` (default: gpt-4o)
+- Structured extraction (parsing, scoring): `settings.LLM_MODEL_PARSER` (default: openai/gpt-4o-mini)
+- Quality-critical reasoning (evaluation, documents): `settings.LLM_MODEL_EVALUATOR` (default: openai/gpt-4o)
 - Never hardcode model strings in agent files — always use settings.
 
 ## Naming Conventions

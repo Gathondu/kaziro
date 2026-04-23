@@ -17,10 +17,11 @@ LangGraph is the agentic orchestration framework. It provides:
 - **Built-in checkpointing** — enables resume of long-running pipelines.
 - **Human-in-the-loop hooks** — used for the doc-editor flow where a user can
   edit before send.
-- **Seamless OpenAI integration** via `langchain-openai`'s `ChatOpenAI` and
-  `OpenAIEmbeddings`.
+- **OpenRouter integration** via `langchain-openrouter`'s `ChatOpenRouter` for
+  chat and `langchain-openai`'s `OpenAIEmbeddings` against OpenRouter's
+  OpenAI-compatible `/v1/embeddings` endpoint.
 
-Alternatives considered (CrewAI, raw OpenAI SDK) and the rationale are in
+Alternatives considered (CrewAI, raw vendor SDKs) and the rationale are in
 [ADR-0001](../decisions/ADR-0001-agentic-framework-langgraph.md).
 
 ## 2. Pipeline overview
@@ -30,13 +31,13 @@ flowchart TD
   scheduler["APScheduler / Celery beat<br/>cron per user config"]
   fetch["Job Fetch Service<br/>(RapidAPI client)"]
   rawT[("raw_jobs")]
-  parser["Parser Agent<br/>gpt-4o-mini"]
+  parser["Parser Agent<br/>openai/gpt-4o-mini"]
   postingsT[("job_postings<br/>+ pgvector")]
-  evaluator["Evaluator Agent<br/>3-pass (gpt-4o)"]
+  evaluator["Evaluator Agent<br/>3-pass (openai/gpt-4o)"]
   evalT[("job_evaluations")]
-  research["Research Agent<br/>Firecrawl + gpt-4o"]
+  research["Research Agent<br/>Firecrawl + openai/gpt-4o"]
   companyT[("company_summaries")]
-  document["Document Agent<br/>gpt-4o"]
+  document["Document Agent<br/>openai/gpt-4o"]
   docsT[("application_docs")]
   ws["WebSocket notifier"]
 
@@ -73,7 +74,7 @@ Detailed sequence is in
 ### Stage 1 — Parser Agent
 
 **Type**: LangGraph 3-node agent with a retry loop on the parse step.
-**Model**: `settings.OPENAI_MODEL_PARSER` (default `gpt-4o-mini`).
+**Model**: `settings.LLM_MODEL_PARSER` (default `openai/gpt-4o-mini`).
 **Code**: [`backend/agents/parser_agent.py`](../../backend/agents/parser_agent.py).
 **Detailed spec**: [`design/agents/parser-agent.md`](../design/agents/parser-agent.md).
 
@@ -86,13 +87,13 @@ parse → (route_after_parse) → embed → persist → END
 | Node      | Responsibility                                                              |
 | --------- | --------------------------------------------------------------------------- |
 | `parse`   | LLM (structured output, `temperature=0`) → `JobPostingSchema`               |
-| `embed`   | Generate `text-embedding-3-small` (1536-dim) of `title + company + description` |
+| `embed`   | Generate embedding (default `openai/text-embedding-3-small`, 1536-dim) of `title + company + description` |
 | `persist` | Insert `JobPosting`; mark `RawJob.parse_status = PARSED` (or `FAILED` after 3 retries) |
 
 ### Stage 2 — Evaluator Agent (3-pass)
 
 **Type**: LangGraph multi-node stateful graph.
-**Model**: `settings.OPENAI_MODEL_EVALUATOR` (default `gpt-4o`).
+**Model**: `settings.LLM_MODEL_EVALUATOR` (default `openai/gpt-4o`).
 **Code**: [`backend/agents/evaluator_agent.py`](../../backend/agents/evaluator_agent.py).
 **Detailed spec**: [`design/agents/evaluator-agent.md`](../design/agents/evaluator-agent.md).
 **Why 3 passes**: see [ADR-0006](../decisions/ADR-0006-evaluator-three-pass.md).
@@ -123,7 +124,7 @@ The full audit trail (all three passes' outputs) is persisted to
 ### Stage 3 — Research Agent
 
 **Type**: LangGraph agent with tool use.
-**Model**: `settings.OPENAI_MODEL_EVALUATOR` (`gpt-4o`).
+**Model**: `settings.LLM_MODEL_RESEARCH` (default `openai/gpt-4o`).
 **Tools**: Firecrawl scrape (`POST /v1/scrape`).
 **Code**: [`backend/agents/research_agent.py`](../../backend/agents/research_agent.py).
 **Detailed spec**: [`design/agents/research-agent.md`](../design/agents/research-agent.md).
@@ -145,7 +146,7 @@ check_cache ──fresh?──→ END
 ### Stage 4 — Document Agent
 
 **Type**: LangGraph multi-node agent.
-**Model**: `settings.OPENAI_MODEL_EVALUATOR` (`gpt-4o`, `temperature=0.4`).
+**Model**: `settings.LLM_MODEL_DOCUMENT` (default `openai/gpt-4o`, `temperature=0.4`).
 **Code**: [`backend/agents/document_agent.py`](../../backend/agents/document_agent.py).
 **Detailed spec**: [`design/agents/document-agent.md`](../design/agents/document-agent.md).
 
@@ -244,6 +245,6 @@ This payload is logged at INFO and exposed to the admin pipeline dashboard
 | --------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | A new agent stage (e.g., interview-prep agent)      | New file in `backend/agents/`, register in `pipeline_orchestrator.py`                |
 | A new classification bucket                         | `Classification` enum in `evaluator_agent.py` + DB migration + frontend badges       |
-| A different LLM model per stage                     | Add a `OPENAI_MODEL_<X>` env var; consume via `settings.OPENAI_MODEL_<X>`            |
+| A different LLM model per stage                     | Set `LLM_MODEL_<STAGE>` (see `backend/config.py`); values are OpenRouter model ids. |
 | A new external scrape source                        | New service in `backend/services/`, called from `research_agent.scrape_node`         |
 | Real-time progress for individual passes            | Publish `notify_user(...)` from each pass node; extend frontend toast types          |

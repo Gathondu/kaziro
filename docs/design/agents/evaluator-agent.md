@@ -19,7 +19,7 @@ user-facing feedback.
 | Aspect       | Value                                                  |
 | ------------ | ------------------------------------------------------ |
 | Framework    | LangGraph (5 functional nodes + error sink)            |
-| LLM          | `settings.OPENAI_MODEL_EVALUATOR` (default `gpt-4o`)   |
+| LLM          | `settings.LLM_MODEL_EVALUATOR` (default `openai/gpt-4o`) |
 | Temperature  | 0.2 (deterministic but not robotic)                    |
 
 ## State

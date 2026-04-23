@@ -249,7 +249,7 @@ Use clearly fake values for secrets (`changeme`, `xxx`).
 - Every required and optional env var present.
 - No real credentials checked in.
 - Comments group vars by section (App / DB / Supabase / Redis /
-Celery / OpenAI / Integrations / Observability / Frontend).
+Celery / OpenRouter / Integrations / Observability / Frontend).
 - `.gitignore` updated so real `.env` files cannot be committed.
 
 **References**

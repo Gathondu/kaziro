@@ -24,6 +24,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     # Agentic / LLM
     "langgraph>=0.2",
+    "langchain-openrouter>=0.1",
     "langchain-openai>=0.2",
     "openai>=1.51",
     "tiktoken>=0.8",
@@ -134,6 +135,7 @@ module = [
     "supabase.*",
     "langgraph.*",
     "langchain_openai.*",
+    "langchain_openrouter.*",
     "pgvector.*",
     "bleach.*",
 ]

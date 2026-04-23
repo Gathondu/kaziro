@@ -60,7 +60,7 @@ jobs:
       SUPABASE_ANON_KEY: ci-anon-key
       SUPABASE_SERVICE_KEY: ci-service-key
       SUPABASE_JWT_SECRET: ci-jwt-secret
-      OPENAI_API_KEY: ci-openai-key
+      OPENROUTER_API_KEY: ci-openrouter-key
       RAPIDAPI_KEY: ci-rapidapi-key
       RAPIDAPI_HOST: jsearch.p.rapidapi.com
       FIRECRAWL_API_KEY: ci-firecrawl-key

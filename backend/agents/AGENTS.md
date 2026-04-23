@@ -92,13 +92,14 @@ Always read from `settings`:
 
 | Use case                                           | Setting                       | Default                  |
 | -------------------------------------------------- | ----------------------------- | ------------------------ |
-| Structured extraction (parser)                     | `LLM_MODEL_PARSER`            | `gpt-4o-mini`            |
-| Quality reasoning (evaluator, all 3 passes)        | `LLM_MODEL_EVALUATOR`         | `gpt-4o`                 |
-| Research brief generation                          | `LLM_MODEL_RESEARCH`          | `gpt-4o`                 |
-| Document generation (CV, cover letter)             | `LLM_MODEL_DOCUMENT`          | `gpt-4o`                 |
-| Embeddings (`job_postings.embedding`)              | `LLM_EMBEDDING_MODEL`         | `text-embedding-3-small` |
+| Structured extraction (parser)                     | `LLM_MODEL_PARSER`            | `openai/gpt-4o-mini`     |
+| Quality reasoning (evaluator, all 3 passes)        | `LLM_MODEL_EVALUATOR`         | `openai/gpt-4o`          |
+| Research brief generation                          | `LLM_MODEL_RESEARCH`          | `openai/gpt-4o`          |
+| Document generation (CV, cover letter)             | `LLM_MODEL_DOCUMENT`          | `openai/gpt-4o`          |
+| Embeddings (`job_postings.embedding`)              | `LLM_EMBEDDING_MODEL`         | `openai/text-embedding-3-small` |
 
-Never hardcode model strings (`"gpt-4o"`) in agent files.
+Never hardcode model strings in agent files — use `settings` (values are
+[OpenRouter model ids](https://openrouter.ai/models)).
 
 ## Naming conventions
 
@@ -120,8 +121,8 @@ Never hardcode model strings (`"gpt-4o"`) in agent files.
 - ❌ Business logic in routing functions — routing is pure state
   inspection.
 - ❌ Hardcoded model strings.
-- ❌ Per-call instantiation of `ChatOpenAI` / `OpenAIEmbeddings` —
-  module-level singletons only.
+- ❌ Per-call instantiation of `ChatOpenRouter` / `OpenAIEmbeddings` —
+  module-level singletons only (construct via `backend.llm.openrouter`).
 
 ## Pipeline orchestrator (`pipeline_orchestrator.py`)
 

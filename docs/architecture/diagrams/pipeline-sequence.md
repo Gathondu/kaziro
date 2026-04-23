@@ -77,7 +77,7 @@ sequenceDiagram
 | Stage             | Typical p50 latency       | Bounded by                              |
 | ----------------- | ------------------------- | --------------------------------------- |
 | Fetch (one user)  | 2 – 5 s                   | RapidAPI response                       |
-| Parse (one job)   | 3 – 8 s                   | OpenAI gpt-4o-mini call                 |
+| Parse (one job)   | 3 – 8 s                   | OpenRouter `openai/gpt-4o-mini` call    |
 | Evaluate (one job × one user) | 25 – 60 s     | 3 sequential gpt-4o calls               |
 | Research (one job)| 10 – 30 s (cache miss)    | 2 parallel Firecrawl scrapes + gpt-4o   |
 | Document          | 30 – 60 s                 | 2 generative gpt-4o calls + quality check |

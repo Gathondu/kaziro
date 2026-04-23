@@ -72,20 +72,21 @@ Conventions:
 | `CELERY_TASK_TIME_LIMIT`       | No       | `1800`                 | worker  | Hard time limit per task in seconds.                     |
 | `CELERY_TASK_SOFT_TIME_LIMIT`  | No       | `1500`                 | worker  | Soft time limit; raises `SoftTimeLimitExceeded`.         |
 
-## OpenAI / LLM
+## OpenRouter / LLM
 
-| Variable                | Required | Default                  | Scope             | Description                                              |
-| ----------------------- | -------- | ------------------------ | ----------------- | -------------------------------------------------------- |
-| `OPENAI_API_KEY`        | Yes      | —                        | backend, worker   | OpenAI API key.                                          |
-| `OPENAI_ORG_ID`         | No       | —                        | backend, worker   | Optional org ID for billing.                             |
-| `OPENAI_BASE_URL`       | No       | OpenAI default           | backend, worker   | Override for proxies (e.g., LiteLLM).                    |
-| `OPENAI_TIMEOUT_SECONDS`| No       | `60`                     | backend, worker   | Per-request timeout.                                     |
-| `OPENAI_MAX_RETRIES`    | No       | `3`                      | backend, worker   | Retries on 5xx / rate-limit.                             |
-| `LLM_MODEL_PARSER`      | No       | `gpt-4o-mini`            | worker            | Parser model.                                            |
-| `LLM_MODEL_EVALUATOR`   | No       | `gpt-4o`                 | worker            | Evaluator (all 3 passes).                                |
-| `LLM_MODEL_RESEARCH`    | No       | `gpt-4o`                 | worker            | Research brief generation.                               |
-| `LLM_MODEL_DOCUMENT`    | No       | `gpt-4o`                 | worker            | Document agent.                                          |
-| `LLM_EMBEDDING_MODEL`   | No       | `text-embedding-3-small` | worker            | Embedding model for `job_postings.embedding`.            |
+| Variable                     | Required | Default                         | Scope             | Description                                                                 |
+| ---------------------------- | -------- | ------------------------------- | ----------------- | --------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`         | Yes      | —                               | backend, worker   | [OpenRouter](https://openrouter.ai/) API key.                               |
+| `OPENROUTER_API_BASE`        | No       | `https://openrouter.ai/api/v1`  | backend, worker   | Override API base (self-hosted or non-default endpoint).                    |
+| `OPENROUTER_APP_URL`         | No       | —                               | backend, worker   | `HTTP-Referer` for OpenRouter attribution (recommended in production).       |
+| `OPENROUTER_APP_TITLE`       | No       | —                               | backend, worker   | `X-Title` for OpenRouter attribution.                                        |
+| `OPENROUTER_TIMEOUT_SECONDS` | No       | `60`                            | backend, worker   | Per-request timeout (seconds; converted for the OpenRouter client).          |
+| `OPENROUTER_MAX_RETRIES`     | No       | `3`                             | backend, worker   | Retries on 5xx / rate-limit.                                                 |
+| `LLM_MODEL_PARSER`           | No       | `openai/gpt-4o-mini`            | worker            | Parser chat model ([OpenRouter model id](https://openrouter.ai/models)).    |
+| `LLM_MODEL_EVALUATOR`        | No       | `openai/gpt-4o`                 | worker            | Evaluator (all 3 passes).                                                   |
+| `LLM_MODEL_RESEARCH`         | No       | `openai/gpt-4o`                 | worker            | Research brief generation.                                                  |
+| `LLM_MODEL_DOCUMENT`         | No       | `openai/gpt-4o`                 | worker            | Document agent.                                                             |
+| `LLM_EMBEDDING_MODEL`        | No       | `openai/text-embedding-3-small` | worker            | Embedding model for `job_postings.embedding` (OpenAI-compat on OpenRouter). |
 
 ## External integrations
 

@@ -12,7 +12,7 @@ generates a tailored CV + cover letter for every good fit.
 
 ## Stack
 
-- **Backend**: Python 3.12 · FastAPI · LangGraph · OpenAI · Celery · Redis
+- **Backend**: Python 3.12 · FastAPI · LangGraph · OpenRouter · Celery · Redis
 - **Database**: PostgreSQL 16 + pgvector (via Supabase)
 - **Frontend**: SvelteKit · Svelte 5 (runes) · TailwindCSS · DaisyUI · TanStack Query
 - **Infra**: Docker · Kubernetes · Vercel · GitHub Actions · ArgoCD
@@ -42,7 +42,7 @@ ADR for the layout: [`docs/decisions/ADR-0009-monorepo-layout.md`](docs/decision
 - Node 20+ and [`pnpm`](https://pnpm.io/)
 - Docker + docker-compose
 - A Supabase project (free tier is fine)
-- An OpenAI API key
+- An OpenRouter API key
 
 ### 1. Clone and configure
 
@@ -50,7 +50,7 @@ ADR for the layout: [`docs/decisions/ADR-0009-monorepo-layout.md`](docs/decision
 git clone https://github.com/<org>/kaziro.git
 cd kaziro
 cp .env.example .env
-# fill in SUPABASE_*, OPENAI_API_KEY, RAPIDAPI_KEY, FIRECRAWL_API_KEY, ...
+# fill in SUPABASE_*, OPENROUTER_API_KEY, RAPIDAPI_KEY, FIRECRAWL_API_KEY, ...
 ```
 
 Full env-var reference: [`docs/reference/env-vars.md`](docs/reference/env-vars.md).

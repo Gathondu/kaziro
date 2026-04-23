@@ -40,7 +40,7 @@ frontend/tests/
 - `test_user`: a pre-created User with full profile, scoped to test.
 - `test_job_posting`: a pre-parsed JobPosting for the test user's domain.
 - `test_evaluation`: a GOOD_FIT evaluation for `test_job_posting` and `test_user`.
-- `mock_llm`: patches `ChatOpenAI` to return pre-recorded responses from fixtures/llm/.
+- `mock_llm`: patches `ChatOpenRouter` to return pre-recorded responses from fixtures/llm/.
 - `mock_firecrawl`: patches `firecrawl_scrape` to return fixture HTML content.
 - `authenticated_client`: `AsyncClient` with valid JWT headers for the test user.
 
@@ -56,7 +56,7 @@ frontend/tests/
 ### LLM Mocking
 
 - Use VCR.py cassettes for LLM calls. Store cassettes in `backend/tests/cassettes/`.
-- Never make live API calls in tests. Set `OPENAI_API_KEY=test` in test env.
+- Never make live API calls in tests. Set `OPENROUTER_API_KEY=test` in test env.
 - Cassette naming: `<agent>_<scenario>.yaml` e.g., `evaluator_good_fit.yaml`.
 - Record cassettes once with: `pytest --vcr-record=new_episodes`.
 

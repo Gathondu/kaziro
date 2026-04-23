@@ -2,10 +2,11 @@
 
 Pipeline:
 
-1. ``parse_node``    — LLM call (gpt-4o-mini, structured output) extracts
+1. ``parse_node``    — LLM call (parser model, structured output) extracts
    the canonical fields from the upstream JSON. Up to ``MAX_PARSE_RETRIES``
    attempts.
-2. ``embed_node``    — :class:`OpenAIEmbeddings` generates the 1536-dim
+2. ``embed_node``    — embeddings (OpenRouter OpenAI-compatible API) produce
+   the 1536-dim
    description embedding. Embedding failure is non-fatal — we still
    persist the posting without the vector.
 3. ``persist_node``  — writes a ``job_postings`` row + flips the
@@ -25,13 +26,13 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Any, Final, Protocol
 
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.config import get_settings
 from backend.db.repositories import job_posting_repository, raw_job_repository
 from backend.db.session import async_session_factory
+from backend.llm.openrouter import build_chat_model, build_embeddings
 from backend.logging_config import get_logger
 from backend.metrics import (
     agent_duration_seconds,
@@ -115,22 +116,16 @@ _embedder: _Embeddable | None = None
 
 def _build_default_llm() -> _Invokable:
     settings = get_settings()
-    base = ChatOpenAI(
+    base = build_chat_model(
         model=settings.LLM_MODEL_PARSER,
         temperature=0,
-        api_key=settings.OPENAI_API_KEY.get_secret_value(),
-        timeout=settings.OPENAI_TIMEOUT_SECONDS,
-        max_retries=settings.OPENAI_MAX_RETRIES,
+        settings=settings,
     )
     return base.with_structured_output(JobPostingSchema)
 
 
 def _build_default_embedder() -> _Embeddable:
-    settings = get_settings()
-    return OpenAIEmbeddings(
-        model=settings.LLM_EMBEDDING_MODEL,
-        api_key=settings.OPENAI_API_KEY.get_secret_value(),
-    )
+    return build_embeddings(get_settings())
 
 
 def get_llm() -> _Invokable:
@@ -200,7 +195,7 @@ async def parse_node(state: ParserState) -> ParserState:
 
     try:
         parsed: JobPostingSchema = await get_llm().ainvoke(prompt)
-        external_api_calls_total.labels(service="openai", status="200").inc()
+        external_api_calls_total.labels(service="openrouter", status="200").inc()
         bound.info(
             "parser.parse_success",
             title=parsed.title,
@@ -208,7 +203,7 @@ async def parse_node(state: ParserState) -> ParserState:
         )
         return state.model_copy(update={"parsed": parsed, "error": None})
     except Exception as exc:
-        external_api_calls_total.labels(service="openai", status="error").inc()
+        external_api_calls_total.labels(service="openrouter", status="error").inc()
         bound.warning("parser.parse_failed", error=str(exc))
         return state.model_copy(
             update={"error": str(exc), "retries": state.retries + 1}
@@ -231,11 +226,11 @@ async def embed_node(state: ParserState) -> ParserState:
 
     try:
         embedding = await get_embedder().aembed_query(embed_text)
-        external_api_calls_total.labels(service="openai", status="200").inc()
+        external_api_calls_total.labels(service="openrouter", status="200").inc()
         bound.info("parser.embed_success", dims=len(embedding))
         return state.model_copy(update={"embedding": embedding})
     except Exception as exc:
-        external_api_calls_total.labels(service="openai", status="error").inc()
+        external_api_calls_total.labels(service="openrouter", status="error").inc()
         bound.warning("parser.embed_failed", error=str(exc))
         return state
 

@@ -16,7 +16,7 @@ format and generates a 1536-dim text embedding for semantic search.
 | Aspect             | Value                                                     |
 | ------------------ | --------------------------------------------------------- |
 | Framework          | LangGraph (3-node graph with retry loop)                  |
-| LLM                | `settings.OPENAI_MODEL_PARSER` (default `gpt-4o-mini`)    |
+| LLM                | `settings.LLM_MODEL_PARSER` (default `openai/gpt-4o-mini`) |
 | Embedding model    | `text-embedding-3-small` (1536-dim)                       |
 | Temperature        | 0 (deterministic structured extraction)                   |
 | Structured output  | `with_structured_output(JobPostingSchema)`                |
@@ -123,7 +123,7 @@ Every node binds `raw_job_id` and `node`. Key events:
 
 | Scenario                              | Behaviour                                                |
 | ------------------------------------- | -------------------------------------------------------- |
-| OpenAI 429 / 5xx                      | Caught in `parse_node`; retry up to 3 times              |
+| OpenRouter 429 / 5xx                | Caught in `parse_node`; retry up to 3 times              |
 | LLM returns malformed JSON            | Pydantic validation error caught; retry                  |
 | Embedding API failure                 | Non-fatal; persist with NULL embedding                   |
 | `raw_job_id` not found                | Logged at ERROR; state.error set; no row written         |

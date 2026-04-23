@@ -86,7 +86,7 @@ celery_queue_depth: Final[Gauge] = Gauge(
 external_api_calls_total: Final[Counter] = Counter(
     "kaziro_external_api_calls_total",
     "Calls to upstream services, labelled by service and outcome.",
-    labelnames=("service", "status"),  # service ∈ {rapidapi, firecrawl, openai}
+    labelnames=("service", "status"),  # service ∈ {rapidapi, firecrawl, openrouter}
     registry=registry,
 )
 

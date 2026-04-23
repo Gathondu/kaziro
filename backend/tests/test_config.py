@@ -44,7 +44,7 @@ def test_happy_boot_parses_all_fields() -> None:
         "SUPABASE_SERVICE_KEY",
         "SUPABASE_JWT_SECRET",
         "REDIS_URL",
-        "OPENAI_API_KEY",
+        "OPENROUTER_API_KEY",
         "RAPIDAPI_KEY",
         "RAPIDAPI_HOST",
         "FIRECRAWL_API_KEY",

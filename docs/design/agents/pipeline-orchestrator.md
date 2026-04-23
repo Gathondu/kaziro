@@ -49,7 +49,7 @@ eval_results = await asyncio.gather(*[evaluate_with_sem(jid) for jid in parsed_i
 ```
 
 Stages 3 and 4 run **sequentially per job** to keep agent context clean
-and avoid Firecrawl/OpenAI rate limits across many parallel scrapes.
+and avoid Firecrawl / LLM rate limits across many parallel scrapes.
 
 ## Error isolation
 
@@ -160,6 +160,6 @@ ID for the stage.
 | -------------------------------------- | ------------------------------------------------------------------------------ |
 | Add a new pipeline stage               | New stage function in this file; chain it from `run_full_pipeline_for_config`  |
 | Skip stages based on user preferences  | Read flags from `user_profiles` or `job_search_configs` at orchestrator level  |
-| Increase parallelism                   | Bump `asyncio.Semaphore` value; watch OpenAI quota / cost                      |
+| Increase parallelism                   | Bump `asyncio.Semaphore` value; watch OpenRouter quota / cost                |
 | Add per-stage notifications            | Add `notify_user(...)` calls in the relevant stage function                    |
 | Expose metrics per stage               | Add Prometheus histograms in `backend/metrics.py`; wrap stage with `.time()`   |

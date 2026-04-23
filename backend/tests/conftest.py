@@ -33,7 +33,7 @@ _REQUIRED_ENV: dict[str, str] = {
     "SUPABASE_SERVICE_KEY": "test-service-key",
     "SUPABASE_JWT_SECRET": "test-jwt-secret",
     "REDIS_URL": "redis://localhost:6379/0",
-    "OPENAI_API_KEY": "test-openai-key",
+    "OPENROUTER_API_KEY": "test-openrouter-key",
     "RAPIDAPI_KEY": "test-rapidapi-key",
     "RAPIDAPI_HOST": "jsearch.p.rapidapi.com",
     "FIRECRAWL_API_KEY": "test-firecrawl-key",

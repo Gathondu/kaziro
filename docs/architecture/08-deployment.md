@@ -40,7 +40,7 @@ make dev          # or: docker compose up --build
 ### 2.2 Pre-flight
 
 - Copy `.env.example` to `.env` at repo root and fill in API keys
-  (`OPENAI_API_KEY`, `RAPIDAPI_KEY`, `FIRECRAWL_API_KEY`, Supabase keys).
+  (`OPENROUTER_API_KEY`, `RAPIDAPI_KEY`, `FIRECRAWL_API_KEY`, Supabase keys).
 - Run migrations: `make migrate` (wraps `alembic upgrade head`).
 - Seed dev DB: `make seed`.
 - Open the app at <http://localhost:5173>.
@@ -109,7 +109,7 @@ For Vercel/Netlify deployment, the frontend image isn't used in production
 | Object storage        | Supabase local      | Supabase Storage Cloud                                 |
 | Frontend              | Vite dev `:5173`    | Vercel (preferred) or Netlify CDN                      |
 | Firecrawl             | Cloud API           | Cloud API                                              |
-| OpenAI                | Cloud API           | Cloud API                                              |
+| OpenRouter            | Cloud API           | Cloud API                                              |
 | Metrics               | Prometheus container | Managed Prometheus + Grafana Cloud                    |
 | Logs                  | stdout              | Centralised store (Loki / DataDog)                     |
 | Traces                | Jaeger container    | Grafana Tempo                                          |
@@ -195,7 +195,7 @@ PR (preview URL). PR previews are commented on by the Vercel bot.
   Manager / GCP Secret Manager).
 - `external-secrets-operator` syncs values into Kubernetes `Secret` objects
   every 15 minutes.
-- Rotation policy: 90 days max for OpenAI/RapidAPI/Firecrawl keys; 30 days
+- Rotation policy: 90 days max for OpenRouter/RapidAPI/Firecrawl keys; 30 days
   for `SECRET_KEY`. Rotation is zero-downtime — keys are rolled while pods
   pick up the new value via env var refresh on next restart.
 

@@ -9,7 +9,7 @@ Pipeline:
 2. ``scrape_node``         — Firecrawl scrape of company site + job
    listing page (in parallel). Failures are non-fatal — the brief
    downgrades gracefully when content is missing.
-3. ``generate_brief_node`` — gpt-4o synthesis into a structured brief.
+3. ``generate_brief_node`` — LLM synthesis into a structured brief.
 4. ``persist_summary_node``— ``company_summary_repository.upsert`` writes
    the row + 30-day TTL.
 
@@ -26,7 +26,6 @@ import uuid
 from typing import Any, Final, Protocol
 
 import httpx
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, ConfigDict
 
@@ -36,6 +35,7 @@ from backend.db.repositories import (
     job_posting_repository,
 )
 from backend.db.session import async_session_factory
+from backend.llm.openrouter import build_chat_model
 from backend.logging_config import get_logger
 from backend.metrics import (
     agent_duration_seconds,
@@ -186,12 +186,10 @@ _llm: _Invokable | None = None
 
 def _build_default_llm() -> _Invokable:
     settings = get_settings()
-    return ChatOpenAI(
+    return build_chat_model(
         model=settings.LLM_MODEL_RESEARCH,
         temperature=0.3,
-        api_key=settings.OPENAI_API_KEY.get_secret_value(),
-        timeout=settings.OPENAI_TIMEOUT_SECONDS,
-        max_retries=settings.OPENAI_MAX_RETRIES,
+        settings=settings,
     )
 
 
@@ -350,9 +348,9 @@ Provide a structured analysis in this exact JSON format (no other text):
 
     try:
         response = await get_llm().ainvoke(prompt)
-        external_api_calls_total.labels(service="openai", status="200").inc()
+        external_api_calls_total.labels(service="openrouter", status="200").inc()
     except Exception as exc:
-        external_api_calls_total.labels(service="openai", status="error").inc()
+        external_api_calls_total.labels(service="openrouter", status="error").inc()
         bound.error("research.brief_generation_failed", error=str(exc))
         return state.model_copy(update={"error": str(exc)})
 

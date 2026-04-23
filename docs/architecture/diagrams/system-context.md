@@ -27,7 +27,7 @@ flowchart TB
     supa["Supabase<br/>(Auth + Postgres + Storage)"]
     rapid["RapidAPI<br/>(JSearch / LinkedIn Jobs)"]
     firecrawl["Firecrawl API<br/>(web scraping)"]
-    openai["OpenAI API<br/>(LLM + embeddings)"]
+    openrouter["OpenRouter API<br/>(LLM + embeddings)"]
   end
 
   user -->|HTTPS| fe
@@ -37,7 +37,7 @@ flowchart TB
   api --> workers
   workers --> rapid
   workers --> firecrawl
-  workers --> openai
+  workers --> openrouter
   workers --> supa
 ```
 
@@ -55,4 +55,4 @@ flowchart TB
 | **Supabase**   | Hosted Postgres + pgvector + Auth (JWT) + Storage (object store).    |
 | **RapidAPI**   | Source of raw job postings (JSearch / LinkedIn Jobs endpoints).      |
 | **Firecrawl**  | JS-rendered web scraping for company websites and job pages.         |
-| **OpenAI**     | All LLM and embedding calls (`gpt-4o`, `gpt-4o-mini`, `text-embedding-3-small`). |
+| **OpenRouter** | All LLM and embedding calls (e.g. `openai/gpt-4o`, `openai/gpt-4o-mini`, `openai/text-embedding-3-small`). |

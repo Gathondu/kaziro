@@ -98,6 +98,6 @@ description: when working on backend files
 ## Configuration (backend/config.py)
 
 - All settings use Pydantic `BaseSettings` with `model_config = SettingsConfigDict(env_file=".env")`.
-- Group settings: database, openai, supabase, celery, firecrawl, app.
+- Group settings: database, openrouter, supabase, celery, firecrawl, app.
 - Required settings have no default. Optional ones have sensible defaults.
 - Expose a single `settings` singleton imported everywhere: `from backend.config import settings`.

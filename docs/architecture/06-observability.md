@@ -30,7 +30,7 @@ Configured once in `backend/main.py` startup hook via
 | INFO      | Always on                                                                         | Pipeline stage start/complete, user actions, external API calls |
 | WARNING   | Degraded but functional                                                           | Retries, cache misses, fallback to pass-1 scores      |
 | ERROR     | Caught exception that affected the user or pipeline progression                   | Parser failed after retries, evaluator pass-1 failed  |
-| CRITICAL  | System-level failure                                                              | DB unreachable, Redis down, OpenAI key invalid        |
+| CRITICAL  | System-level failure                                                              | DB unreachable, Redis down, OpenRouter key invalid    |
 
 ### 1.3 Mandatory context fields
 
@@ -135,7 +135,7 @@ active_pipeline_tasks = Gauge(
 | `kaziro_llm_tokens_used_total`             | Counter   | `agent_name`, `model`, `type`     | `type` ∈ {input, output}                    |
 | `kaziro_api_request_duration_seconds`      | Histogram | `method`, `endpoint`, `status`    | Auto-emitted by instrumentator              |
 | `kaziro_celery_queue_depth`                | Gauge     | `queue_name`                      | Sampled every 30 s by a sidecar             |
-| `kaziro_external_api_calls_total`          | Counter   | `service`, `status`               | `service` ∈ {rapidapi, firecrawl, openai}   |
+| `kaziro_external_api_calls_total`          | Counter   | `service`, `status`               | `service` ∈ {rapidapi, firecrawl, openrouter} |
 | `kaziro_active_pipeline_tasks`             | Gauge     | —                                 |                                             |
 | `kaziro_db_connection_pool_in_use`         | Gauge     | —                                 | From SQLAlchemy engine events               |
 
@@ -169,7 +169,7 @@ Defined in `infra/monitoring/alerts.yaml` and applied via Alertmanager.
 | ----------------------------------- | --------------------------------------------- | --------- | ----------------------------------------------- |
 | `KaziroPipelineErrorRateHigh`       | `rate(pipeline_jobs_total{status="error"}[15m]) / rate(pipeline_jobs_total[15m]) > 0.05` | CRITICAL | Page on-call, halt new pipeline tasks |
 | `KaziroCeleryQueueBacklog`          | `kaziro_celery_queue_depth > 500` for 10 m   | WARNING   | Scale workers, Slack alert                      |
-| `KaziroOpenAIErrorRateHigh`         | `rate(kaziro_external_api_calls_total{service="openai",status="error"}[10m]) > 0.10` | CRITICAL | Pause pipeline, banner notify users |
+| `KaziroOpenRouterErrorRateHigh`     | `rate(kaziro_external_api_calls_total{service="openrouter",status="error"}[10m]) > 0.10` | CRITICAL | Pause pipeline, banner notify users |
 | `KaziroJobFetchEmpty`               | 3 consecutive fetches return 0 results        | WARNING   | Log alert, check RapidAPI quota                 |
 | `KaziroDbPoolExhausted`             | `kaziro_db_connection_pool_in_use` ≥ pool_max | CRITICAL  | Auto-restart pods, page on-call                 |
 | `KaziroAgentLatencyHigh`            | p95 of `kaziro_agent_duration_seconds` > 120 s | WARNING  | Investigate LLM latency, Slack alert            |
@@ -185,7 +185,7 @@ when each alert ships).
 | --------------------- | ------------------------------------------------------------------------ |
 | `GET /health`         | Liveness — returns 200 if process is alive                               |
 | `GET /health/ready`   | Readiness — checks DB connection, Redis connection                       |
-| `GET /health/detailed` | Per-component status JSON (DB, Redis, OpenAI, Firecrawl, Supabase)      |
+| `GET /health/detailed` | Per-component status JSON (DB, Redis, OpenRouter, Firecrawl, Supabase)  |
 
 Celery worker health is exposed via Flower (`celery flower`) in dev and via
 the Prometheus `celery-exporter` in production.

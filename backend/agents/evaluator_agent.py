@@ -24,7 +24,6 @@ import time
 import uuid
 from typing import Any, Final, Protocol
 
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,6 +35,7 @@ from backend.db.repositories import (
     profile_repository,
 )
 from backend.db.session import async_session_factory
+from backend.llm.openrouter import build_chat_model
 from backend.logging_config import get_logger
 from backend.metrics import (
     agent_duration_seconds,
@@ -135,12 +135,10 @@ _llm: _Invokable | None = None
 
 def _build_default_llm() -> _Invokable:
     settings = get_settings()
-    return ChatOpenAI(
+    return build_chat_model(
         model=settings.LLM_MODEL_EVALUATOR,
         temperature=0.2,
-        api_key=settings.OPENAI_API_KEY.get_secret_value(),
-        timeout=settings.OPENAI_TIMEOUT_SECONDS,
-        max_retries=settings.OPENAI_MAX_RETRIES,
+        settings=settings,
     )
 
 
@@ -211,13 +209,13 @@ def _scores_from_dict(data: dict[str, Any]) -> DimensionScores:
 async def _invoke_json(prompt: str) -> dict[str, Any]:
     """Send ``prompt`` to the LLM and parse the JSON body.
 
-    Tracks every call against ``external_api_calls_total{service=openai}``.
+    Tracks every call against ``external_api_calls_total{service=openrouter}``.
     """
     try:
         response = await get_llm().ainvoke(prompt)
-        external_api_calls_total.labels(service="openai", status="200").inc()
+        external_api_calls_total.labels(service="openrouter", status="200").inc()
     except Exception:
-        external_api_calls_total.labels(service="openai", status="error").inc()
+        external_api_calls_total.labels(service="openrouter", status="error").inc()
         raise
     raw = getattr(response, "content", response)
     if not isinstance(raw, str):

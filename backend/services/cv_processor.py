@@ -81,7 +81,7 @@ _embedder: _Embeddable | None = None
 
 
 def get_embedder() -> _Embeddable:
-    """Reuse the parser agent's embedder so we share one OpenAI client."""
+    """Reuse the parser agent's embedder so we share one embedding client."""
     global _embedder
     if _embedder is None:
         from backend.agents.parser_agent import (

@@ -21,7 +21,6 @@ import time
 import uuid
 from typing import Any, Final, Protocol
 
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -34,6 +33,7 @@ from backend.db.repositories import (
     profile_repository,
 )
 from backend.db.session import async_session_factory
+from backend.llm.openrouter import build_chat_model
 from backend.logging_config import get_logger
 from backend.metrics import (
     agent_duration_seconds,
@@ -137,12 +137,10 @@ _pdf_renderer: PdfRendererProtocol | None = None
 
 def _build_default_llm() -> _Invokable:
     settings = get_settings()
-    return ChatOpenAI(
+    return build_chat_model(
         model=settings.LLM_MODEL_DOCUMENT,
         temperature=0.4,
-        api_key=settings.OPENAI_API_KEY.get_secret_value(),
-        timeout=settings.OPENAI_TIMEOUT_SECONDS,
-        max_retries=settings.OPENAI_MAX_RETRIES,
+        settings=settings,
     )
 
 
@@ -178,9 +176,9 @@ def set_pdf_renderer_for_tests(renderer: PdfRendererProtocol | None) -> None:
 async def _invoke_text(prompt: str) -> str:
     try:
         response = await get_llm().ainvoke(prompt)
-        external_api_calls_total.labels(service="openai", status="200").inc()
+        external_api_calls_total.labels(service="openrouter", status="200").inc()
     except Exception:
-        external_api_calls_total.labels(service="openai", status="error").inc()
+        external_api_calls_total.labels(service="openrouter", status="error").inc()
         raise
     raw = getattr(response, "content", response)
     return raw.strip() if isinstance(raw, str) else str(raw).strip()

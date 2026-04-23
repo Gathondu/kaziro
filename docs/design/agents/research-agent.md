@@ -22,7 +22,7 @@ truncated raw scraped content.
 | Aspect             | Value                                                  |
 | ------------------ | ------------------------------------------------------ |
 | Framework          | LangGraph (4-node graph with cache short-circuit)      |
-| LLM                | `settings.OPENAI_MODEL_EVALUATOR` (default `gpt-4o`)   |
+| LLM                | `settings.LLM_MODEL_RESEARCH` (default `openai/gpt-4o`) |
 | Temperature        | 0.3                                                    |
 | Scraping           | Firecrawl Cloud API (`POST /v1/scrape`)                |
 | Cache TTL          | 30 days                                                |

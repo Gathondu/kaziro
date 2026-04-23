@@ -15,7 +15,7 @@ We need a framework that:
 - Manages stateful, multi-node agent workflows.
 - Supports conditional branching (retry on parse failure; skip research on
   REJECT classification).
-- Integrates with OpenAI, embedding APIs, and external HTTP tools.
+- Integrates with OpenRouter (LLM + embeddings) and external HTTP tools.
 - Allows future human-in-the-loop pauses (e.g., user-in-the-loop doc
   edits).
 - Is well-supported, observable, and testable.
@@ -27,7 +27,7 @@ We need a framework that:
 
 - Stateful multi-node graphs with first-class conditional edges.
 - Native checkpointing for resume/retry.
-- Existing OpenAI / LangChain ecosystem familiarity in the team.
+- Existing LangChain / LangGraph ecosystem familiarity in the team.
 - Active maintenance and community support.
 - Observable: easy to bind structured logs and metrics around node
   execution.
@@ -37,7 +37,7 @@ We need a framework that:
 
 1. **LangGraph** — graph-based state machine for LLM agents.
 2. **CrewAI** — role-based multi-agent collaboration framework.
-3. **Raw OpenAI SDK + custom orchestrator** — no framework; build the
+3. **Raw LLM vendor SDK + custom orchestrator** — no framework; build the
    graph ourselves.
 4. **Microsoft Autogen** — multi-agent conversation framework.
 
@@ -57,9 +57,10 @@ fit the problem cleanly.
   cache short-circuit) is one line of code per route.
 - Pydantic state is testable — we can unit-test individual nodes by
   passing a hand-crafted state.
-- Native LangChain integration means `ChatOpenAI`,
-  `OpenAIEmbeddings`, structured-output binders, and tool nodes are
-  available out of the box.
+- Native LangChain integration means `ChatOpenRouter` (via
+  `langchain-openrouter`), `OpenAIEmbeddings` against OpenRouter's
+  OpenAI-compatible embeddings API, structured-output binders, and tool nodes
+  are available out of the box.
 - Future human-in-the-loop is supported with `interrupt()` + breakpoints
   — useful for the doc-editor flow in V2.
 
@@ -85,7 +86,7 @@ fit the problem cleanly.
 - **Cons**: Optimised for collaborative reasoning, not stateful graphs.
   Conditional branching and per-node retry are weaker.
 
-### Option 3 — Raw OpenAI SDK + custom orchestrator
+### Option 3 — Raw vendor SDK + custom orchestrator
 
 - **Pros**: Zero framework dep; minimal install footprint.
 - **Cons**: We rewrite stateful graphs, conditional edges, retries,

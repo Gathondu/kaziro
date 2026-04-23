@@ -34,8 +34,10 @@ Versioning policy:
 | `supabase`           | `>=2.8`   | Supabase Python SDK (auth, storage).                      |
 | `python-jose[cryptography]` | `>=3.3` | JWT verification.                                  |
 | `langgraph`          | `>=0.2`   | Agentic graph framework.                                  |
-| `langchain-openai`   | `>=0.2`   | LangChain OpenAI binding (chat models, embeddings).       |
-| `openai`             | `>=1.51`  | Direct OpenAI SDK (used outside LangChain when simpler).  |
+| `langchain-openrouter` | `>=0.1` | LangChain [OpenRouter](https://docs.langchain.com/oss/python/integrations/chat/openrouter) chat models (`ChatOpenRouter`). |
+| `langchain-openai`   | `>=0.2`   | `OpenAIEmbeddings` pointed at OpenRouter's OpenAI-compatible `/v1/embeddings`. |
+| `openai`             | `>=1.51`  | Transitive / HTTP client used by `langchain-openai` embeddings. |
+| `openrouter`         | (via `langchain-openrouter`) | Official OpenRouter Python SDK used by `ChatOpenRouter`. |
 | `tiktoken`           | `>=0.8`   | Token counting for budget tracking.                       |
 | `celery[redis]`      | `>=5.4`   | Task queue.                                               |
 | `redis`              | `>=5.0`   | Redis client (cache + Pub/Sub).                           |
