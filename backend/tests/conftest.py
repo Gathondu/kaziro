@@ -40,6 +40,12 @@ _REQUIRED_ENV: dict[str, str] = {
     "CORS_ORIGINS": "http://localhost:5173",
 }
 
+# Apply defaults at import time so nested ``conftest.py`` modules can
+# ``import backend.db.*`` before pytest runs the autouse ``_seed_env`` fixture
+# (``backend.config`` eagerly builds ``settings`` on first import).
+for _k, _v in _REQUIRED_ENV.items():
+    os.environ.setdefault(_k, _v)
+
 
 @pytest.fixture(autouse=True)
 def _seed_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:

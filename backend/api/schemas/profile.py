@@ -51,6 +51,26 @@ class ProfileUpdateRequest(BaseModel):
     linkedin_url: AnyHttpUrl | None = None
 
 
+class CvUploadResponse(BaseModel):
+    """Response for ``POST /profile/cv``."""
+
+    signed_url: str = Field(
+        description="Short-lived signed URL to download the uploaded PDF.",
+    )
+    storage_path: str = Field(
+        description="Bucket-relative path of the stored master CV PDF.",
+    )
+    text_chars: int = Field(
+        description="Number of characters extracted from the PDF.",
+        ge=0,
+    )
+    embedding_dims: int = Field(
+        description="Dimensionality of the freshly-computed profile embedding.",
+        ge=0,
+    )
+    has_master_cv: bool = True
+
+
 def to_response(profile: object) -> ProfileResponse:
     """Adapter so the route stays one expression long."""
     has_master_cv = bool(getattr(profile, "master_cv_text", None))
@@ -72,4 +92,9 @@ def to_response(profile: object) -> ProfileResponse:
     )
 
 
-__all__ = ["ProfileResponse", "ProfileUpdateRequest", "to_response"]
+__all__ = [
+    "CvUploadResponse",
+    "ProfileResponse",
+    "ProfileUpdateRequest",
+    "to_response",
+]

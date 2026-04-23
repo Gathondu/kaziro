@@ -1,7 +1,7 @@
 # Kaziro — Build Plan
 
 **Status**: Active
-**Last updated**: 2026-04-22
+**Last updated**: 2026-04-23
 **Source**: Operational decomposition of [`docs/design/roadmap.md`](docs/design/roadmap.md).
 
 > The single, in-repo, task-by-task plan for building Kaziro from the
@@ -85,12 +85,12 @@ Phase 0.
 | -------------------------------------- | ---- | ----- | ---- |
 | Phase 0 — Foundation                   | 9    | 9     | 100% |
 | Phase 1 — Backend skeleton & data      | 12   | 12    | 100% |
-| Phase 2 — Agentic core                 | 0    | 12    | 0%   |
+| Phase 2 — Agentic core                 | 10   | 12    | 83%  |
 | Phase 3 — API surface                  | 0    | 16    | 0%   |
 | Phase 4 — Frontend MVP                 | 0    | 13    | 0%   |
 | Phase 5 — Production hardening         | 0    | 11    | 0%   |
 | Phase 6 — Public launch                | 0    | 6     | 0%   |
-| **Total**                              | 21   | 79    | 27%  |
+| **Total**                              | 31   | 79    | 39%  |
 
 ---
 
@@ -816,7 +816,7 @@ task. See [`docs/design/roadmap.md#phase-2--agentic-core`](docs/design/roadmap.m
 
 ### T2.1 — Fix `from kaziro.*` imports in `backend/agents/`
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T1.1
@@ -842,7 +842,7 @@ to `from backend.agents.*` to match the actual layout (per
 
 ### T2.2 — `backend/services/job_fetcher.py` (RapidAPI client)
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.8
@@ -872,7 +872,7 @@ and writes to `raw_jobs` with `parse_status=PENDING`.
 
 ### T2.3 — Parser agent integration test
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T2.1, T2.2
@@ -904,7 +904,7 @@ fresh `raw_job` row → parsed `JobPostingSchema` + 1536-dim embedding
 
 ### T2.4 — Evaluator agent integration test
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T2.3
@@ -936,7 +936,7 @@ each classification bucket.
 
 ### T2.5 — Evaluator calibration set (50 fixtures)
 
-- **Status**: [ ]
+- **Status**: [~] *(scaffolding: balanced 50-row JSON + shape test; VCR replay + 80% gate pending)*
 - **Size**: L
 - **Priority**: P0
 - **Depends on**: T2.4
@@ -965,7 +965,7 @@ cassettes; assert ≥ 80% classification accuracy.
 
 ### T2.6 — Research agent integration test (cache hit + miss)
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T2.4
@@ -996,7 +996,7 @@ cache hit (within 30 days) → short-circuits.
 
 ### T2.7 — Document agent integration test
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T2.6
@@ -1027,7 +1027,7 @@ Tailored CV + cover letter generated, PDFs rendered, two
 
 ### T2.8 — Pipeline orchestrator end-to-end test
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: L
 - **Priority**: P0
 - **Depends on**: T2.5, T2.7
@@ -1041,8 +1041,8 @@ expected number of rows in each downstream table and a populated
 `PipelineSummary`.
 
 **Files**
-- `backend/tests/agents/test_pipeline_orchestrator.py`
-- `backend/tests/cassettes/pipeline_full_run.yaml`
+- `backend/tests/test_pipeline_orchestrator.py` (mocked stage boundaries + summary dict)
+- `backend/tests/cassettes/pipeline_full_run.yaml` *(optional — not committed; mocks cover CI)*
 
 **Acceptance criteria**
 - [ ] One run produces ≥ 1 `application_docs` row when seed jobs
@@ -1057,7 +1057,7 @@ expected number of rows in each downstream table and a populated
 
 ### T2.9 — `celery_app.py` + Beat schedule
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T2.8
@@ -1090,7 +1090,7 @@ schedule that triggers the pipeline per user `job_search_config`.
 
 ### T2.10 — Per-stage Celery queues + worker config
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P1
 - **Depends on**: T2.9
@@ -1118,7 +1118,7 @@ docker-compose to run one worker per queue group.
 
 ### T2.11 — CV PDF parsing on `/profile` upload
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T2.3, T1.11
@@ -1153,7 +1153,7 @@ currently sends pre-parsed text via `PUT /profile`.
 
 ### T2.12 — Repository + ORM round-trip test suite
 
-- **Status**: [ ]
+- **Status**: [~] *(started: `tests/db/conftest.py`, profile + `search_similar`; expand to every repo + pagination)*
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.8, T2.1

@@ -13,7 +13,7 @@ backend/
 ├── uv.lock
 ├── alembic.ini
 ├── main.py                    ← FastAPI entry (app factory)
-├── celery_app.py              ← Celery app + Beat schedule
+├── tasks/celery_app.py        ← Celery app factory + Beat schedule
 ├── config.py                  ← Pydantic Settings — env-driven config
 ├── api/                       ← FastAPI routers (thin controllers)
 │   ├── deps.py                ← shared deps (auth, db session, current_user)
@@ -101,13 +101,13 @@ Read the rule itself for full detail.
 ## Celery rules
 
 - Tasks live in `backend/tasks/<domain>.py` and are imported by
-  `celery_app.py`.
+  `backend/tasks/celery_app.py` (``celery -A backend.tasks.celery_app:celery_app``).
 - Every task: `@app.task(bind=True, autoretry_for=(...,),
   retry_backoff=True, max_retries=N)`.
 - Tasks are sync wrappers — async work runs inside `asyncio.run(...)`.
 - Use distinct queues per stage so we can scale them independently:
   `parser`, `evaluator`, `research`, `document`, `default`.
-- Beat schedule lives in `celery_app.py` with explicit cron strings.
+- Beat schedule lives in `backend/tasks/celery_app.py` with explicit cron strings.
   Document every entry.
 
 ## Observability

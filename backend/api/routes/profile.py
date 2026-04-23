@@ -1,25 +1,22 @@
-"""``/profile`` routes — read & partial update.
-
-The CV upload endpoint (``POST /profile/upload-cv``) is intentionally
-deferred until Phase 3 (T3.1) where Storage signing + the parse Celery
-task land. T1.11 only ships the JSON CRUD surface.
-"""
+"""``/profile`` routes — read, partial update, and CV upload."""
 
 from __future__ import annotations
 
 from typing import Final
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile, status
 
 from backend.api.deps import CurrentUser, SessionDep
 from backend.api.errors import NotFoundError
 from backend.api.schemas.common import Envelope, envelope
 from backend.api.schemas.profile import (
+    CvUploadResponse,
     ProfileResponse,
     ProfileUpdateRequest,
     to_response,
 )
 from backend.db.repositories import profile_repository
+from backend.services import cv_processor
 
 router: Final[APIRouter] = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -74,6 +71,44 @@ async def upsert_profile(
     )
     await session.commit()
     return envelope(to_response(profile))
+
+
+@router.post(
+    "/cv",
+    status_code=status.HTTP_201_CREATED,
+    response_model=Envelope[CvUploadResponse],
+    summary="Upload a master CV PDF (extracts text + recomputes embedding)",
+)
+async def upload_master_cv(
+    session: SessionDep,
+    current_user: CurrentUser,
+    file: UploadFile = File(
+        ..., description="PDF up to 10 MB."
+    ),
+) -> Envelope[CvUploadResponse]:
+    """Validate, store, parse, and embed the user's master CV."""
+    payload = await file.read()
+    try:
+        result = await cv_processor.process_cv_upload(
+            session,
+            user_id=current_user.id,
+            filename=file.filename or "cv.pdf",
+            content_type=file.content_type,
+            payload=payload,
+        )
+    finally:
+        await file.close()
+
+    await session.commit()
+
+    return envelope(
+        CvUploadResponse(
+            signed_url=result.signed_url,
+            storage_path=result.storage_path,
+            text_chars=result.text_chars,
+            embedding_dims=result.embedding_dims,
+        )
+    )
 
 
 __all__ = ["router"]

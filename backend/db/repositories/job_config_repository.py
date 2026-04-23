@@ -54,6 +54,18 @@ async def list_active_for_scheduler(
     return list((await session.execute(stmt)).scalars().all())
 
 
+async def get_by_id_unscoped(
+    session: AsyncSession, config_id: uuid.UUID
+) -> JobSearchConfig | None:
+    """Background-task fetch by primary key (no user scoping).
+
+    Only Celery tasks and the Pipeline Orchestrator should call this.
+    HTTP handlers MUST use :func:`get_by_id` so RLS / authorization is
+    enforced.
+    """
+    return await session.get(JobSearchConfig, config_id)
+
+
 async def create(
     session: AsyncSession,
     *,
@@ -103,6 +115,7 @@ __all__ = [
     "create",
     "delete_by_id",
     "get_by_id",
+    "get_by_id_unscoped",
     "list_active_for_scheduler",
     "list_for_user",
     "update",

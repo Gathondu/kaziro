@@ -31,7 +31,7 @@ help: ## Show this help.
 # ---------------------------------------------------------------------------
 
 .PHONY: dev
-dev: ## Boot the full stack (postgres, redis, backend, worker, beat, frontend).
+dev: ## Boot the full stack (postgres, redis, backend, all workers, beat, frontend).
 	$(COMPOSE) up --build
 
 .PHONY: dev-detached
@@ -59,8 +59,20 @@ dev-frontend: ## Run the Vite dev server on the host.
 	cd $(FRONTEND_DIR) && $(PNPM) dev
 
 .PHONY: dev-worker
-dev-worker: ## Run a Celery worker on the host.
-	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=2
+dev-worker: ## Run a single Celery worker on the host listening to all queues.
+	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=2 -Q default,parser,evaluator,research,document,maintenance
+
+.PHONY: dev-worker-parser
+dev-worker-parser: ## Run a host-side Celery worker dedicated to the parser queue.
+	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=4 -Q parser -n worker-parser@%h
+
+.PHONY: dev-worker-evaluator
+dev-worker-evaluator: ## Run a host-side Celery worker dedicated to the evaluator queue.
+	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=2 -Q evaluator -n worker-evaluator@%h
+
+.PHONY: dev-worker-research-doc
+dev-worker-research-doc: ## Run a host-side Celery worker for research + document queues.
+	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=2 -Q research,document -n worker-research-doc@%h
 
 .PHONY: dev-beat
 dev-beat: ## Run the Celery Beat scheduler on the host.

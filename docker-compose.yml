@@ -7,8 +7,11 @@
 #   * postgres — PostgreSQL 16 + pgvector + pg_trgm.
 #   * redis    — Redis 7 used as Celery broker, cache, and pub/sub.
 #   * backend  — FastAPI/uvicorn API.
-#   * worker   — Celery worker (default queue + agent queues).
-#   * beat     — Celery Beat scheduler.
+#   * worker-default        — Pipeline orchestration + maintenance queues.
+#   * worker-parser         — LLM Parser agent (cheap, high-throughput).
+#   * worker-evaluator      — 3-pass Evaluator agent (LLM heavy).
+#   * worker-research-doc   — Research + Document agents (LLM + IO heavy).
+#   * beat                  — Celery Beat scheduler (per-config fan-out + cleanup).
 #   * frontend — Vite dev server (HMR).
 #
 # Non-secret defaults are inlined; sensitive values must come from the
@@ -86,7 +89,7 @@ services:
       retries: 5
       start_period: 15s
 
-  worker:
+  worker-default:
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -103,7 +106,12 @@ services:
         "backend.tasks.celery_app:celery_app",
         "worker",
         "--loglevel=info",
-        "--concurrency=4"
+        "--concurrency=2",
+        "-Q",
+        "default,maintenance",
+        "-n",
+        "worker-default@%h",
+        "--prefetch-multiplier=1"
       ]
     depends_on:
       postgres:
@@ -111,7 +119,115 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping || exit 1"]
+      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping -t 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  worker-parser:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      <<: *backend-env
+    command:
+      [
+        "celery",
+        "-A",
+        "backend.tasks.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=4",
+        "-Q",
+        "parser",
+        "-n",
+        "worker-parser@%h",
+        "--prefetch-multiplier=1"
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping -t 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  worker-evaluator:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      <<: *backend-env
+    command:
+      [
+        "celery",
+        "-A",
+        "backend.tasks.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=2",
+        "-Q",
+        "evaluator",
+        "-n",
+        "worker-evaluator@%h",
+        "--prefetch-multiplier=1"
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping -t 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  worker-research-doc:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      <<: *backend-env
+    command:
+      [
+        "celery",
+        "-A",
+        "backend.tasks.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=2",
+        "-Q",
+        "research,document",
+        "-n",
+        "worker-research-doc@%h",
+        "--prefetch-multiplier=1"
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping -t 5 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
