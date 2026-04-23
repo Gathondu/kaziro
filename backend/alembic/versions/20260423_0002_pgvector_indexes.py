@@ -37,26 +37,30 @@ transactional_ddl = False
 
 
 def upgrade() -> None:
-    op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS "
-        "ix_user_profiles_profile_embedding_ivfflat "
-        "ON user_profiles USING ivfflat (profile_embedding vector_cosine_ops) "
-        "WITH (lists = 100)"
-    )
-    op.execute(
-        "CREATE INDEX CONCURRENTLY IF NOT EXISTS "
-        "ix_job_postings_description_embedding_ivfflat "
-        "ON job_postings USING ivfflat (description_embedding vector_cosine_ops) "
-        "WITH (lists = 100)"
-    )
+    with op.get_context().autocommit_block():
+        op.execute(
+            "CREATE INDEX CONCURRENTLY IF NOT EXISTS "
+            "ix_user_profiles_profile_embedding_ivfflat "
+            "ON user_profiles USING ivfflat (profile_embedding vector_cosine_ops) "
+            "WITH (lists = 100)"
+        )
+    with op.get_context().autocommit_block():
+        op.execute(
+            "CREATE INDEX CONCURRENTLY IF NOT EXISTS "
+            "ix_job_postings_description_embedding_ivfflat "
+            "ON job_postings USING ivfflat (description_embedding vector_cosine_ops) "
+            "WITH (lists = 100)"
+        )
 
 
 def downgrade() -> None:
-    op.execute(
-        "DROP INDEX CONCURRENTLY IF EXISTS "
-        "ix_job_postings_description_embedding_ivfflat"
-    )
-    op.execute(
-        "DROP INDEX CONCURRENTLY IF EXISTS "
-        "ix_user_profiles_profile_embedding_ivfflat"
-    )
+    with op.get_context().autocommit_block():
+        op.execute(
+            "DROP INDEX CONCURRENTLY IF EXISTS "
+            "ix_job_postings_description_embedding_ivfflat"
+        )
+    with op.get_context().autocommit_block():
+        op.execute(
+            "DROP INDEX CONCURRENTLY IF EXISTS "
+            "ix_user_profiles_profile_embedding_ivfflat"
+        )

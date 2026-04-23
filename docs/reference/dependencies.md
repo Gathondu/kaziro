@@ -29,6 +29,7 @@ Versioning policy:
 | `pydantic-settings`  | `>=2.5`   | `BaseSettings` for env-driven config.                     |
 | `sqlalchemy`         | `>=2.0,<2.1` | ORM with async session support.                        |
 | `asyncpg`            | `>=0.30`  | Postgres async driver.                                    |
+| `psycopg[binary]`    | `>=3.2`   | Postgres sync driver for Alembic (``postgresql+psycopg``; bare ``postgresql://`` in ``DATABASE_URL_SYNC`` is rewritten in ``alembic/env.py``). |
 | `alembic`            | `>=1.13`  | DB migrations.                                            |
 | `pgvector`           | `>=0.3`   | Python bindings for the pgvector type.                    |
 | `supabase`           | `>=2.8`   | Supabase Python SDK (auth, storage).                      |

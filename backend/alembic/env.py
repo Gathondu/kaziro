@@ -27,6 +27,7 @@ from backend.db.models import (  # noqa: F401  — side-effect imports register 
     UserProfile,
 )
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.engine import make_url
 
 from alembic import context
 
@@ -35,10 +36,22 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Inject the DB URL at runtime. We strip ``+driver`` decorations and force
-# the sync driver — Alembic must talk to Postgres synchronously.
+
+def _alembic_sync_sqlalchemy_url(url: str) -> str:
+    """Use psycopg v3 for bare ``postgresql`` / ``postgres`` URLs (defaults map to psycopg2)."""
+    u = make_url(url)
+    if u.drivername in ("postgresql", "postgres"):
+        u = u.set(drivername="postgresql+psycopg")
+    return u.render_as_string(hide_password=False)
+
+
+# Inject the DB URL at runtime. Alembic runs synchronously against
+# ``DATABASE_URL_SYNC`` (must not use ``+asyncpg``).
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL_SYNC))
+config.set_main_option(
+    "sqlalchemy.url",
+    _alembic_sync_sqlalchemy_url(str(settings.DATABASE_URL_SYNC)),
+)
 
 target_metadata = Base.metadata
 
