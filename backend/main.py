@@ -16,6 +16,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api import health as health_routes
 from backend.api import metrics as metrics_routes
+from backend.api.errors import register_exception_handlers
+from backend.api.router import api_v1_router, auth_router
 from backend.config import Settings, get_settings
 from backend.logging_config import configure_logging, get_logger
 
@@ -61,8 +63,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             expose_headers=["X-Request-Id"],
         )
 
+    register_exception_handlers(app)
+
     app.include_router(health_routes.router)
     app.include_router(metrics_routes.router, prefix=settings.PROMETHEUS_METRICS_PATH)
+    app.include_router(auth_router)
+    app.include_router(api_v1_router)
 
     return app
 

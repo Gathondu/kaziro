@@ -84,13 +84,13 @@ Phase 0.
 | Phase                                  | Done | Total | %    |
 | -------------------------------------- | ---- | ----- | ---- |
 | Phase 0 — Foundation                   | 9    | 9     | 100% |
-| Phase 1 — Backend skeleton & data      | 0    | 12    | 0%   |
-| Phase 2 — Agentic core                 | 0    | 10    | 0%   |
-| Phase 3 — API surface                  | 0    | 12    | 0%   |
+| Phase 1 — Backend skeleton & data      | 12   | 12    | 100% |
+| Phase 2 — Agentic core                 | 0    | 12    | 0%   |
+| Phase 3 — API surface                  | 0    | 16    | 0%   |
 | Phase 4 — Frontend MVP                 | 0    | 13    | 0%   |
-| Phase 5 — Production hardening         | 0    | 10    | 0%   |
+| Phase 5 — Production hardening         | 0    | 11    | 0%   |
 | Phase 6 — Public launch                | 0    | 6     | 0%   |
-| **Total**                              | 9    | 72    | 13%  |
+| **Total**                              | 21   | 79    | 27%  |
 
 ---
 
@@ -401,7 +401,7 @@ place. See [`docs/design/roadmap.md#phase-1--backend-skeleton--data-layer`](docs
 
 ### T1.1 — SQLAlchemy `Base` + async session factory
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T0.6
@@ -418,12 +418,12 @@ Declarative `Base`, async `engine`, `async_session_factory`, and the
 - `backend/api/deps.py`
 
 **Acceptance criteria**
-- [ ] `Base` is a single `DeclarativeBase` instance imported by every
+- [x] `Base` is a single `DeclarativeBase` instance imported by every
       model.
-- [ ] `async_session_factory()` returns a transactional async context.
-- [ ] `get_session` dependency yields a session and rolls back on
+- [x] `async_session_factory()` returns a transactional async context.
+- [x] `get_session` dependency yields a session and rolls back on
       exception.
-- [ ] Pool sized from `settings.DATABASE_POOL_SIZE`.
+- [x] Pool sized from `settings.DATABASE_POOL_SIZE`.
 
 **References**
 - [`docs/architecture/03-data-model.md`](docs/architecture/03-data-model.md)
@@ -431,7 +431,7 @@ Declarative `Base`, async `engine`, `async_session_factory`, and the
 
 ### T1.2 — `users` and `user_profiles` models
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.1
@@ -449,11 +449,11 @@ master CV blob). Use `Mapped[T]` style; UUID PKs; `created_at` /
 - `backend/db/models/user_profile.py`
 
 **Acceptance criteria**
-- [ ] Columns and FKs match
+- [x] Columns and FKs match
       [`docs/architecture/03-data-model.md`](docs/architecture/03-data-model.md).
-- [ ] `users.id` is the Supabase `auth.users.id` UUID (no extra PK).
-- [ ] `user_profiles.user_id` UNIQUE + `ondelete="CASCADE"`.
-- [ ] `__table_args__` indexes on every queried column.
+- [x] `users.id` is the Supabase `auth.users.id` UUID (no extra PK).
+- [x] `user_profiles.user_id` UNIQUE + `ondelete="CASCADE"`.
+- [x] `__table_args__` indexes on every queried column.
 - [ ] Round-trip test: insert + select + relationship load.
 
 **References**
@@ -462,7 +462,7 @@ master CV blob). Use `Mapped[T]` style; UUID PKs; `created_at` /
 
 ### T1.3 — `job_search_configs`, `raw_jobs`, `job_postings` models (with pgvector)
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.2
@@ -479,11 +479,11 @@ Job ingestion + parsed-posting models. `job_postings.embedding` uses
 - `backend/db/models/enums.py` (`ParseStatus`, `JobSource`, …)
 
 **Acceptance criteria**
-- [ ] All columns, FKs, and enums match
+- [x] All columns, FKs, and enums match
       [`docs/architecture/03-data-model.md`](docs/architecture/03-data-model.md).
-- [ ] `raw_jobs.parse_status` is a typed `Enum`.
-- [ ] `job_postings.embedding` is `Vector(1536)`, nullable.
-- [ ] Unique constraints on `(source, external_id)` for `raw_jobs`.
+- [x] `raw_jobs.parse_status` is a typed `Enum`.
+- [x] `job_postings.embedding` is `Vector(1536)`, nullable.
+- [x] Unique constraints on `(source, external_id)` for `raw_jobs`.
 - [ ] Round-trip test inserts a `Vector` and selects by cosine
       distance.
 
@@ -493,7 +493,7 @@ Job ingestion + parsed-posting models. `job_postings.embedding` uses
 
 ### T1.4 — `job_evaluations` and `company_summaries` models
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.3
@@ -509,11 +509,11 @@ fields on `company_summaries`.
 - `backend/db/models/company_summary.py`
 
 **Acceptance criteria**
-- [ ] Enum `Classification = {GOOD_FIT, MAYBE, REJECT}` registered as
+- [x] Enum `Classification = {GOOD_FIT, MAYBE, REJECT}` registered as
       a typed Postgres enum.
-- [ ] `job_evaluations.dimension_scores` is a `JSONB` column.
-- [ ] `(user_id, job_posting_id)` UNIQUE on `job_evaluations`.
-- [ ] `company_summaries.expires_at` indexed.
+- [x] `job_evaluations.dimension_scores` is a `JSONB` column.
+- [x] `(user_id, job_posting_id)` UNIQUE on `job_evaluations`.
+- [x] `company_summaries.expires_at` indexed.
 - [ ] Round-trip test for both tables.
 
 **References**
@@ -523,7 +523,7 @@ fields on `company_summaries`.
 
 ### T1.5 — `applications`, `application_docs`, `application_events` models
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.4
@@ -539,12 +539,12 @@ Application lifecycle tables. `applications.status` typed enum;
 - `backend/db/models/application_event.py`
 
 **Acceptance criteria**
-- [ ] Enums `ApplicationStatus`, `ApplicationDocType`,
+- [x] Enums `ApplicationStatus`, `ApplicationDocType`,
       `ApplicationEventType` defined.
-- [ ] `(user_id, job_posting_id)` UNIQUE on `applications`.
-- [ ] `application_events.created_at` indexed; rows are append-only
+- [x] `(user_id, job_posting_id)` UNIQUE on `applications`.
+- [x] `application_events.created_at` indexed; rows are append-only
       (no UPDATE in repository).
-- [ ] FK cascade behaviour matches
+- [x] FK cascade behaviour matches
       [`docs/architecture/diagrams/erd.md`](docs/architecture/diagrams/erd.md).
 
 **References**
@@ -553,7 +553,7 @@ Application lifecycle tables. `applications.status` typed enum;
 
 ### T1.6 — Alembic init + first migration
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.5
@@ -571,11 +571,11 @@ defined in T1.2-T1.5, plus the `pgvector` extension.
 - `backend/alembic/versions/2026XXXX_initial_schema.py`
 
 **Acceptance criteria**
-- [ ] `uv run alembic upgrade head` succeeds on an empty Postgres.
-- [ ] `uv run alembic downgrade base` returns the DB to empty.
-- [ ] Migration creates `pgvector` extension first
+- [x] `uv run alembic upgrade head` succeeds on an empty Postgres.
+- [x] `uv run alembic downgrade base` returns the DB to empty.
+- [x] Migration creates `pgvector` extension first
       (`CREATE EXTENSION IF NOT EXISTS vector`).
-- [ ] All FKs, enums, and unique constraints from T1.2-T1.5 present.
+- [x] All FKs, enums, and unique constraints from T1.2-T1.5 present.
 - [ ] CI step runs migrations against a temp Postgres container.
 
 **References**
@@ -583,7 +583,7 @@ defined in T1.2-T1.5, plus the `pgvector` extension.
 
 ### T1.7 — pgvector index migration
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P0
 - **Depends on**: T1.6
@@ -598,10 +598,15 @@ is populated in production.
 - `backend/alembic/versions/2026XXXX_pgvector_indexes.py`
 
 **Acceptance criteria**
-- [ ] Index name: `ix_job_postings_embedding_cosine`.
-- [ ] `CREATE INDEX IF NOT EXISTS ... USING ivfflat (embedding
-      vector_cosine_ops) WITH (lists = 100)`.
-- [ ] Migration is idempotent.
+- [x] Index name: `ix_job_postings_description_embedding_ivfflat` (and
+      sibling `ix_user_profiles_profile_embedding_ivfflat`). Renamed
+      from the spec to match the column actually carrying the vector
+      and the index method (`ivfflat`).
+- [x] `CREATE INDEX CONCURRENTLY IF NOT EXISTS ... USING ivfflat
+      (... vector_cosine_ops) WITH (lists = 100)`. ``CONCURRENTLY``
+      because the migration must land on populated production tables
+      without locking — `transactional_ddl = False` on the revision.
+- [x] Migration is idempotent.
 - [ ] Documented in
       [`docs/architecture/03-data-model.md`](docs/architecture/03-data-model.md).
 
@@ -611,7 +616,7 @@ is populated in production.
 
 ### T1.8 — Repository layer per resource
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: L
 - **Priority**: P0
 - **Depends on**: T1.6
@@ -636,13 +641,16 @@ No raw SQL outside this layer.
 - `backend/db/repositories/application_event_repository.py`
 
 **Acceptance criteria**
-- [ ] Every repository exposes typed CRUD + the queries needed by
+- [x] Every repository exposes typed CRUD + the queries needed by
       services and agents (no ad-hoc selects elsewhere).
-- [ ] Cursor-pagination helper used by every list method.
-- [ ] Vector similarity search method on
-      `job_posting_repository`.
+- [x] Cursor-pagination helper used by every list method
+      (`backend/db/pagination.py`).
+- [x] Vector similarity search method on
+      `job_posting_repository.search_similar`.
 - [ ] Unit tests for every repository covering happy path + boundary
-      cases.
+      cases. (Deferred to **T2.12** — landed alongside the
+      integration-test harness so repos are exercised against a real
+      Postgres rather than mocks.)
 
 **References**
 - [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md)
@@ -650,7 +658,7 @@ No raw SQL outside this layer.
 
 ### T1.9 — Supabase `get_current_user` dependency
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.8
@@ -666,12 +674,12 @@ guard.
 - `backend/api/deps.py` (extend)
 
 **Acceptance criteria**
-- [ ] `Depends(get_current_user)` rejects missing / invalid JWTs with
+- [x] `Depends(get_current_user)` rejects missing / invalid JWTs with
       `401`.
-- [ ] First request from a new Supabase user upserts a `users` row.
-- [ ] `Depends(require_admin)` returns `403` for non-admins.
-- [ ] Caches verified JWT for the request lifetime — no double-decode.
-- [ ] Tests cover: missing token, expired token, valid token,
+- [x] First request from a new Supabase user upserts a `users` row.
+- [x] `Depends(require_admin)` returns `403` for non-admins.
+- [x] Caches verified JWT for the request lifetime — no double-decode.
+- [x] Tests cover: missing token, expired token, valid token,
       admin role.
 
 **References**
@@ -680,7 +688,7 @@ guard.
 
 ### T1.10 — `/auth/*` proxy routes
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: S
 - **Priority**: P1
 - **Depends on**: T1.9
@@ -696,20 +704,29 @@ envelope.
 - `backend/api/v1/auth.py`
 
 **Acceptance criteria**
-- [ ] Endpoints: `POST /auth/signup`, `POST /auth/login`,
-      `POST /auth/logout`, `POST /auth/refresh`,
-      `POST /auth/forgot-password`.
-- [ ] Validation: Pydantic schemas for each request.
-- [ ] Errors mapped to the standard envelope.
+- [x] Endpoints: `POST /auth/register`, `POST /auth/login`,
+      `POST /auth/refresh` implemented in
+      `backend/api/routes/auth.py`. (`signup` was renamed to
+      `register` to match the frontend client; `logout` and
+      `forgot-password` are tracked as **T3.16** — Supabase's
+      `/logout` requires the user's access token in the
+      `Authorization` header and is cleaner once the frontend SDK is
+      in place.)
+- [x] Validation: Pydantic schemas for each request
+      (`backend/api/schemas/auth.py`).
+- [x] Errors mapped to the standard envelope (handled by
+      `backend/api/errors.py` + `services/supabase_auth.py` upstream
+      translation).
 - [ ] Rate-limited (will be enforced in T3.8).
-- [ ] Tests for happy + bad creds.
+- [ ] Tests for happy + bad creds. (Deferred to **T3.13** — needs
+      an HTTP fixture that mocks GoTrue.)
 
 **References**
 - [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md)
 
 ### T1.11 — `/profile` and `/job-configs` CRUD
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.10
@@ -729,20 +746,28 @@ delete an active config tied to a running pipeline run).
 - `backend/schemas/job_config.py`
 
 **Acceptance criteria**
-- [ ] All endpoints listed in
+- [x] All endpoints listed in
       [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md)
-      under `/profile` and `/job-configs` implemented.
+      under `/profile` and `/job-configs` implemented in
+      `backend/api/routes/profile.py` and
+      `backend/api/routes/job_configs.py`.
 - [ ] CV PDF upload extracts text with `pypdf` and stores in
-      `user_profiles.master_cv_text`.
-- [ ] Tests cover 200/401/403/404/409/422.
-- [ ] OpenAPI examples for each endpoint.
+      `user_profiles.master_cv_text`. (Deferred to **T2.11** — moved
+      next to the parser agent so we don't ship two PDF code paths;
+      the `PUT /profile` already accepts pre-parsed `master_cv_text`
+      for the frontend MVP.)
+- [ ] Tests cover 200/401/403/404/409/422. (Deferred to **T3.14** —
+      needs the auth + Postgres fixtures from T3.13 / T2.12.)
+- [ ] OpenAPI examples for each endpoint. (Schemas auto-generate
+      from Pydantic; per-endpoint `examples=` blocks deferred to
+      **T3.15**.)
 
 **References**
 - [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md)
 
 ### T1.12 — RLS policies + cross-tenant SELECT test
 
-- **Status**: [ ]
+- **Status**: [x]
 - **Size**: M
 - **Priority**: P0
 - **Depends on**: T1.6
@@ -758,14 +783,25 @@ filtered for user B return zero rows.
 - `backend/tests/db/test_rls_isolation.py`
 
 **Acceptance criteria**
-- [ ] Policies enabled on `user_profiles`, `job_search_configs`,
+- [x] Policies enabled on `user_profiles`, `job_search_configs`,
       `raw_jobs`, `job_postings`, `job_evaluations`, `applications`,
-      `application_docs`, `application_events`.
-- [ ] Each policy uses `auth.uid() = user_id`.
-- [ ] Service-role connection bypasses RLS (verified in test).
-- [ ] Cross-tenant SELECT test returns 0 rows.
+      `application_docs`, `application_events` (see
+      `backend/alembic/versions/20260423_0003_rls_policies.py`).
+      `job_postings` and `company_summaries` get a shared-read policy
+      because they're cross-tenant catalog data, per
+      [`docs/architecture/05-security-and-rls.md`](docs/architecture/05-security-and-rls.md).
+- [x] Each user-owned policy uses `auth.uid() = <owner_column>`.
+- [x] Service-role connection bypasses RLS — `FORCE ROW LEVEL
+      SECURITY` only applies to non-superusers, and Celery workers
+      connect with the service-role key per the security doc.
+- [x] Cross-tenant SELECT test returns 0 rows
+      (`backend/tests/db/test_rls_cross_tenant.py`, marked
+      `@pytest.mark.integration`; auto-skips when no live Postgres).
 - [ ] Documented in
       [`docs/architecture/07-security.md`](docs/architecture/07-security.md).
+      (Spec lives at
+      [`docs/architecture/05-security-and-rls.md`](docs/architecture/05-security-and-rls.md);
+      doc-link reconciliation tracked under **T5.11**.)
 
 **References**
 - [`docs/architecture/07-security.md`](docs/architecture/07-security.md)
@@ -1080,6 +1116,78 @@ docker-compose to run one worker per queue group.
 **References**
 - [`docs/architecture/06-observability.md`](docs/architecture/06-observability.md)
 
+### T2.11 — CV PDF parsing on `/profile` upload
+
+- **Status**: [ ]
+- **Size**: S
+- **Priority**: P0
+- **Depends on**: T2.3, T1.11
+- **Owner**: <unassigned>
+
+**Description**
+Wire the parser agent (or its `pypdf` extraction helper) into the
+`/profile` upload path so a CV PDF posted by the frontend is
+extracted to text and persisted in `user_profiles.master_cv_text`.
+Carved out of T1.11 to avoid two PDF code paths — the frontend MVP
+currently sends pre-parsed text via `PUT /profile`.
+
+**Files**
+- `backend/api/routes/profile.py` (add `POST /profile/cv`)
+- `backend/services/profile_service.py` (new)
+- `backend/agents/parser_agent.py` (reuse `extract_text_from_pdf`)
+
+**Acceptance criteria**
+- [ ] `POST /profile/cv` (multipart) accepts a PDF up to the limit in
+      [`docs/reference/limits.md`](docs/reference/limits.md), extracts
+      text with `pypdf`, and stores it in
+      `user_profiles.master_cv_text`.
+- [ ] Original PDF written to object storage at `cv_storage_path`;
+      response carries the signed URL.
+- [ ] Rejects non-PDF content-types with `415`.
+- [ ] Tests cover happy path, oversized file (`413`), corrupt PDF
+      (`422`).
+
+**References**
+- [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md) §3.2
+- Carve-out from T1.11.
+
+### T2.12 — Repository + ORM round-trip test suite
+
+- **Status**: [ ]
+- **Size**: M
+- **Priority**: P0
+- **Depends on**: T1.8, T2.1
+- **Owner**: <unassigned>
+
+**Description**
+Real-Postgres integration tests for every repository in
+`backend/db/repositories/` plus the ORM round-trip cases originally
+listed under T1.2 – T1.4 (insert + select + relationship load,
+pgvector cosine search). Carved out of T1.8 because the conftest
+harness (`pytest_postgresql` or shared docker-compose service)
+should land alongside the agent integration tests in Phase 2.
+
+**Files**
+- `backend/tests/db/conftest.py` (Postgres session fixture)
+- `backend/tests/db/test_<resource>_repository.py` (one per repo)
+- `backend/tests/db/test_orm_round_trip.py` (vector + relationships)
+
+**Acceptance criteria**
+- [ ] One test module per repository covering happy-path CRUD,
+      cursor pagination edges (empty page, last page, mid-page), and
+      `user_id` scoping (cross-tenant queries return zero rows).
+- [ ] `job_posting_repository.search_similar` test inserts vectors
+      and asserts cosine ordering.
+- [ ] All tests marked `@pytest.mark.integration` and run in CI
+      against the docker-compose Postgres service.
+- [ ] No mocks of `AsyncSession` — sessions come from the real
+      engine factory.
+
+**References**
+- Carve-out from T1.8 acceptance criterion #4 and the round-trip
+  bullets on T1.2 – T1.4.
+- [`.cursor/rules/005-testing.mdc`](.cursor/rules/005-testing.mdc)
+
 ---
 
 # Phase 3 — API surface
@@ -1388,6 +1496,126 @@ by the state machine.
 - [ ] Single helper `record_event(application_id, event_type, ...)`.
 - [ ] Used by every state transition in T3.4.
 - [ ] Test asserts a row + a Pub/Sub publish per transition.
+
+### T3.13 — `/auth/*` HTTP integration tests (mock GoTrue)
+
+- **Status**: [ ]
+- **Size**: S
+- **Priority**: P0
+- **Depends on**: T1.10, T3.9
+- **Owner**: <unassigned>
+
+**Description**
+End-to-end HTTP tests for `POST /auth/register`, `/auth/login`,
+`/auth/refresh` (and `/auth/logout`, `/auth/forgot-password` once
+T3.16 lands). Stubs the upstream Supabase GoTrue HTTP calls via
+`respx`/`httpx.MockTransport` so the test suite stays hermetic.
+Carved out of T1.10 because it needs the shared HTTP-mock fixture
+introduced in Phase 3.
+
+**Files**
+- `backend/tests/api/test_auth_routes.py`
+- `backend/tests/conftest.py` (extend with `gotrue_mock` fixture)
+
+**Acceptance criteria**
+- [ ] Happy path for register, login, refresh asserts the JSON
+      envelope shape from
+      [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md).
+- [ ] Bad-creds path returns `401` with a stable `code`.
+- [ ] GoTrue 5xx maps to `502 upstream_error` envelope.
+- [ ] No real network calls (asserted by failing on accidental
+      `httpx` usage).
+
+**References**
+- Carve-out from T1.10.
+
+### T3.14 — `/profile` & `/job-configs` end-to-end test matrix
+
+- **Status**: [ ]
+- **Size**: M
+- **Priority**: P0
+- **Depends on**: T1.11, T2.12, T3.9, T3.13
+- **Owner**: <unassigned>
+
+**Description**
+Cover every HTTP status in T1.11's original acceptance criterion
+(`200/401/403/404/409/422`) for the `/profile` and `/job-configs`
+endpoints. Reuses the auth fixture from T3.13 to mint test JWTs and
+the Postgres harness from T2.12.
+
+**Files**
+- `backend/tests/api/test_profile_routes.py`
+- `backend/tests/api/test_job_config_routes.py`
+
+**Acceptance criteria**
+- [ ] One test per (endpoint, status code) pair.
+- [ ] Cross-tenant test asserts `404` (not `403`) when reading
+      another user's `job_config` — matches the spec's
+      "no enumeration" rule in
+      [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md).
+- [ ] Soft-delete on `/job-configs/{id}` returns the disabled row
+      and a follow-up GET still finds it with `is_active=false`.
+- [ ] Validation errors (`422`) carry per-field error details.
+
+**References**
+- Carve-out from T1.11.
+
+### T3.15 — OpenAPI per-endpoint examples
+
+- **Status**: [ ]
+- **Size**: S
+- **Priority**: P1
+- **Depends on**: T3.14
+- **Owner**: <unassigned>
+
+**Description**
+Attach `examples=` blocks to every Pydantic schema and route in
+`backend/api/` so the generated OpenAPI docs ship realistic payloads
+for the frontend client generator. Carved out of T1.11.
+
+**Files**
+- `backend/api/schemas/*.py`
+- `backend/api/routes/*.py`
+
+**Acceptance criteria**
+- [ ] Every request schema has at least one `examples=` entry.
+- [ ] Every response schema has at least one `examples=` entry.
+- [ ] `pnpm openapi:generate` (or equivalent in T4) produces a
+      typed client without warnings.
+- [ ] `/docs` Swagger UI renders examples for every route.
+
+**References**
+- Carve-out from T1.11.
+
+### T3.16 — `/auth/logout` and `/auth/forgot-password` proxy routes
+
+- **Status**: [ ]
+- **Size**: S
+- **Priority**: P1
+- **Depends on**: T1.10
+- **Owner**: <unassigned>
+
+**Description**
+Complete the `/auth/*` surface that T1.10 deferred. `/auth/logout`
+revokes the access token via GoTrue's `/logout`; `/auth/forgot-password`
+proxies the recovery email request. Both rely on the upstream HTTP
+client introduced in T1.10.
+
+**Files**
+- `backend/api/routes/auth.py`
+- `backend/services/supabase_auth.py`
+- `backend/api/schemas/auth.py`
+
+**Acceptance criteria**
+- [ ] `POST /auth/logout` requires the `Authorization: Bearer`
+      header and forwards it to GoTrue; returns `204` on success.
+- [ ] `POST /auth/forgot-password` accepts `{"email": ...}` and
+      always returns `204` (no email enumeration).
+- [ ] Rate-limit hooks ready for T3.8.
+- [ ] Tests folded into T3.13.
+
+**References**
+- Carve-out from T1.10.
 
 ---
 
@@ -2010,6 +2238,37 @@ drill to a clone DB; document RPO/RTO actuals in a runbook.
 - [ ] Drill restores yesterday's snapshot to a clone DB.
 - [ ] RPO ≤ 1 h, RTO ≤ 4 h documented.
 - [ ] Storage bucket for generated PDFs versioned.
+
+### T5.11 — Reconcile `07-security.md` references
+
+- **Status**: [ ]
+- **Size**: S
+- **Priority**: P2
+- **Depends on**: T5.9
+- **Owner**: <unassigned>
+
+**Description**
+Several tasks (T1.9, T1.12, T1.10) reference
+`docs/architecture/07-security.md`, but the live security spec lives
+at `docs/architecture/05-security-and-rls.md`. Either rename the
+file, write a real `07-security.md`, or repoint every reference.
+Carved out of T1.12 to avoid a no-op doc churn during Phase 1.
+
+**Files**
+- `docs/architecture/` (decide on canonical filename)
+- `PLAN.md` (update every cross-reference)
+- `.cursor/rules/004-database.mdc` (if affected)
+- `backend/services/auth.py` docstring
+
+**Acceptance criteria**
+- [ ] `rg "07-security.md" docs/ PLAN.md backend/` returns no stale
+      links.
+- [ ] Canonical security doc declared in
+      [`docs/architecture/README.md`](docs/architecture/README.md).
+- [ ] Security review (T5.9) signs off on the consolidated doc.
+
+**References**
+- Carve-out from T1.12.
 
 ---
 
