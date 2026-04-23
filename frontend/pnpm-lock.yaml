@@ -14,6 +14,9 @@ importers:
       '@tanstack/svelte-query':
         specifier: ^5.59.16
         version: 5.90.2(svelte@5.55.4(@typescript-eslint/types@8.59.0))
+      '@tanstack/svelte-virtual':
+        specifier: ^3.13.24
+        version: 3.13.24(svelte@5.55.4(@typescript-eslint/types@8.59.0))
       '@tiptap/core':
         specifier: ^2.8.0
         version: 2.27.2(@tiptap/pm@2.27.2)
@@ -29,6 +32,9 @@ importers:
       pdfjs-dist:
         specifier: ^4.7.76
         version: 4.10.38
+      svelte-dnd-action:
+        specifier: ^0.9.69
+        version: 0.9.69(svelte@5.55.4(@typescript-eslint/types@8.59.0))
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -866,6 +872,14 @@ packages:
     resolution: {integrity: sha512-owjnp0w8sOXlMhLZhucHrsYvCjgjHrVyII/wlqMGefxKFyroZS3xCwTee+IUx7UHbL+QmKr/HQTeTqhgxmxPQw==}
     peerDependencies:
       svelte: ^3.54.0 || ^4.0.0 || ^5.0.0
+
+  '@tanstack/svelte-virtual@3.13.24':
+    resolution: {integrity: sha512-Up3LOD5Cj+oJ3GuKfM1Li06jzzZMIZnRPmu3aik9rJQgk7jq7LgPo4yumfUw4+I4edjYfyPKSZnXGwZ9Vjlebw==}
+    peerDependencies:
+      svelte: ^3.48.0 || ^4.0.0 || ^5.0.0
+
+  '@tanstack/virtual-core@3.14.0':
+    resolution: {integrity: sha512-JLANqGy/D6k4Ujmh8Tr25lGimuOXNiaVyXaCAZS0W+1390sADdGnyUdSWNIfd49gebtIxGMij4IktRVzrdr12Q==}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -2385,6 +2399,11 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
 
+  svelte-dnd-action@0.9.69:
+    resolution: {integrity: sha512-NAmSOH7htJoYraTQvr+q5whlIuVoq88vEuHr4NcFgscDRUxfWPPxgie2OoxepBCQCikrXZV4pqV86aun60wVyw==}
+    peerDependencies:
+      svelte: '>=3.23.0 || ^5.0.0-next.0'
+
   svelte-eslint-parser@0.43.0:
     resolution: {integrity: sha512-GpU52uPKKcVnh8tKN5P4UZpJ/fUDndmq7wfsvoVXsyP+aY0anol7Yqo01fyrlaWGMFfm4av5DyrjlaXdLRJvGA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
@@ -3223,6 +3242,13 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.90.2
       svelte: 5.55.4(@typescript-eslint/types@8.59.0)
+
+  '@tanstack/svelte-virtual@3.13.24(svelte@5.55.4(@typescript-eslint/types@8.59.0))':
+    dependencies:
+      '@tanstack/virtual-core': 3.14.0
+      svelte: 5.55.4(@typescript-eslint/types@8.59.0)
+
+  '@tanstack/virtual-core@3.14.0': {}
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -4765,6 +4791,10 @@ snapshots:
       typescript: 5.9.3
     transitivePeerDependencies:
       - picomatch
+
+  svelte-dnd-action@0.9.69(svelte@5.55.4(@typescript-eslint/types@8.59.0)):
+    dependencies:
+      svelte: 5.55.4(@typescript-eslint/types@8.59.0)
 
   svelte-eslint-parser@0.43.0(svelte@5.55.4(@typescript-eslint/types@8.59.0)):
     dependencies:

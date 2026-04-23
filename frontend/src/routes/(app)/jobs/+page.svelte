@@ -1,0 +1,83 @@
+<script lang="ts">
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+	import { get } from 'svelte/store';
+	import JobCard from '$lib/components/jobs/JobCard.svelte';
+	import JobFilters from '$lib/components/jobs/JobFilters.svelte';
+	import { useJobsInfiniteFromUrl } from '$lib/hooks/useJobs';
+	import type { Classification } from '$lib/types/enums';
+
+	let classification = $state<Classification | ''>('');
+	let keyword = $state('');
+	let postedAfter = $state('');
+
+	$effect(() => {
+		const s = $page.url.searchParams;
+		keyword = s.get('q') ?? '';
+		postedAfter = s.get('posted') ?? '';
+		const fit = s.get('fit') as Classification | '';
+		classification = fit === 'GOOD_FIT' || fit === 'MAYBE' || fit === 'REJECT' ? fit : '';
+	});
+
+	const q = useJobsInfiniteFromUrl();
+
+	const flat = $derived(($q.data?.pages ?? []).flatMap((p) => p.items));
+
+	function pushUrl(next: {
+		classification: Classification | '';
+		keyword: string;
+		postedAfter: string;
+	}): void {
+		classification = next.classification;
+		keyword = next.keyword;
+		postedAfter = next.postedAfter;
+		const p = new URLSearchParams();
+		if (keyword) p.set('q', keyword);
+		if (postedAfter) p.set('posted', postedAfter);
+		if (classification) p.set('fit', classification);
+		const qs = p.toString();
+		void goto(qs ? `?${qs}` : '?', { replaceState: true, keepFocus: true, noScroll: true });
+	}
+
+	let sentinel = $state<HTMLDivElement | null>(null);
+
+	$effect(() => {
+		if (!sentinel) return;
+		const ob = new IntersectionObserver(([e]) => {
+			const st = get(q);
+			if (e.isIntersecting && st.hasNextPage && !st.isFetchingNextPage) {
+				void st.fetchNextPage();
+			}
+		});
+		ob.observe(sentinel);
+		return () => ob.disconnect();
+	});
+</script>
+
+<svelte:head>
+	<title>Jobs — Kaziro</title>
+</svelte:head>
+
+<h1 class="mb-4 text-2xl font-semibold">Jobs</h1>
+<JobFilters {classification} {keyword} {postedAfter} onChange={pushUrl} />
+
+{#if $q.isPending}
+	<p class="mt-6 text-sm text-base-content/60">Loading jobs…</p>
+{:else if $q.isError}
+	<p class="mt-6 text-sm text-error">Could not load jobs.</p>
+{:else}
+	<div class="mt-6 max-h-96 space-y-3 overflow-y-auto pr-1">
+		{#if flat.length > 100}
+			<p class="mb-2 text-xs text-base-content/60" role="status">
+				Showing {flat.length} loaded jobs — refine filters to narrow results.
+			</p>
+		{/if}
+		{#each flat as job (job.id)}
+			<JobCard {job} />
+		{/each}
+		<div bind:this={sentinel} class="h-4"></div>
+		{#if $q.isFetchingNextPage}
+			<p class="py-3 text-center text-sm text-base-content/60">Loading more…</p>
+		{/if}
+	</div>
+{/if}

@@ -1,16 +1,28 @@
 <script lang="ts">
-	const heading = 'Kaziro';
-	const tagline = 'Autonomous job-application pipeline — Phase 0 scaffold.';
+	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
+	import { getUser, isAuthReady } from '$lib/stores/auth';
+	import Button from '$lib/components/ui/Button.svelte';
+
+	$effect(() => {
+		if (!browser || !isAuthReady()) return;
+		if (getUser()) {
+			void goto('/dashboard');
+		}
+	});
 </script>
 
-<main class="hero min-h-screen bg-base-200">
-	<div class="hero-content text-center">
-		<div class="max-w-md">
-			<h1 class="text-5xl font-bold">{heading}</h1>
-			<p class="py-6 text-base-content/80">{tagline}</p>
-			<a class="btn btn-primary" href="https://github.com/" target="_blank" rel="noreferrer">
-				Read the docs
-			</a>
-		</div>
+<svelte:head>
+	<title>Kaziro</title>
+</svelte:head>
+
+<main class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
+	<h1 class="text-3xl font-semibold text-primary">Kaziro</h1>
+	<p class="text-base leading-relaxed text-base-content/80">
+		AI-assisted job search, evaluation, and tailored applications — warm, focused, and fast.
+	</p>
+	<div class="flex flex-wrap gap-3">
+		<a href="/login"><Button>Log in</Button></a>
+		<a href="/signup"><Button variant="outline">Create account</Button></a>
 	</div>
 </main>

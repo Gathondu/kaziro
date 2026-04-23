@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Final
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, Request, status
 
 from backend.api.deps import CurrentUser, SessionDep
 from backend.api.errors import NotFoundError
@@ -17,6 +17,10 @@ from backend.api.schemas.job_config import (
 )
 from backend.db.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from backend.db.repositories import job_config_repository
+from backend.logging_config import get_logger
+from backend.tasks.pipeline import run_pipeline_for_config_task
+
+log = get_logger(__name__)
 
 router: Final[APIRouter] = APIRouter(prefix="/job-configs", tags=["job-configs"])
 
@@ -103,6 +107,36 @@ async def disable_config(
         raise NotFoundError("job config not found", code="job_config_not_found")
     await session.commit()
     return envelope(JobConfigResponse.model_validate(config))
+
+
+@router.post(
+    "/{config_id}/run",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=Envelope[dict[str, str]],
+    summary="Enqueue a full pipeline run for this job-search config",
+)
+async def run_config_pipeline(
+    config_id: uuid.UUID,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Envelope[dict[str, str]]:
+    """User-scoped equivalent of admin replay — used after onboarding."""
+    cfg = await job_config_repository.get_by_id(session, current_user.id, config_id)
+    if cfg is None:
+        raise NotFoundError("job config not found", code="job_config_not_found")
+    rid = request.headers.get("x-request-id")
+    async_result = run_pipeline_for_config_task.apply_async(
+        args=[str(config_id), str(current_user.id)],
+        headers={"request_id": rid or ""},
+    )
+    log.info(
+        "job_configs.run_enqueued",
+        config_id=str(config_id),
+        user_id=str(current_user.id),
+        task_id=async_result.id,
+    )
+    return envelope({"task_id": async_result.id})
 
 
 __all__ = ["router"]

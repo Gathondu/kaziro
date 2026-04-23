@@ -1,0 +1,54 @@
+import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
+import {
+	createJobConfig,
+	disableJobConfig,
+	listJobConfigs,
+	runJobConfigPipeline,
+	updateJobConfig
+} from '$lib/api/jobConfigs';
+import type { JobConfig } from '$lib/types/jobConfig';
+
+export function useJobConfigs(activeOnly = false) {
+	return createQuery({
+		queryKey: ['job-configs', { activeOnly }],
+		queryFn: async () => (await listJobConfigs({ active_only: activeOnly, limit: 50 })).items,
+		staleTime: 60_000
+	});
+}
+
+export function useCreateJobConfig() {
+	const qc = useQueryClient();
+	return createMutation<JobConfig, Error, Record<string, unknown>>({
+		mutationFn: (body: Record<string, unknown>) => createJobConfig(body),
+		onSuccess: () => {
+			void qc.invalidateQueries({ queryKey: ['job-configs'] });
+		}
+	});
+}
+
+export function useUpdateJobConfig() {
+	const qc = useQueryClient();
+	return createMutation<JobConfig, Error, { id: string; body: Record<string, unknown> }>({
+		mutationFn: (args) => updateJobConfig(args.id, args.body),
+		onSuccess: (data) => {
+			void qc.invalidateQueries({ queryKey: ['job-configs'] });
+			void qc.invalidateQueries({ queryKey: ['job-config', data.id] });
+		}
+	});
+}
+
+export function useDisableJobConfig() {
+	const qc = useQueryClient();
+	return createMutation<JobConfig, Error, string>({
+		mutationFn: (id: string) => disableJobConfig(id),
+		onSuccess: () => {
+			void qc.invalidateQueries({ queryKey: ['job-configs'] });
+		}
+	});
+}
+
+export function useRunJobConfigPipeline() {
+	return createMutation<{ task_id: string }, Error, string>({
+		mutationFn: (id: string) => runJobConfigPipeline(id)
+	});
+}
