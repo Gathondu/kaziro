@@ -17,7 +17,6 @@ Public task names (must stay stable — they appear on the broker):
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from datetime import UTC, datetime
 from typing import Any, Final
@@ -39,6 +38,7 @@ from backend.services.schedule_presets import (
     ALLOWED_FETCH_SCHEDULE_CRONS,
     should_run_fetch,
 )
+from backend.tasks.async_runner import run_sqlalchemy_async
 from backend.tasks.celery_app import (
     QUEUE_DEFAULT,
     QUEUE_DOCUMENT,
@@ -93,7 +93,7 @@ def run_parser_for_raw_job(self: Any, raw_job_id: str) -> dict[str, Any]:
             "error": result.error,
         }
 
-    return asyncio.run(_runner())
+    return run_sqlalchemy_async(_runner)
 
 
 @shared_task(
@@ -111,7 +111,9 @@ def run_evaluator_for_user(
         user_id=user_id,
         attempt=self.request.retries + 1,
     )
-    result = asyncio.run(run_evaluator_agent(job_posting_id, user_id))
+    result = run_sqlalchemy_async(
+        lambda: run_evaluator_agent(job_posting_id, user_id)
+    )
     return {
         "job_posting_id": job_posting_id,
         "user_id": user_id,
@@ -138,7 +140,7 @@ def run_research_for_posting(self: Any, job_posting_id: str) -> dict[str, Any]:
         job_posting_id=job_posting_id,
         attempt=self.request.retries + 1,
     )
-    result = asyncio.run(run_research_agent(job_posting_id))
+    result = run_sqlalchemy_async(lambda: run_research_agent(job_posting_id))
     return {
         "job_posting_id": job_posting_id,
         "summary_id": result.summary_id,
@@ -162,7 +164,9 @@ def run_document_for_evaluation(
         user_id=user_id,
         attempt=self.request.retries + 1,
     )
-    result = asyncio.run(run_document_agent(job_evaluation_id, user_id))
+    result = run_sqlalchemy_async(
+        lambda: run_document_agent(job_evaluation_id, user_id)
+    )
     return {
         "job_evaluation_id": job_evaluation_id,
         "user_id": user_id,
@@ -193,7 +197,9 @@ def run_pipeline_for_config_task(
         user_id=user_id,
         attempt=self.request.retries + 1,
     )
-    return asyncio.run(run_full_pipeline_for_config(config_id, user_id))
+    return run_sqlalchemy_async(
+        lambda: run_full_pipeline_for_config(config_id, user_id)
+    )
 
 
 @shared_task(
@@ -212,7 +218,9 @@ def run_pipeline_for_single_job_task(
         user_id=user_id,
         attempt=self.request.retries + 1,
     )
-    return asyncio.run(run_pipeline_for_single_job(job_posting_id, user_id))
+    return run_sqlalchemy_async(
+        lambda: run_pipeline_for_single_job(job_posting_id, user_id)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -240,7 +248,7 @@ def enqueue_active_pipelines(self: Any) -> dict[str, Any]:
             )
         return [(str(c.id), str(c.user_id), c.fetch_schedule_cron) for c in configs]
 
-    rows = asyncio.run(_list_active())
+    rows = run_sqlalchemy_async(_list_active)
     now = datetime.now(UTC)
     task_id = getattr(self.request, "id", None)
     task_log = get_logger(__name__).bind(task_id=task_id or "")

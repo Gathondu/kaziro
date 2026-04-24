@@ -106,7 +106,10 @@ Read the rule itself for full detail.
   `backend/tasks/celery_app.py` (``celery -A backend.tasks.celery_app:celery_app``).
 - Every task: `@app.task(bind=True, autoretry_for=(...,),
   retry_backoff=True, max_retries=N)`.
-- Tasks are sync wrappers — async work runs inside `asyncio.run(...)`.
+- Tasks are sync wrappers — async work runs via
+  `backend.tasks.async_runner.run_sqlalchemy_async` (wraps `asyncio.run` and
+  disposes the global async engine afterward so pooled connections are not
+  bound to a closed event loop).
 - Use distinct queues per stage so we can scale them independently:
   `parser`, `evaluator`, `research`, `document`, `default`.
 - Beat schedule lives in `backend/tasks/celery_app.py` with explicit cron strings.
