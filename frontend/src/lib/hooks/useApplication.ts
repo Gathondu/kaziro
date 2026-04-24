@@ -1,7 +1,9 @@
+import { browser } from '$app/environment';
 import { derived } from 'svelte/store';
 import { page } from '$app/stores';
 import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
 import {
+	LIST_APPLICATIONS_MAX_LIMIT,
 	createApplication,
 	getApplication,
 	listApplications,
@@ -18,7 +20,7 @@ export function useApplicationFromRoute() {
 		return {
 			queryKey: ['application', id] as const,
 			queryFn: () => getApplication(String(id)),
-			enabled: Boolean(id),
+			enabled: browser && Boolean(id),
 			staleTime: 60_000
 		};
 	});
@@ -92,7 +94,7 @@ export function useApplicationsBoard() {
 	return createQuery({
 		queryKey: ['applications', 'board'],
 		queryFn: async (): Promise<Application[]> => {
-			const { items } = await listApplications({ limit: 200 });
+			const { items } = await listApplications({ limit: LIST_APPLICATIONS_MAX_LIMIT });
 			return items;
 		},
 		staleTime: 30_000

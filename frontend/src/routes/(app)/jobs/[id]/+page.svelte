@@ -44,10 +44,13 @@
 	async function notInterested(): Promise<void> {
 		if (!jobId) return;
 		try {
-			const { listApplications, createApplication, updateApplicationStatus } = await import(
-				'$lib/api/applications'
-			);
-			const { items } = await listApplications({ limit: 200 });
+			const {
+				LIST_APPLICATIONS_MAX_LIMIT,
+				listApplications,
+				createApplication,
+				updateApplicationStatus
+			} = await import('$lib/api/applications');
+			const { items } = await listApplications({ limit: LIST_APPLICATIONS_MAX_LIMIT });
 			let app = items.find((a) => a.job_posting_id === jobId);
 			if (!app) {
 				app = await createApplication(jobId);

@@ -2,6 +2,8 @@ import { apiFetch, apiFetchEmpty, apiFetchMeta, resolveAuthenticatedRedirect } f
 import type { Application, ApplicationDetail } from '$lib/types/applications';
 import type { ApplicationStatus } from '$lib/types/enums';
 
+export const LIST_APPLICATIONS_MAX_LIMIT = 100;
+
 export interface ListApplicationsParams {
 	cursor?: string | null;
 	limit?: number;
@@ -11,7 +13,10 @@ export interface ListApplicationsParams {
 function appsQuery(p: ListApplicationsParams): string {
 	const q = new URLSearchParams();
 	if (p.cursor) q.set('cursor', p.cursor);
-	if (p.limit != null) q.set('limit', String(p.limit));
+	if (p.limit != null) {
+		const n = Math.min(Math.max(1, p.limit), LIST_APPLICATIONS_MAX_LIMIT);
+		q.set('limit', String(n));
+	}
 	if (p.status) q.set('status', p.status);
 	const s = q.toString();
 	return s ? `?${s}` : '';
