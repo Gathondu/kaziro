@@ -76,25 +76,40 @@
 	<label class="form-control">
 		<span class="label-text font-medium">Professional summary</span>
 		<textarea
-			class="textarea textarea-bordered min-h-24 rounded-xl border-base-300 bg-base-200"
+			class="textarea textarea-bordered min-h-24 rounded-xl border-base-300 bg-base-200 {fieldErrors.professional_summary
+				? 'textarea-error'
+				: ''}"
 			bind:value={professional_summary}
 		></textarea>
+		{#if fieldErrors.professional_summary}<span class="label-text-alt text-error"
+				>{fieldErrors.professional_summary}</span
+			>{/if}
 	</label>
 	<label class="form-control">
 		<span class="label-text font-medium">Domain</span>
+		<span class="label-text-alt text-base-content/60">Short field of focus (max 100 characters).</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200"
+			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.domain
+				? 'input-error'
+				: ''}"
+			maxlength={100}
 			bind:value={domain}
 		/>
+		{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span>{/if}
 	</label>
 	<label class="form-control">
 		<span class="label-text font-medium">Years of experience</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200"
+			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.experience_years
+				? 'input-error'
+				: ''}"
 			type="number"
 			min="0"
 			bind:value={experience_years}
 		/>
+		{#if fieldErrors.experience_years}<span class="label-text-alt text-error"
+				>{fieldErrors.experience_years}</span
+			>{/if}
 	</label>
 	<label class="form-control">
 		<span class="label-text font-medium">Skills (comma-separated)</span>
