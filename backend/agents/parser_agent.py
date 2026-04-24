@@ -24,7 +24,7 @@ import json
 import time
 import uuid
 from datetime import UTC, date, datetime
-from typing import Any, Final, Protocol
+from typing import Any, Final, Protocol, cast
 
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, ConfigDict, Field
@@ -121,7 +121,7 @@ def _build_default_llm() -> _Invokable:
         temperature=0,
         settings=settings,
     )
-    return base.with_structured_output(JobPostingSchema)
+    return cast(_Invokable, base.with_structured_output(JobPostingSchema))
 
 
 def _build_default_embedder() -> _Embeddable:
