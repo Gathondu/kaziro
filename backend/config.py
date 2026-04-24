@@ -19,6 +19,7 @@ from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import AnyHttpUrl, Field, PostgresDsn, RedisDsn, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -203,11 +204,41 @@ class Settings(BaseSettings):
 
 
 def _redis_url_with_db(url: str, db: int) -> str:
-    """Replace (or append) the trailing /db component on a Redis URL."""
-    base, sep, _ = url.rpartition("/")
-    if sep and base.count("/") >= 2:  # scheme://host:port/<db>
-        return f"{base}/{db}"
-    return f"{url.rstrip('/')}/{db}"
+    """Replace DB index and ensure required ``rediss`` TLS query parameters."""
+    parsed = urlsplit(url)
+    base_path = parsed.path or "/0"
+    head, sep, _tail = base_path.rpartition("/")
+    target_db = 0 if parsed.scheme == "rediss" else db
+    db_path = f"{head}/{target_db}" if sep else f"/{target_db}"
+
+    query_pairs = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    if parsed.scheme == "rediss":
+        ssl_cert_reqs = query_pairs.get("ssl_cert_reqs")
+        if ssl_cert_reqs is None:
+            query_pairs["ssl_cert_reqs"] = "required"
+        else:
+            query_pairs["ssl_cert_reqs"] = _normalize_ssl_cert_reqs(ssl_cert_reqs)
+
+    computed = urlunsplit(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            db_path,
+            urlencode(query_pairs),
+            parsed.fragment,
+        )
+    )
+    return computed
+
+
+def _normalize_ssl_cert_reqs(value: str) -> str:
+    normalized = value.strip().lower()
+    mapping = {
+        "cert_required": "required",
+        "cert_optional": "optional",
+        "cert_none": "none",
+    }
+    return mapping.get(normalized, normalized)
 
 
 @lru_cache(maxsize=1)

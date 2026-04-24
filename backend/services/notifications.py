@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import uuid
 from typing import Any, Final
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import redis.asyncio as aioredis
 
@@ -30,11 +31,39 @@ _redis_client: aioredis.Redis | None = None
 
 def _get_pubsub_url() -> str:
     settings = get_settings()
-    base = str(settings.REDIS_URL).rstrip("/")
-    parts = base.rsplit("/", 1)
-    if len(parts) == 2 and parts[1].isdigit():
-        return f"{parts[0]}/{settings.REDIS_PUBSUB_DB}"
-    return f"{base}/{settings.REDIS_PUBSUB_DB}"
+    parsed = urlsplit(str(settings.REDIS_URL))
+    base_path = parsed.path or "/0"
+    head, sep, _tail = base_path.rpartition("/")
+    target_db = 0 if parsed.scheme == "rediss" else settings.REDIS_PUBSUB_DB
+    db_path = f"{head}/{target_db}" if sep else f"/{target_db}"
+
+    query_pairs = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    if parsed.scheme == "rediss":
+        ssl_cert_reqs = query_pairs.get("ssl_cert_reqs")
+        if ssl_cert_reqs is None:
+            query_pairs["ssl_cert_reqs"] = "required"
+        else:
+            query_pairs["ssl_cert_reqs"] = _normalize_ssl_cert_reqs(ssl_cert_reqs)
+
+    return urlunsplit(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            db_path,
+            urlencode(query_pairs),
+            parsed.fragment,
+        )
+    )
+
+
+def _normalize_ssl_cert_reqs(value: str) -> str:
+    normalized = value.strip().lower()
+    mapping = {
+        "cert_required": "required",
+        "cert_optional": "optional",
+        "cert_none": "none",
+    }
+    return mapping.get(normalized, normalized)
 
 
 def get_redis() -> aioredis.Redis:
