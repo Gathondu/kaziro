@@ -44,9 +44,6 @@ class UserProfile(TimestampedBase):
     experience_years: Mapped[int | None] = mapped_column(Integer, nullable=True)
     domain: Mapped[str | None] = mapped_column(String(100), nullable=True)
     values_statement: Mapped[str | None] = mapped_column(Text, nullable=True)
-
-    # Master CV: the original file in Supabase Storage, the extracted text
-    # cached for agents (see docs/architecture/03-data-model.md §9).
     cv_storage_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     master_cv_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     linkedin_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
