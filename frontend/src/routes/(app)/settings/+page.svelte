@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
 	import Button from '$lib/components/ui/Button.svelte';
-	import ThemeToggle from '$lib/components/settings/ThemeToggle.svelte';
 	import { useProfile, useUpsertProfile } from '$lib/hooks/useProfile';
 	import { profileSettingsSchema } from '$lib/schemas/profile';
 
@@ -65,13 +64,6 @@
 <svelte:head>
 	<title>Settings — Kaziro</title>
 </svelte:head>
-
-<h1 class="mb-6 text-2xl font-semibold">Settings</h1>
-
-<div class="mb-8 max-w-xl space-y-4 rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
-	<h2 class="text-base font-semibold">Appearance</h2>
-	<ThemeToggle />
-</div>
 
 {#if $profile.isPending}
 	<p class="text-sm text-base-content/60">Loading profile…</p>

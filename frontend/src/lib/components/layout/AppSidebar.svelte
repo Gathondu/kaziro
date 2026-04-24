@@ -1,13 +1,6 @@
 <script lang="ts">
+	import AppearanceIconSwitch from '$lib/components/layout/AppearanceIconSwitch.svelte';
 	import { page } from '$app/stores';
-	import { isNotificationsConnected, subscribeConnection } from '$lib/stores/notifications';
-
-	let wsOk = $state(false);
-	$effect(() =>
-		subscribeConnection(() => {
-			wsOk = isNotificationsConnected();
-		})
-	);
 
 	const path = $derived($page.url.pathname);
 
@@ -30,12 +23,8 @@
 		<a class={linkCls('/settings')} href="/settings">Settings</a>
 		<a class={linkCls('/onboarding')} href="/onboarding/profile">Onboarding</a>
 	</nav>
-	<div class="border-t border-base-300 p-3">
-		<span
-			class="badge rounded-lg font-medium {wsOk ? 'badge-success' : 'badge-ghost'}"
-			title="Realtime connection"
-		>
-			{wsOk ? 'Live' : 'Offline'}
-		</span>
+	<div class="flex flex-col gap-2 border-t border-base-300 p-3">
+		<span class="text-xs font-medium uppercase tracking-wide text-base-content/60">Appearance</span>
+		<AppearanceIconSwitch />
 	</div>
 </aside>

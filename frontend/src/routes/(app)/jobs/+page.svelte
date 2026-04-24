@@ -58,7 +58,6 @@
 	<title>Jobs — Kaziro</title>
 </svelte:head>
 
-<h1 class="mb-4 text-2xl font-semibold">Jobs</h1>
 <JobFilters {classification} {keyword} {postedAfter} onChange={pushUrl} />
 
 {#if $q.isPending}

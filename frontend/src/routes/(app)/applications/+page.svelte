@@ -32,8 +32,6 @@
 	<title>Applications — Kaziro</title>
 </svelte:head>
 
-<h1 class="mb-4 text-2xl font-semibold">Applications</h1>
-
 {#if $board.isPending}
 	<p class="text-sm text-base-content/60">Loading board…</p>
 {:else if $board.isError}

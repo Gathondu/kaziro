@@ -10,8 +10,6 @@
 	<title>Dashboard — Kaziro</title>
 </svelte:head>
 
-<h1 class="mb-6 text-2xl font-semibold">Dashboard</h1>
-
 {#if $dashboard.isPending}
 	<p class="text-sm text-base-content/60" aria-live="polite">Loading dashboard…</p>
 {:else if $dashboard.isError}

@@ -11,8 +11,6 @@
 	<title>Job configs — Kaziro</title>
 </svelte:head>
 
-<h1 class="mb-4 text-2xl font-semibold">Job search configs</h1>
-
 {#if $list.isPending}
 	<p class="text-sm text-base-content/60">Loading…</p>
 {:else if $list.isError}

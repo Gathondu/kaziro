@@ -92,7 +92,6 @@
 {:else if $appQ.isError}
 	<p class="text-sm text-error">Application not found.</p>
 {:else if $appQ.data}
-	<h1 class="mb-4 text-xl font-semibold">Prepare documents</h1>
 	<p class="mb-6 text-sm text-base-content/70">
 		Job: <strong>{$appQ.data.job_posting?.title ?? ''}</strong>
 	</p>
