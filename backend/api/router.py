@@ -1,8 +1,7 @@
 """Versioned API router aggregator.
 
 Mount every public ``/api/v1/*`` route here. Health, metrics, and
-auth-proxy are exempt from the ``/api/v1`` prefix per
-``docs/architecture/04-api-design.md`` §1 and §3.7.
+auth-proxy are exempt from the ``/api/v1``.
 """
 
 from __future__ import annotations

@@ -12,14 +12,12 @@ carries a Bearer token:
 3. **Return** the loaded :class:`backend.db.models.user.User` instance to
    the caller's route.
 
-Also exposes :func:`require_admin` for the admin-only routes (T3.7).
-
-Reference: ``docs/architecture/07-security.md`` §1.
+Also exposes :func:`require_admin` for the admin-only routes.
 
 Note on signature algorithms
 ----------------------------
 Supabase may issue **HS256** tokens (legacy JWT secret) or **RS256 /
-ES256** tokens when `JWT Signing Keys`_ are enabled. We read the
+ES256** tokens when `JWT Signing Keys` are enabled. We read the
 unverified header ``alg``, allow only those three algorithms, then
 verify either symmetrically or via:
 
@@ -225,10 +223,10 @@ def _is_admin_payload(payload: dict[str, object], role: str) -> bool:
         return True
     metadata = payload.get("app_metadata")
     if isinstance(metadata, dict):
-        flag = metadata.get("is_admin")
+        flag = metadata.get("is_admin")  # type: ignore[arg-type]
         if isinstance(flag, bool) and flag:
             return True
-        roles = metadata.get("roles")
+        roles = metadata.get("roles")  # type: ignore[arg-type]
         if isinstance(roles, list) and ADMIN_ROLE in roles:
             return True
     return False
@@ -262,8 +260,7 @@ async def get_current_user(
     """Resolve the authenticated :class:`User`, upserting on first hit.
 
     Inactive users are rejected with ``403`` even with a valid token:
-    deactivation is the soft-delete pathway documented in
-    ``docs/architecture/07-security.md`` §3.
+    deactivation is the soft-delete pathway documented in.
     """
     user = await user_repository.upsert_from_supabase(
         session, user_id=claims.user_id, email=claims.email

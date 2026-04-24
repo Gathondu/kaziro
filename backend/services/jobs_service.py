@@ -7,7 +7,7 @@ from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.errors import NotFoundError
+from backend.api.exceptions import NotFoundError
 from backend.db.models.enums import Classification
 from backend.db.models.job_evaluation import JobEvaluation
 from backend.db.models.job_posting import JobPosting

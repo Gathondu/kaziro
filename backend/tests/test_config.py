@@ -48,6 +48,7 @@ def test_happy_boot_parses_all_fields() -> None:
         "RAPIDAPI_KEY",
         "RAPIDAPI_HOST",
         "FIRECRAWL_API_KEY",
+        "CORS_ORIGINS",
     ],
 )
 def test_missing_required_var_raises_validation_error(
@@ -71,3 +72,15 @@ def test_invalid_otel_sample_rate_raises(monkeypatch: pytest.MonkeyPatch) -> Non
 
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_cors_origins_empty_env_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.config import Settings, get_settings
+
+    monkeypatch.setenv("CORS_ORIGINS", "")
+    get_settings.cache_clear()
+
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+
+    assert "CORS_ORIGINS" in str(exc_info.value)

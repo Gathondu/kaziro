@@ -1,6 +1,6 @@
 """Thin proxy over the Supabase GoTrue REST API.
 
-Used by the ``/auth/*`` routes (T1.10) to register, sign in, and refresh
+Used by the ``/auth/*`` routes to register, sign in, and refresh
 tokens. We deliberately avoid the ``supabase-py`` SDK here — it carries
 a sync httpx client and its error model is opaque. A small focused
 async client gives us cleaner error mapping and avoids tying the
@@ -15,7 +15,7 @@ from typing import Any, Final
 
 import httpx
 
-from backend.api.errors import ApiError, ConflictError, UnauthorizedError, UpstreamError
+from backend.api.exceptions import ApiError, ConflictError, UnauthorizedError, UpstreamError
 from backend.api.schemas.auth import (
     LoginRequest,
     RefreshRequest,
@@ -57,9 +57,7 @@ async def _post(
         log.warning("auth.upstream_timeout", endpoint=path, auth_op=auth_event)
         raise UpstreamError("authentication service is unreachable") from exc
     except httpx.HTTPError as exc:
-        log.error(
-            "auth.upstream_error", endpoint=path, auth_op=auth_event, error=str(exc)
-        )
+        log.error("auth.upstream_error", endpoint=path, auth_op=auth_event, error=str(exc))
         raise UpstreamError("authentication service error") from exc
 
     return _parse_response(resp, auth_event=auth_event)
@@ -121,7 +119,7 @@ def _token_from_session(session: dict[str, Any]) -> TokenResponse:
 
 def _extract_user_id(user: object) -> str | None:
     if isinstance(user, dict):
-        value = user.get("id")
+        value = user.get("id")  # type: ignore[union-attr]
         if isinstance(value, str):
             return value
     return None
@@ -144,7 +142,7 @@ async def register(request: RegisterRequest, settings: Settings | None = None) -
         raise UpstreamError("authentication service did not return a user id")
 
     email = (
-        (body.get("user") or {}).get("email")  # type: ignore[union-attr]
+        (body.get("user") or {}).get("email")
         if isinstance(body.get("user"), dict)
         else body.get("email")
     ) or request.email

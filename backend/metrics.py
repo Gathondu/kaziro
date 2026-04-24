@@ -1,9 +1,7 @@
 """Prometheus metric registry — single source of truth.
 
 Every metric exported by Kaziro is declared here so the catalog is
-trivial to inspect in code review and documentation. Refer to
-``docs/architecture/06-observability.md`` for the canonical catalog and
-alert mapping.
+trivial to inspect in code review and documentation.
 """
 
 from __future__ import annotations

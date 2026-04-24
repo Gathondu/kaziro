@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from sqlalchemy import text
 from backend.db.models.enums import JobSource
 from backend.db.repositories import (
     job_config_repository,
@@ -17,6 +16,7 @@ from backend.db.repositories import (
     user_repository,
 )
 from backend.db.session import async_session_factory
+from sqlalchemy import text
 
 pytestmark = [pytest.mark.integration]
 
@@ -26,7 +26,7 @@ async def _require_postgres() -> None:
     try:
         async with async_session_factory() as session:
             await session.execute(text("SELECT 1 FROM users LIMIT 1"))
-    except Exception as exc:  # noqa: BLE001 — broad skip for CI without Postgres
+    except Exception as exc:
         pytest.skip(f"Postgres not reachable or migrations missing: {exc}")
 
 
@@ -101,9 +101,7 @@ async def insert_raw_job(
 async def get_user_config_id(user_id: uuid.UUID) -> uuid.UUID:
     async with async_session_factory() as session:
         res = await session.execute(
-            text(
-                "SELECT id FROM job_search_configs WHERE user_id = :u LIMIT 1"
-            ),
+            text("SELECT id FROM job_search_configs WHERE user_id = :u LIMIT 1"),
             {"u": str(user_id)},
         )
         row = res.scalar_one()

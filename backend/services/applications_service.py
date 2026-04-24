@@ -7,7 +7,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.errors import ConflictError, NotFoundError
+from backend.api.exceptions import ConflictError, NotFoundError
 from backend.db.models.application import Application
 from backend.db.models.enums import (
     ApplicationEventType,

@@ -29,7 +29,7 @@ Conventions:
 | `DEBUG`       | No       | `false`       | backend           | FastAPI debug mode. Always `false` in production.            |
 | `API_HOST`    | No       | `0.0.0.0`     | backend           | Bind address.                                                |
 | `API_PORT`    | No       | `8000`        | backend           | HTTP port.                                                   |
-| `CORS_ORIGINS`| Yes      | —             | backend           | Comma-separated allowed origins (e.g., `https://app.kaziro.com`). |
+| `CORS_ORIGINS`| Yes      | —             | backend           | Comma-separated browser origins; must list **at least one** (empty fails boot). |
 
 ## Database (Supabase / Postgres)
 

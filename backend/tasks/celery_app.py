@@ -87,7 +87,10 @@ def create_celery_app(settings: Settings | None = None) -> Celery:
         "kaziro",
         broker=settings.celery_broker_url,
         backend=settings.celery_result_backend,
-        include=list(TASK_MODULES),
+        include=[
+            *TASK_MODULES,
+            "backend.services.celery_signals",
+        ],
     )
 
     app.conf.update(
@@ -108,8 +111,6 @@ def create_celery_app(settings: Settings | None = None) -> Celery:
         task_always_eager=settings.CELERY_TASK_ALWAYS_EAGER,
         beat_schedule=_build_beat_schedule(),
     )
-
-    import backend.services.celery_signals  # noqa: F401 — register Celery signal handlers
 
     return app
 

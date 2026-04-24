@@ -76,18 +76,18 @@ def to_response(profile: object) -> ProfileResponse:
     has_master_cv = bool(getattr(profile, "master_cv_text", None))
     return ProfileResponse.model_validate(
         {
-            "id": profile.id,
-            "user_id": profile.user_id,
-            "full_name": profile.full_name,
-            "professional_summary": profile.professional_summary,
-            "skills": profile.skills or [],
-            "experience_years": profile.experience_years,
-            "domain": profile.domain,
-            "values_statement": profile.values_statement,
-            "linkedin_url": profile.linkedin_url,
+            "id": profile.id,  # type:ignore[unresolved-attribute]
+            "user_id": profile.user_id,  # type:ignore[unresolved-attribute]
+            "full_name": profile.full_name,  # type:ignore[unresolved-attribute]
+            "professional_summary": profile.professional_summary,  # type:ignore[unresolved-attribute]
+            "skills": profile.skills or [],  # type:ignore[unresolved-attribute]
+            "experience_years": profile.experience_years,  # type:ignore[unresolved-attribute]
+            "domain": profile.domain,  # type:ignore[unresolved-attribute]
+            "values_statement": profile.values_statement,  # type:ignore[unresolved-attribute]
+            "linkedin_url": profile.linkedin_url,  # type:ignore[unresolved-attribute]
             "has_master_cv": has_master_cv,
-            "created_at": profile.created_at,
-            "updated_at": profile.updated_at,
+            "created_at": profile.created_at,  # type:ignore[unresolved-attribute]
+            "updated_at": profile.updated_at,  # type:ignore[unresolved-attribute]
         }
     )
 

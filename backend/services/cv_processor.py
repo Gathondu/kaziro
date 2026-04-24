@@ -26,7 +26,7 @@ from typing import Final, Protocol
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.errors import ApiError
+from backend.api.exceptions import ApiError
 from backend.db.repositories import profile_repository
 from backend.logging_config import get_logger
 from backend.services import storage as storage_service

@@ -30,7 +30,7 @@ import json
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Generic, TypeVar
+from typing import Final, TypeVar
 
 from sqlalchemy import Select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,7 +43,7 @@ MAX_PAGE_SIZE: Final[int] = 100
 
 
 @dataclass(slots=True)
-class Page(Generic[T]):  # noqa: UP046  — keep PEP 484 generics for SQLAlchemy compat
+class Page[T]:
     """A single page of results plus the next-page cursor (if any)."""
 
     items: list[T]
@@ -68,7 +68,7 @@ def decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
         raise ValueError(f"invalid cursor: {cursor!r}") from exc
 
 
-async def paginate(  # noqa: UP047  — keep PEP 484 TypeVar to match Page[T]
+async def paginate[T](
     session: AsyncSession,
     stmt: Select[tuple[T]],
     *,
@@ -101,10 +101,8 @@ async def paginate(  # noqa: UP047  — keep PEP 484 TypeVar to match Page[T]
     if len(rows) > page_size:
         rows = rows[:page_size]
         last = rows[-1]
-        next_cursor = encode_cursor(
-            getattr(last, order_column.key), getattr(last, id_column.key)
-        )
-    return Page(items=rows, next_cursor=next_cursor)
+        next_cursor = encode_cursor(getattr(last, order_column.key), getattr(last, id_column.key))
+    return Page[T](items=rows, next_cursor=next_cursor)
 
 
 __all__ = [

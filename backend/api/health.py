@@ -9,8 +9,6 @@ Three endpoints, three audiences:
 * ``GET /health/detailed`` — per-component status JSON for the on-call
   dashboard. Adds Supabase, OpenRouter, and Firecrawl status as best-effort
   reachability checks.
-
-Reference: ``docs/architecture/06-observability.md`` §5 (Health checks).
 """
 
 from __future__ import annotations

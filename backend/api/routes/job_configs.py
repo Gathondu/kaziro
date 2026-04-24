@@ -8,7 +8,7 @@ from typing import Final
 from fastapi import APIRouter, Query, Request, status
 
 from backend.api.deps import CurrentUser, SessionDep
-from backend.api.errors import NotFoundError
+from backend.api.exceptions import NotFoundError
 from backend.api.schemas.common import Envelope, PageMeta, envelope
 from backend.api.schemas.job_config import (
     JobConfigCreateRequest,
@@ -97,8 +97,7 @@ async def disable_config(
     session: SessionDep,
     current_user: CurrentUser,
 ) -> Envelope[JobConfigResponse]:
-    # Spec: docs/architecture/04-api-design.md §3.3 — DELETE is a
-    # soft-delete. We update is_active rather than removing the row so
+    # DELETE is a soft-delete. We update is_active rather than removing the row so
     # historical raw_jobs / job_postings remain attributable.
     config = await job_config_repository.update(
         session, current_user.id, config_id, is_active=False

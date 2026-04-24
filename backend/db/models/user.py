@@ -53,7 +53,11 @@ class User(Base):
         default=True,
     )
     subscription_tier: Mapped[SubscriptionTier] = mapped_column(
-        SAEnum(SubscriptionTier, name="subscription_tier_enum"),
+        SAEnum(
+            SubscriptionTier,
+            name="subscription_tier_enum",
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
         nullable=False,
         default=SubscriptionTier.FREE,
     )

@@ -65,8 +65,9 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     CORS_ORIGINS: Annotated[list[AnyHttpUrl], NoDecode] = Field(
-        default_factory=list,
-        description="Comma-separated list of allowed origins (parsed by validator).",
+        ...,
+        min_length=1,
+        description="At least one browser origin allowed to call the API (comma-separated in env).",
     )
 
     # -- Database (Supabase / Postgres) -----------------------------------

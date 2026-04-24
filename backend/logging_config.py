@@ -60,7 +60,7 @@ def _redact_sensitive_fields(
             return [_walk(item) for item in node]
         return node
 
-    return _walk(event_dict)  # type: ignore[no-any-return]
+    return _walk(event_dict)
 
 
 def _build_processor_chain(settings: Settings) -> list[Processor]:

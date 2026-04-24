@@ -55,6 +55,7 @@ async def upsert_from_supabase(
         is_active=True,
         subscription_tier=SubscriptionTier.FREE,
     )
+
     session.add(user)
     await session.flush()
     return user

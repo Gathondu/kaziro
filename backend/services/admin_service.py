@@ -7,7 +7,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.errors import NotFoundError
+from backend.api.exceptions import NotFoundError
 from backend.db.repositories import (
     company_summary_repository,
     job_config_repository,

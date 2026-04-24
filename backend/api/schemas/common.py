@@ -9,7 +9,7 @@ so route code never assembles them by hand.
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -42,10 +42,10 @@ class ErrorBody(BaseModel):
     message: str = Field(description="Human-readable error message.")
 
 
-class Envelope(BaseModel, Generic[T]):  # noqa: UP046  — Pydantic generics still rely on Generic[T] in 2.x
+class Envelope[T](BaseModel):
     """Standard success envelope.
 
-    OpenAPI: parameterise responses as ``Envelope[MyPayload]`` so the
+    API: parameterise responses as ``Envelope[MyPayload]`` so the
     generated schema reflects the wrapped shape.
     """
 
@@ -54,14 +54,14 @@ class Envelope(BaseModel, Generic[T]):  # noqa: UP046  — Pydantic generics sti
     error: ErrorBody | None = Field(default=None)
 
 
-def envelope(data: T, *, meta: PageMeta | None = None) -> Envelope[T]:  # noqa: UP047
+def envelope[T](data: T, *, meta: PageMeta | None = None) -> Envelope[T]:
     """Wrap a payload in the success envelope."""
-    return Envelope(data=data, meta=meta, error=None)
+    return Envelope[T](data=data, meta=meta, error=None)
 
 
-def error_envelope(code: str, message: str) -> Envelope[None]:
+def error_envelope[T](code: str, message: str) -> Envelope[T]:
     """Wrap an error in the failure envelope."""
-    return Envelope(data=None, meta=None, error=ErrorBody(code=code, message=message))
+    return Envelope[T](data=None, meta=None, error=ErrorBody(code=code, message=message))
 
 
 __all__ = [

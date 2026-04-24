@@ -7,7 +7,7 @@ from typing import Final
 from fastapi import APIRouter, File, UploadFile, status
 
 from backend.api.deps import CurrentUser, SessionDep
-from backend.api.errors import NotFoundError
+from backend.api.exceptions import NotFoundError
 from backend.api.schemas.common import Envelope, envelope
 from backend.api.schemas.profile import (
     CvUploadResponse,

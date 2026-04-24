@@ -23,10 +23,10 @@ async def integration_engine() -> AsyncIterator[AsyncEngine]:
         async with eng.connect() as conn:
             try:
                 await conn.execute(text("SELECT 1 FROM users LIMIT 1"))
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 await eng.dispose()
                 pytest.skip(f"DB not ready (run migrations): {exc}")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         await eng.dispose()
         pytest.skip(f"Postgres unreachable: {exc}")
 
@@ -63,9 +63,7 @@ async def purge_user_cascade(session: AsyncSession, user_id: Any) -> None:
         ),
         {"u": uid},
     )
-    await session.execute(
-        text("DELETE FROM raw_jobs WHERE user_id = CAST(:u AS uuid)"), {"u": uid}
-    )
+    await session.execute(text("DELETE FROM raw_jobs WHERE user_id = CAST(:u AS uuid)"), {"u": uid})
     await session.execute(
         text("DELETE FROM user_profiles WHERE user_id = CAST(:u AS uuid)"),
         {"u": uid},
@@ -74,7 +72,5 @@ async def purge_user_cascade(session: AsyncSession, user_id: Any) -> None:
         text("DELETE FROM job_search_configs WHERE user_id = CAST(:u AS uuid)"),
         {"u": uid},
     )
-    await session.execute(
-        text("DELETE FROM users WHERE id = CAST(:u AS uuid)"), {"u": uid}
-    )
+    await session.execute(text("DELETE FROM users WHERE id = CAST(:u AS uuid)"), {"u": uid})
     await session.flush()
