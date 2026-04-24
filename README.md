@@ -72,6 +72,9 @@ uv run uvicorn main:app --reload
 uv run celery -A celery_app worker --loglevel=INFO
 # (optional) cron scheduler:
 uv run celery -A celery_app beat --loglevel=INFO
+# On Windows, ``backend.config`` defaults the worker pool to ``solo`` so Celery
+# avoids prefork/billiard (``PermissionError`` / invalid handle). Use Docker or
+# Linux for prefork workers in production-like setups.
 ```
 
 API now serves at <http://localhost:8000> · OpenAPI at `/docs`.

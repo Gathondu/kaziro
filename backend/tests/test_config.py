@@ -9,8 +9,24 @@ Covers two paths:
 
 from __future__ import annotations
 
+import sys
+
 import pytest
 from pydantic import ValidationError
+from pydantic_settings import SettingsConfigDict
+
+from backend.config import Settings
+
+
+class _SettingsEnvOnly(Settings):
+    """Same fields as :class:`Settings` but reads only ``os.environ`` (no ``.env``)."""
+
+    model_config = SettingsConfigDict(
+        env_file=None,
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 def test_settings_singleton_returns_same_instance() -> None:
@@ -54,13 +70,13 @@ def test_happy_boot_parses_all_fields() -> None:
 def test_missing_required_var_raises_validation_error(
     monkeypatch: pytest.MonkeyPatch, missing_var: str
 ) -> None:
-    from backend.config import Settings, get_settings
+    from backend.config import get_settings
 
     monkeypatch.delenv(missing_var, raising=False)
     get_settings.cache_clear()
 
     with pytest.raises(ValidationError) as exc_info:
-        Settings()
+        _SettingsEnvOnly()
 
     assert missing_var in str(exc_info.value)
 
@@ -84,3 +100,30 @@ def test_cors_origins_empty_env_raises(monkeypatch: pytest.MonkeyPatch) -> None:
         Settings()
 
     assert "CORS_ORIGINS" in str(exc_info.value)
+
+
+def test_celery_worker_pool_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.config import get_settings
+
+    monkeypatch.setenv("CELERY_WORKER_POOL", "threads")
+    get_settings.cache_clear()
+    assert get_settings().celery_worker_pool == "threads"
+
+
+def test_celery_worker_pool_win32_defaults_solo(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.config import get_settings
+
+    # Empty env overrides a ``CELERY_WORKER_POOL`` entry from ``.env`` (coerced to ``None``).
+    monkeypatch.setenv("CELERY_WORKER_POOL", "")
+    monkeypatch.setattr(sys, "platform", "win32")
+    get_settings.cache_clear()
+    assert get_settings().celery_worker_pool == "solo"
+
+
+def test_celery_worker_pool_non_win32_defaults_prefork(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.config import get_settings
+
+    monkeypatch.setenv("CELERY_WORKER_POOL", "")
+    monkeypatch.setattr(sys, "platform", "linux")
+    get_settings.cache_clear()
+    assert get_settings().celery_worker_pool == "prefork"

@@ -15,6 +15,7 @@ the same PR (and in ``.env.example``).
 
 from __future__ import annotations
 
+import sys
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
@@ -112,6 +113,7 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: RedisDsn | None = None
     CELERY_TASK_ALWAYS_EAGER: bool = False
     CELERY_WORKER_CONCURRENCY: int = 4
+    CELERY_WORKER_POOL: str | None = None
     CELERY_TASK_TIME_LIMIT: int = 1800
     CELERY_TASK_SOFT_TIME_LIMIT: int = 1500
 
@@ -158,6 +160,15 @@ class Settings(BaseSettings):
     MOCK_FIRECRAWL: bool = False
 
     # -- Validators --------------------------------------------------------
+    @field_validator("CELERY_WORKER_POOL", mode="before")
+    @classmethod
+    def _normalize_celery_worker_pool(cls, value: object) -> object:
+        if value is None:
+            return None
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def _split_csv_origins(cls, value: object) -> object:
@@ -201,6 +212,18 @@ class Settings(BaseSettings):
         if self.CELERY_RESULT_BACKEND is not None:
             return str(self.CELERY_RESULT_BACKEND)
         return _redis_url_with_db(str(self.REDIS_URL), self.REDIS_RESULT_DB)
+
+    @property
+    def celery_worker_pool(self) -> str:
+        """Worker execution pool (``celery.worker`` / ``--pool``).
+
+        Prefork relies on billiard multiprocessing primitives that routinely
+        fail on Windows (``PermissionError``, invalid semaphore handles). Solo
+        runs tasks in-process and is the practical default for local dev on NT.
+        """
+        if self.CELERY_WORKER_POOL is not None:
+            return self.CELERY_WORKER_POOL
+        return "solo" if sys.platform == "win32" else "prefork"
 
 
 def _redis_url_with_db(url: str, db: int) -> str:

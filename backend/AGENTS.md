@@ -111,6 +111,9 @@ Read the rule itself for full detail.
   `parser`, `evaluator`, `research`, `document`, `default`.
 - Beat schedule lives in `backend/tasks/celery_app.py` with explicit cron strings.
   Document every entry.
+- On Windows, `create_celery_app` sets `worker_pool` to `solo` by default
+  (prefork/billiard is unstable on NT). Override with `CELERY_WORKER_POOL` or
+  `celery worker --pool=threads` if you need local concurrency.
 
 ## Observability
 

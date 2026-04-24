@@ -110,6 +110,7 @@ def create_celery_app(settings: Settings | None = None) -> Celery:
         task_time_limit=settings.CELERY_TASK_TIME_LIMIT,
         task_soft_time_limit=settings.CELERY_TASK_SOFT_TIME_LIMIT,
         worker_concurrency=settings.CELERY_WORKER_CONCURRENCY,
+        worker_pool=settings.celery_worker_pool,
         task_always_eager=settings.CELERY_TASK_ALWAYS_EAGER,
         beat_schedule=_build_beat_schedule(),
     )

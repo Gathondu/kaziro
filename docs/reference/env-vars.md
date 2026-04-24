@@ -69,6 +69,7 @@ Conventions:
 | `CELERY_RESULT_BACKEND`        | Yes      | derived from `REDIS_URL` + `REDIS_RESULT_DB` | worker | Celery result backend URL.                    |
 | `CELERY_TASK_ALWAYS_EAGER`     | No       | `false`                | worker, tests | Run tasks inline (testing only).                  |
 | `CELERY_WORKER_CONCURRENCY`    | No       | `4`                    | worker  | Concurrency per worker.                                  |
+| `CELERY_WORKER_POOL`           | No       | `solo` on Windows, `prefork` on Unix | worker | Celery ``--pool`` (e.g. ``solo`` for local Windows dev). |
 | `CELERY_TASK_TIME_LIMIT`       | No       | `1800`                 | worker  | Hard time limit per task in seconds.                     |
 | `CELERY_TASK_SOFT_TIME_LIMIT`  | No       | `1500`                 | worker  | Soft time limit; raises `SoftTimeLimitExceeded`.         |
 
