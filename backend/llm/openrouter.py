@@ -8,6 +8,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_openrouter import ChatOpenRouter
 
 from backend.config import Settings, get_settings
+from backend.db.models import EMBEDDING_DIM
 
 # OpenRouter exposes an OpenAI-compatible HTTP API (chat + embeddings).
 OPENROUTER_OPENAI_COMPAT_BASE: str = "https://openrouter.ai/api/v1"
@@ -50,4 +51,7 @@ def build_embeddings(settings: Settings | None = None) -> OpenAIEmbeddings:
         model=s.LLM_EMBEDDING_MODEL,
         openai_api_key=s.OPENROUTER_API_KEY,
         openai_api_base=base,
+        encoding_format="float",  # type:ignore[arg-type]
+        check_embedding_ctx_length=False,
+        dimensions=EMBEDDING_DIM,
     )
