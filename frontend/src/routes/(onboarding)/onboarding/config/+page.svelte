@@ -3,7 +3,8 @@
 	import { get } from 'svelte/store';
 	import WizardProgress from '$lib/components/onboarding/WizardProgress.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { useCreateJobConfig, useRunJobConfigPipeline } from '$lib/hooks/useJobConfig';
+	import { FETCH_CRON_DAILY } from '$lib/constants/fetchSchedule';
+	import { useCreateJobConfig, useRunJobConfigPipeline, useSchedulePresets } from '$lib/hooks/useJobConfig';
 	import { jobConfigFormSchema } from '$lib/schemas/jobConfig';
 	import { clearOnboardingDraft, saveOnboardingDraft } from '$lib/utils/onboarding';
 
@@ -13,9 +14,10 @@
 	let remote_only = $state(false);
 	let salary_min = $state<number | ''>('');
 	let salary_max = $state<number | ''>('');
-	let fetch_schedule_cron = $state('0 */6 * * *');
+	let fetch_schedule_cron = $state(FETCH_CRON_DAILY);
 	let fieldErrors = $state<Record<string, string>>({});
 
+	const presets = useSchedulePresets();
 	const createCfg = useCreateJobConfig();
 	const runPipe = useRunJobConfigPipeline();
 
@@ -119,20 +121,39 @@
 		</label>
 	</div>
 	<label class="form-control">
-		<span class="label-text font-medium">Fetch schedule (cron)</span>
-		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.fetch_schedule_cron
-				? 'input-error'
-				: ''}"
-			bind:value={fetch_schedule_cron}
-		/>
+		<span class="label-text font-medium">Fetch schedule</span>
+		{#if $presets.isPending}
+			<select class="select select-bordered rounded-xl border-base-300 bg-base-200" disabled>
+				<option>Loading…</option>
+			</select>
+		{:else if $presets.isError}
+			<p class="text-sm text-error">Could not load schedules. Refresh and try again.</p>
+		{:else if $presets.data}
+			<select
+				class="select select-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.fetch_schedule_cron
+					? 'select-error'
+					: ''}"
+				bind:value={fetch_schedule_cron}
+			>
+				{#each $presets.data as p (p.id)}
+					<option value={p.fetch_schedule_cron}>{p.label}</option>
+				{/each}
+			</select>
+			<span class="label-text-alt text-base-content/60">Runs are scheduled in UTC.</span>
+		{/if}
 		{#if fieldErrors.fetch_schedule_cron}
 			<span class="label-text-alt text-error">{fieldErrors.fetch_schedule_cron}</span>
 		{/if}
 	</label>
 	<div class="flex gap-3">
 		<Button type="button" variant="outline" onclick={() => goto('/onboarding/cv')}>Back</Button>
-		<Button type="submit" disabled={$createCfg.isPending || $runPipe.isPending}>
+		<Button
+			type="submit"
+			disabled={$createCfg.isPending ||
+				$runPipe.isPending ||
+				$presets.isPending ||
+				$presets.isError}
+		>
 			{$createCfg.isPending || $runPipe.isPending ? 'Finishing…' : 'Finish setup'}
 		</Button>
 	</div>

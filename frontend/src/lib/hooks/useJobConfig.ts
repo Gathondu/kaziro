@@ -4,10 +4,20 @@ import {
 	createJobConfig,
 	disableJobConfig,
 	listJobConfigs,
+	listSchedulePresets,
 	runJobConfigPipeline,
 	updateJobConfig
 } from '$lib/api/jobConfigs';
 import type { JobConfig } from '$lib/types/jobConfig';
+import type { SchedulePreset } from '$lib/types/schedulePreset';
+
+export function useSchedulePresets() {
+	return createQuery({
+		queryKey: ['job-configs', 'schedule-presets'],
+		queryFn: listSchedulePresets,
+		staleTime: 86_400_000
+	});
+}
 
 export function useJobConfigs(activeOnly = false) {
 	return createQuery({

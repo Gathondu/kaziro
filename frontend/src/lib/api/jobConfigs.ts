@@ -1,6 +1,7 @@
 import { apiFetch, apiFetchMeta } from './client';
 import { clampListLimit } from './limits';
 import type { JobConfig } from '$lib/types/jobConfig';
+import type { SchedulePreset } from '$lib/types/schedulePreset';
 
 export interface ListJobConfigsParams {
 	cursor?: string | null;
@@ -17,6 +18,10 @@ function qc(p: ListJobConfigsParams): string {
 	if (p.active_only) q.set('active_only', 'true');
 	const s = q.toString();
 	return s ? `?${s}` : '';
+}
+
+export async function listSchedulePresets(): Promise<SchedulePreset[]> {
+	return apiFetch<SchedulePreset[]>('/api/v1/job-configs/schedule-presets');
 }
 
 export async function listJobConfigs(

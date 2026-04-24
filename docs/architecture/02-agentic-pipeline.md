@@ -61,8 +61,11 @@ Detailed sequence is in
 **Type**: Celery periodic task. Not a LangGraph agent — no reasoning required.
 **Code**: `backend/services/job_fetcher.py` (Phase 1).
 
-- Triggered by APScheduler / Celery beat using each user's
-  `job_search_configs.fetch_schedule_cron` (default `0 */6 * * *`).
+- Triggered by Celery Beat hourly (UTC minute 0): `enqueue_active_pipelines`
+  enqueues `run_pipeline_for_config` only when each active config's
+  `fetch_schedule_cron` matches that tick (preset **daily** `0 6 * * *` or
+  **weekly** `0 6 * * *`). Users can also trigger a run immediately via
+  `POST /api/v1/job-configs/{id}/run`.
 - Reads `keywords`, `location`, `remote_only`, `salary_min/max`,
   `employment_types` from the user's config.
 - Calls RapidAPI JSearch (or LinkedIn Jobs) endpoint with those parameters.

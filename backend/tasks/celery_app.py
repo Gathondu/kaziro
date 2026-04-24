@@ -62,8 +62,10 @@ TASK_ROUTES: Final[dict[str, dict[str, str]]] = {
 def _build_beat_schedule() -> dict[str, dict[str, object]]:
     """Static Beat schedule.
 
-    The hourly per-config fan-out is the core scheduled job; the daily
-    cache purge keeps ``company_summaries`` from growing unbounded.
+    ``enqueue_active_pipelines`` runs at minute 0 every hour (UTC) and
+    enqueues ``run_pipeline_for_config`` only for configs whose preset
+    ``fetch_schedule_cron`` matches that tick (daily / weekly). The
+    daily cache purge keeps ``company_summaries`` from growing unbounded.
     """
     return {
         "enqueue-active-pipelines-hourly": {

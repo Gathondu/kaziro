@@ -2,20 +2,16 @@
 
 from __future__ import annotations
 
-import re
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
 from backend.api.schemas.common import ORMModel
-
-# Five whitespace-separated cron tokens. Each token is one of:
-#   * any of  *  ?  -  ,  /  digits
-# This is intentionally permissive — Celery Beat will reject malformed
-# expressions on first run; we only catch the obvious typos here.
-_CRON_RE = re.compile(r"^[\d*/,\-?]+(\s+[\d*/,\-?]+){4}$")
-_DEFAULT_CRON = "0 */6 * * *"
+from backend.services.schedule_presets import (
+    FETCH_CRON_DAILY,
+    validate_fetch_schedule_cron,
+)
 
 
 class JobConfigBase(BaseModel):
@@ -26,17 +22,13 @@ class JobConfigBase(BaseModel):
     salary_min: int | None = Field(default=None, ge=0, le=10_000_000)
     salary_max: int | None = Field(default=None, ge=0, le=10_000_000)
     employment_types: list[str] = Field(default_factory=list, max_length=10)
-    fetch_schedule_cron: str = Field(default=_DEFAULT_CRON, max_length=64)
+    fetch_schedule_cron: str = Field(default=FETCH_CRON_DAILY, max_length=64)
     is_active: bool = True
 
     @field_validator("fetch_schedule_cron")
     @classmethod
-    def _validate_cron(cls, value: str) -> str:
-        if not _CRON_RE.match(value):
-            raise ValueError(
-                "fetch_schedule_cron must be a 5-field cron expression (e.g., '0 */6 * * *')"
-            )
-        return value
+    def _validate_fetch_schedule_cron(cls, value: str) -> str:
+        return validate_fetch_schedule_cron(value)
 
 
 class JobConfigCreateRequest(JobConfigBase):
@@ -58,12 +50,10 @@ class JobConfigUpdateRequest(BaseModel):
 
     @field_validator("fetch_schedule_cron")
     @classmethod
-    def _validate_cron(cls, value: str | None) -> str | None:
+    def _validate_fetch_schedule_cron(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        if not _CRON_RE.match(value):
-            raise ValueError("invalid cron expression")
-        return value
+        return validate_fetch_schedule_cron(value)
 
 
 class JobConfigResponse(ORMModel):

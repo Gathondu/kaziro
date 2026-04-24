@@ -12,13 +12,14 @@ Public task names (must stay stable — they appear on the broker):
 * ``backend.tasks.run_evaluator_for_user``
 * ``backend.tasks.run_research_for_posting``
 * ``backend.tasks.run_document_for_evaluation``
-* ``backend.tasks.enqueue_active_pipelines`` (Beat fan-out)
+* ``backend.tasks.enqueue_active_pipelines`` (Beat fan-out; per-config schedule gate)
 """
 
 from __future__ import annotations
 
 import asyncio
 import uuid
+from datetime import UTC, datetime
 from typing import Any, Final
 
 from celery import shared_task
@@ -34,6 +35,10 @@ from backend.agents.research_agent import run_research_agent
 from backend.db.repositories import job_config_repository
 from backend.db.session import async_session_factory
 from backend.logging_config import get_logger
+from backend.services.schedule_presets import (
+    ALLOWED_FETCH_SCHEDULE_CRONS,
+    should_run_fetch,
+)
 from backend.tasks.celery_app import (
     QUEUE_DEFAULT,
     QUEUE_DOCUMENT,
@@ -218,27 +223,51 @@ def run_pipeline_for_single_job_task(
 @shared_task(
     name="backend.tasks.enqueue_active_pipelines",
     queue=QUEUE_DEFAULT,
+    bind=True,
 )
-def enqueue_active_pipelines() -> dict[str, Any]:
-    """Beat target: enqueue one ``run_pipeline_for_config`` per active config.
+def enqueue_active_pipelines(self: Any) -> dict[str, Any]:
+    """Beat target: enqueue ``run_pipeline_for_config`` for due configs only.
 
-    Runs hourly. Each per-config run is independent and retries on its
-    own; this task only fans out and never blocks waiting for them.
+    Beat fires at minute 0 every hour (UTC). Each active config's
+    ``fetch_schedule_cron`` must be one of two preset strings; this task
+    enqueues only when ``should_run_fetch`` matches the current tick.
     """
 
-    async def _list_active() -> list[tuple[str, str]]:
+    async def _list_active() -> list[tuple[str, str, str]]:
         async with async_session_factory() as session:
             configs = await job_config_repository.list_active_for_scheduler(
                 session
             )
-        return [(str(c.id), str(c.user_id)) for c in configs]
+        return [(str(c.id), str(c.user_id), c.fetch_schedule_cron) for c in configs]
 
-    pairs = asyncio.run(_list_active())
+    rows = asyncio.run(_list_active())
+    now = datetime.now(UTC)
+    task_id = getattr(self.request, "id", None)
+    task_log = get_logger(__name__).bind(task_id=task_id or "")
+    pairs: list[tuple[str, str]] = []
+    skipped = 0
+    for config_id, user_id, cron in rows:
+        if cron not in ALLOWED_FETCH_SCHEDULE_CRONS:
+            task_log.warning(
+                "tasks.enqueue_active_pipelines_unknown_cron",
+                config_id=config_id,
+                fetch_schedule_cron=cron,
+            )
+            skipped += 1
+            continue
+        if should_run_fetch(cron, now):
+            pairs.append((config_id, user_id))
+        else:
+            skipped += 1
     for config_id, user_id in pairs:
         run_pipeline_for_config_task.delay(config_id, user_id)
 
-    log.info("tasks.enqueue_active_pipelines_done", enqueued=len(pairs))
-    return {"enqueued": len(pairs)}
+    task_log.info(
+        "tasks.enqueue_active_pipelines_done",
+        enqueued=len(pairs),
+        skipped=skipped,
+    )
+    return {"enqueued": len(pairs), "skipped": skipped}
 
 
 __all__ = [

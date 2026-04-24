@@ -1,6 +1,5 @@
+import { FETCH_SCHEDULE_CRONS } from '$lib/constants/fetchSchedule';
 import { z } from 'zod';
-
-const cronRe = /^[\d*/,\-?]+(\s+[\d*/,\-?]+){4}$/;
 
 export const jobConfigFormSchema = z
 	.object({
@@ -10,7 +9,9 @@ export const jobConfigFormSchema = z
 		remote_only: z.boolean(),
 		salary_min: z.coerce.number().min(0).optional().nullable(),
 		salary_max: z.coerce.number().min(0).optional().nullable(),
-		fetch_schedule_cron: z.string().regex(cronRe, 'Use a 5-field cron expression, e.g. 0 */6 * * *')
+		fetch_schedule_cron: z.enum(FETCH_SCHEDULE_CRONS, {
+			message: 'Choose a fetch schedule'
+		})
 	})
 	.refine(
 		(d) =>

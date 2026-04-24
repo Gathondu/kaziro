@@ -166,7 +166,7 @@ def upgrade() -> None:
             "fetch_schedule_cron",
             sa.String(length=64),
             nullable=False,
-            server_default="0 */6 * * *",
+            server_default="0 6 * * *",
         ),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),

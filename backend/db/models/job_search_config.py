@@ -16,6 +16,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import TimestampedBase
+from backend.services.schedule_presets import FETCH_CRON_DAILY
 
 if TYPE_CHECKING:
     from backend.db.models.raw_job import RawJob
@@ -52,7 +53,7 @@ class JobSearchConfig(TimestampedBase):
     fetch_schedule_cron: Mapped[str] = mapped_column(
         String(64),
         nullable=False,
-        default="0 */6 * * *",
+        default=FETCH_CRON_DAILY,
     )
     is_active: Mapped[bool] = mapped_column(
         Boolean,

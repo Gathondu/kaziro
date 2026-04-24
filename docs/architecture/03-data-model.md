@@ -105,7 +105,7 @@ The columns below are in **addition** to the base fields above.
 | `salary_min`          | INTEGER        | NULL                         | USD per year                           |
 | `salary_max`          | INTEGER        | NULL                         |                                        |
 | `employment_types`    | TEXT[]         | NOT NULL                     | `full-time \| part-time \| contract`   |
-| `fetch_schedule_cron` | TEXT           | NOT NULL                     | Default: `0 */6 * * *`                 |
+| `fetch_schedule_cron` | TEXT           | NOT NULL                     | Preset only: `0 6 * * *` (daily) or `0 6 * * 1` (weekly), UTC |
 | `is_active`           | BOOLEAN        | NOT NULL DEFAULT true        |                                        |
 
 A user may have multiple active configs (e.g., `senior backend remote` and

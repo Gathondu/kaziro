@@ -18,6 +18,7 @@ from backend.api.schemas.job_config import (
 from backend.db.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from backend.db.repositories import job_config_repository
 from backend.logging_config import get_logger
+from backend.services.schedule_presets import SchedulePresetItem, list_schedule_preset_items
 from backend.tasks.pipeline import run_pipeline_for_config_task
 
 log = get_logger(__name__)
@@ -46,6 +47,18 @@ async def list_configs(
     )
     payload = [JobConfigResponse.model_validate(item) for item in page.items]
     return envelope(payload, meta=PageMeta(next_cursor=page.next_cursor))
+
+
+@router.get(
+    "/schedule-presets",
+    response_model=Envelope[list[SchedulePresetItem]],
+    summary="List supported fetch-schedule presets (daily / weekly)",
+)
+async def list_schedule_presets(
+    _current_user: CurrentUser,
+) -> Envelope[list[SchedulePresetItem]]:
+    """Catalog for onboarding and settings UIs — two fixed UTC schedules."""
+    return envelope(list_schedule_preset_items())
 
 
 @router.post(

@@ -80,9 +80,9 @@ async def two_users(engine: AsyncEngine) -> AsyncIterator[tuple[uuid.UUID, uuid.
                 "remote_only, employment_types, fetch_schedule_cron, is_active, "
                 "created_at, updated_at) VALUES "
                 "(gen_random_uuid(), :a, ARRAY['python']::text[], false, "
-                "ARRAY[]::text[], '0 */6 * * *', true, NOW(), NOW()), "
+                "ARRAY[]::text[], '0 6 * * *', true, NOW(), NOW()), "
                 "(gen_random_uuid(), :b, ARRAY['rust']::text[], false, "
-                "ARRAY[]::text[], '0 */6 * * *', true, NOW(), NOW())"
+                "ARRAY[]::text[], '0 6 * * *', true, NOW(), NOW())"
             ),
             {"a": user_a, "b": user_b},
         )
@@ -163,7 +163,7 @@ async def test_user_cannot_insert_row_owned_by_another_user(
                     "INSERT INTO job_search_configs (id, user_id, keywords, "
                     "remote_only, employment_types, fetch_schedule_cron, is_active, "
                     "created_at, updated_at) VALUES (gen_random_uuid(), :u, "
-                    "ARRAY['go']::text[], false, ARRAY[]::text[], '0 */6 * * *', "
+                    "ARRAY['go']::text[], false, ARRAY[]::text[], '0 6 * * *', "
                     "true, NOW(), NOW())"
                 ),
                 {"u": user_b},
