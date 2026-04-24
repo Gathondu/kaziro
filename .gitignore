@@ -79,3 +79,14 @@ docker-compose.local.yml
 *.pdf-debug
 *.profile
 prof/
+
+# ----- Celery logs ------------------------------------------------------------
+celerybeat-schedule.*
+celerybeat.pid
+celerybeat-schedule.*.db
+celerybeat-schedule.*.db-shm
+celerybeat-schedule.*.db-wal
+celerybeat-schedule.*.db-journal
+celerybeat-schedule.*.db-lock
+celerybeat-schedule.*.db-lock-shm
+celerybeat-schedule.*.db-lock-wal
