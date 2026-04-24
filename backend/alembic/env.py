@@ -14,6 +14,18 @@ from logging.config import fileConfig
 
 from backend.config import get_settings
 from backend.db.base import Base
+from backend.db.models import (  # noqa: F401  — side-effect imports register every model
+    Application,
+    ApplicationDoc,
+    ApplicationEvent,
+    CompanySummary,
+    JobEvaluation,
+    JobPosting,
+    JobSearchConfig,
+    RawJob,
+    User,
+    UserProfile,
+)
 from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import make_url
 
