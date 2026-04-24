@@ -31,7 +31,7 @@ export function useApplicationFromQueryParam(paramName: string) {
 		return {
 			queryKey: ['application', id] as const,
 			queryFn: () => getApplication(id),
-			enabled: Boolean(id),
+			enabled: browser && Boolean(id),
 			staleTime: 60_000
 		};
 	});

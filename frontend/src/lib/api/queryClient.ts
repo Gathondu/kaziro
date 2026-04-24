@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import { QueryClient } from '@tanstack/svelte-query';
 
 export function createAppQueryClient(): QueryClient {
@@ -6,7 +7,8 @@ export function createAppQueryClient(): QueryClient {
 			queries: {
 				staleTime: 60_000,
 				retry: 1,
-				refetchOnWindowFocus: true
+				refetchOnWindowFocus: true,
+				enabled: browser
 			}
 		}
 	});

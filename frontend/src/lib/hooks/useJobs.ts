@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import { derived } from 'svelte/store';
 import { page } from '$app/stores';
 import {
@@ -77,7 +78,7 @@ export function useJobFromRoute() {
 		return {
 			queryKey: ['job', id] as const,
 			queryFn: () => getJob(String(id)),
-			enabled: Boolean(id),
+			enabled: browser && Boolean(id),
 			staleTime: 60_000
 		};
 	});
@@ -90,7 +91,7 @@ export function useJobEvaluationFromRoute() {
 		return {
 			queryKey: ['job', id, 'evaluation'] as const,
 			queryFn: () => getJobEvaluation(String(id)),
-			enabled: Boolean(id),
+			enabled: browser && Boolean(id),
 			staleTime: 5 * 60_000
 		};
 	});
