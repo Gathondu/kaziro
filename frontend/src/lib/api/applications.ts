@@ -1,8 +1,9 @@
 import { apiFetch, apiFetchEmpty, apiFetchMeta, resolveAuthenticatedRedirect } from './client';
+import { API_LIST_MAX_LIMIT, clampListLimit } from './limits';
 import type { Application, ApplicationDetail } from '$lib/types/applications';
 import type { ApplicationStatus } from '$lib/types/enums';
 
-export const LIST_APPLICATIONS_MAX_LIMIT = 100;
+export const LIST_APPLICATIONS_MAX_LIMIT = API_LIST_MAX_LIMIT;
 
 export interface ListApplicationsParams {
 	cursor?: string | null;
@@ -14,8 +15,7 @@ function appsQuery(p: ListApplicationsParams): string {
 	const q = new URLSearchParams();
 	if (p.cursor) q.set('cursor', p.cursor);
 	if (p.limit != null) {
-		const n = Math.min(Math.max(1, p.limit), LIST_APPLICATIONS_MAX_LIMIT);
-		q.set('limit', String(n));
+		q.set('limit', String(clampListLimit(p.limit)));
 	}
 	if (p.status) q.set('status', p.status);
 	const s = q.toString();

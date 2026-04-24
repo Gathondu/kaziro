@@ -7,6 +7,7 @@ import {
 	createQuery,
 	useQueryClient
 } from '@tanstack/svelte-query';
+import { API_LIST_DEFAULT_LIMIT } from '$lib/api/limits';
 import {
 	getJob,
 	getJobEvaluation,
@@ -29,13 +30,13 @@ export type JobsFilter = Omit<ListJobsParams, 'cursor'>;
 function jobFiltersFromPage(): JobsFilter {
 	const s = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
 	if (!s) {
-		return { limit: 20 };
+		return { limit: API_LIST_DEFAULT_LIMIT };
 	}
 	const keyword = s.get('q') ?? '';
 	const postedAfter = s.get('posted') ?? '';
 	const classification = classificationFromFitParam(s.get('fit'));
 	return {
-		limit: 20,
+		limit: API_LIST_DEFAULT_LIMIT,
 		keyword: keyword || undefined,
 		posted_after: postedAfter || undefined,
 		classification
@@ -49,7 +50,7 @@ export function useJobsInfiniteFromUrl() {
 		const postedAfter = s.get('posted') ?? '';
 		const classification = classificationFromFitParam(s.get('fit'));
 		const f: JobsFilter = {
-			limit: 20,
+			limit: API_LIST_DEFAULT_LIMIT,
 			keyword: keyword || undefined,
 			posted_after: postedAfter || undefined,
 			classification
@@ -61,7 +62,7 @@ export function useJobsInfiniteFromUrl() {
 				const { items, nextCursor } = await listJobs({
 					...f,
 					cursor: pageParam ?? undefined,
-					limit: f.limit ?? 20
+					limit: f.limit ?? API_LIST_DEFAULT_LIMIT
 				});
 				return { items, nextCursor };
 			},

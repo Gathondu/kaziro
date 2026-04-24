@@ -1,4 +1,5 @@
 import { apiFetch, apiFetchMeta } from './client';
+import { clampListLimit } from './limits';
 import type { JobConfig } from '$lib/types/jobConfig';
 
 export interface ListJobConfigsParams {
@@ -10,7 +11,9 @@ export interface ListJobConfigsParams {
 function qc(p: ListJobConfigsParams): string {
 	const q = new URLSearchParams();
 	if (p.cursor) q.set('cursor', p.cursor);
-	if (p.limit != null) q.set('limit', String(p.limit));
+	if (p.limit != null) {
+		q.set('limit', String(clampListLimit(p.limit)));
+	}
 	if (p.active_only) q.set('active_only', 'true');
 	const s = q.toString();
 	return s ? `?${s}` : '';

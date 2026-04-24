@@ -1,5 +1,9 @@
 import { createQuery } from '@tanstack/svelte-query';
 import { listApplications } from '$lib/api/applications';
+import {
+	API_LIST_DASHBOARD_APPLICATIONS_SAMPLE_LIMIT,
+	API_LIST_MAX_LIMIT
+} from '$lib/api/limits';
 import { listJobs } from '$lib/api/jobs';
 
 export interface DashboardSnapshot {
@@ -16,9 +20,9 @@ export function useDashboard() {
 		staleTime: 30_000,
 		queryFn: async (): Promise<DashboardSnapshot> => {
 			const [jobsPage, goodPage, appsPage] = await Promise.all([
-				listJobs({ limit: 100 }),
-				listJobs({ limit: 100, classification: ['GOOD_FIT'] }),
-				listApplications({ limit: 50 })
+				listJobs({ limit: API_LIST_MAX_LIMIT }),
+				listJobs({ limit: API_LIST_MAX_LIMIT, classification: ['GOOD_FIT'] }),
+				listApplications({ limit: API_LIST_DASHBOARD_APPLICATIONS_SAMPLE_LIMIT })
 			]);
 			const sentCount = appsPage.items.filter((a) => a.status === 'SENT').length;
 			const recent = appsPage.items.slice(0, 12).map((a) => ({

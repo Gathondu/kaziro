@@ -1,4 +1,5 @@
 import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
+import { API_LIST_JOB_CONFIGS_PAGE_LIMIT } from '$lib/api/limits';
 import {
 	createJobConfig,
 	disableJobConfig,
@@ -11,7 +12,9 @@ import type { JobConfig } from '$lib/types/jobConfig';
 export function useJobConfigs(activeOnly = false) {
 	return createQuery({
 		queryKey: ['job-configs', { activeOnly }],
-		queryFn: async () => (await listJobConfigs({ active_only: activeOnly, limit: 50 })).items,
+		queryFn: async () =>
+			(await listJobConfigs({ active_only: activeOnly, limit: API_LIST_JOB_CONFIGS_PAGE_LIMIT }))
+				.items,
 		staleTime: 60_000
 	});
 }

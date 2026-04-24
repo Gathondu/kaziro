@@ -1,4 +1,5 @@
 import { apiFetch, apiFetchMeta } from './client';
+import { clampListLimit, clampMinScore } from './limits';
 import type { Classification } from '$lib/types/enums';
 import type { JobEvaluation, JobPosting, TriggerEvaluationBody } from '$lib/types/jobs';
 
@@ -15,11 +16,15 @@ export interface ListJobsParams {
 function toSearch(params: ListJobsParams): string {
 	const q = new URLSearchParams();
 	if (params.cursor) q.set('cursor', params.cursor);
-	if (params.limit != null) q.set('limit', String(params.limit));
+	if (params.limit != null) {
+		q.set('limit', String(clampListLimit(params.limit)));
+	}
 	for (const c of params.classification ?? []) {
 		q.append('classification', c);
 	}
-	if (params.min_score != null) q.set('min_score', String(params.min_score));
+	if (params.min_score != null) {
+		q.set('min_score', String(clampMinScore(params.min_score)));
+	}
 	if (params.remote_only != null) q.set('remote_only', String(params.remote_only));
 	if (params.posted_after) q.set('posted_after', params.posted_after);
 	if (params.keyword) q.set('keyword', params.keyword);
