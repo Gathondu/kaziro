@@ -15,6 +15,20 @@
 	let linkedin_url = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
+function countSentences(text: string): number {
+	return text
+		.split(/[.!?]+/)
+		.map((part) => part.trim())
+		.filter(Boolean).length;
+}
+
+function rowsForText(text: string): number {
+	const sentenceCount = countSentences(text);
+	if (sentenceCount === 0 || sentenceCount <= 3) return 3;
+	if (sentenceCount > 10) return 20;
+	return 10;
+}
+
 	$effect(() => {
 		const p = $profile.data;
 		if (!p) return;
@@ -66,8 +80,8 @@
 {:else if $profile.isError}
 	<p class="text-sm text-error">Could not load profile.</p>
 {:else}
-	<form class="max-w-xl space-y-4" onsubmit={submit}>
-		<label class="form-control">
+	<form class="w-full space-y-4" onsubmit={submit}>
+		<label class="form-control w-full md:w-1/3">
 			<span class="label-text font-medium">Full name</span>
 			<input
 				class="input input-bordered rounded-xl border-base-300 bg-base-200"
@@ -80,7 +94,8 @@
 		<label class="form-control">
 			<span class="label-text font-medium">Summary</span>
 			<textarea
-				class="textarea textarea-bordered min-h-24 rounded-xl border-base-300 bg-base-200"
+				class="textarea textarea-bordered rounded-xl border-base-300 bg-base-200"
+				rows={rowsForText(professional_summary)}
 				bind:value={professional_summary}
 			></textarea>
 		</label>
@@ -98,7 +113,8 @@
 		<label class="form-control">
 			<span class="label-text font-medium">Values</span>
 			<textarea
-				class="textarea textarea-bordered min-h-20 rounded-xl border-base-300 bg-base-200"
+				class="textarea textarea-bordered rounded-xl border-base-300 bg-base-200"
+				rows={rowsForText(values_statement)}
 				bind:value={values_statement}
 			></textarea>
 		</label>
@@ -106,6 +122,7 @@
 			<span class="label-text font-medium">LinkedIn URL</span>
 			<input
 				class="input input-bordered rounded-xl border-base-300 bg-base-200"
+				placeholder="https://www.linkedin.com/in/your-handle"
 				bind:value={linkedin_url}
 			/>
 			{#if fieldErrors.linkedin_url}
