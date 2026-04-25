@@ -3,7 +3,9 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
+	import { useQueryClient } from '@tanstack/svelte-query';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { putProfile, uploadCvPdf } from '$lib/api/profile';
 	import { FETCH_CRON_DAILY } from '$lib/constants/fetchSchedule';
 	import { useCreateJobConfig, useRunJobConfigPipeline, useSchedulePresets } from '$lib/hooks/useJobConfig';
 	import { jobConfigFormSchema } from '$lib/schemas/jobConfig';
@@ -13,19 +15,28 @@
 		resumeOnboardingPath,
 		saveOnboardingDraft
 	} from '$lib/utils/onboarding';
+	import {
+		clearOnboardingPendingCv,
+		getOnboardingPendingCv
+	} from '$lib/utils/onboarding-pending-cv';
+	import { validateProfileDraftForSubmit } from '$lib/utils/onboarding-profile.functions';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
+	import { sanitizeSalaryInput } from '$lib/utils/salary-input.utils';
 
 	let name = $state('');
 	let keywordsText = $state('');
 	let location = $state('');
 	let remote_only = $state(false);
-	let salary_min = $state<number | ''>('');
-	let salary_max = $state<number | ''>('');
+	let salaryMinInput = $state('');
+	let salaryMaxInput = $state('');
 	let fetch_schedule_cron = $state(FETCH_CRON_DAILY);
 	let fieldErrors = $state<Record<string, string>>({});
+	let finishing = $state(false);
 
 	const presets = useSchedulePresets();
 	const createCfg = useCreateJobConfig();
 	const runPipe = useRunJobConfigPipeline();
+	const qc = useQueryClient();
 
 	$effect(() => {
 		if (!browser) return;
@@ -43,8 +54,8 @@
 			keywordsText,
 			location,
 			remote_only,
-			salary_min: salary_min === '' ? null : salary_min,
-			salary_max: salary_max === '' ? null : salary_max,
+			salary_min: salaryMinInput.trim() === '' ? null : salaryMinInput,
+			salary_max: salaryMaxInput.trim() === '' ? null : salaryMaxInput,
 			fetch_schedule_cron
 		});
 		if (!parsed.success) {
@@ -54,23 +65,97 @@
 			}
 			return;
 		}
+
+		const draft = loadOnboardingDraft();
+		const profileValidated = validateProfileDraftForSubmit(draft?.profile);
+		if (!profileValidated.ok) {
+			fieldErrors = {
+				form: 'Your profile data is incomplete. Use Back to fix earlier steps.'
+			};
+			return;
+		}
+
 		const keywords = parsed.data.keywordsText
 			.split(',')
 			.map((k) => k.trim())
 			.filter(Boolean);
-		const cfg = await get(createCfg).mutateAsync({
-			name: parsed.data.name || null,
-			keywords,
-			location: parsed.data.location || null,
-			remote_only: parsed.data.remote_only,
-			salary_min: parsed.data.salary_min,
-			salary_max: parsed.data.salary_max,
-			fetch_schedule_cron: parsed.data.fetch_schedule_cron
-		});
-		saveOnboardingDraft({ step: 3, lastConfigId: cfg.id });
-		await get(runPipe).mutateAsync(cfg.id);
-		clearOnboardingDraft();
-		await goto('/dashboard');
+
+		finishing = true;
+		try {
+			const profile = await putProfile(profileValidated.body);
+			qc.setQueryData(['profile'], profile);
+
+			const cvFile = getOnboardingPendingCv();
+			if (cvFile) {
+				await uploadCvPdf(cvFile);
+				clearOnboardingPendingCv();
+				await qc.invalidateQueries({ queryKey: ['profile'] });
+			}
+
+			const cfg = await get(createCfg).mutateAsync({
+				name: parsed.data.name || null,
+				keywords,
+				location: parsed.data.location || null,
+				remote_only: parsed.data.remote_only,
+				salary_min: parsed.data.salary_min,
+				salary_max: parsed.data.salary_max,
+				fetch_schedule_cron: parsed.data.fetch_schedule_cron
+			});
+			saveOnboardingDraft({
+				step: 3,
+				lastConfigId: cfg.id,
+				profile: draft?.profile ?? {}
+			});
+			await get(runPipe).mutateAsync(cfg.id);
+			clearOnboardingDraft();
+			await goto('/dashboard');
+		} catch {
+			fieldErrors = {
+				form: 'Could not finish setup. Check your connection and try again.'
+			};
+		} finally {
+			finishing = false;
+		}
+	}
+
+	function clearSalaryFieldErrors(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'salary_min', 'salary_max');
+	}
+
+	function onKeywordsInput(): void {
+		let next = omitFieldErrors(fieldErrors, 'keywordsText');
+		if (next.form?.startsWith('Could not finish')) {
+			next = omitFieldErrors(next, 'form');
+		}
+		fieldErrors = next;
+	}
+
+	function onNameInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'name');
+	}
+
+	function onLocationInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'location');
+	}
+
+	function onFetchScheduleChange(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'fetch_schedule_cron');
+	}
+
+	function onSalaryMinInput(e: Event): void {
+		const el = e.currentTarget as HTMLInputElement;
+		const next = sanitizeSalaryInput(el.value);
+		salaryMinInput = next;
+		if (el.value !== next) el.value = next;
+		clearSalaryFieldErrors();
+	}
+
+	function onSalaryMaxInput(e: Event): void {
+		const el = e.currentTarget as HTMLInputElement;
+		const next = sanitizeSalaryInput(el.value);
+		salaryMaxInput = next;
+		if (el.value !== next) el.value = next;
+		clearSalaryFieldErrors();
 	}
 </script>
 
@@ -83,6 +168,9 @@
 	We will enqueue your first pipeline run so evaluations can start flowing in.
 </p>
 <form class="space-y-4" onsubmit={finish}>
+	{#if fieldErrors.form}
+		<p class="text-sm text-error" role="alert">{fieldErrors.form}</p>
+	{/if}
 	<label class="form-control">
 		<span class="label-text font-medium">Config name (optional)</span>
 		<input class="input input-bordered rounded-xl border-base-300 bg-base-200" bind:value={name} />
@@ -94,6 +182,7 @@
 				? 'input-error'
 				: ''}"
 			bind:value={keywordsText}
+			oninput={onKeywordsInput}
 		/>
 		{#if fieldErrors.keywordsText}<span class="label-text-alt text-error"
 				>{fieldErrors.keywordsText}</span
@@ -104,6 +193,7 @@
 		<input
 			class="input input-bordered rounded-xl border-base-300 bg-base-200"
 			bind:value={location}
+			oninput={onLocationInput}
 		/>
 	</label>
 	<label class="label cursor-pointer justify-start gap-3">
@@ -114,10 +204,20 @@
 		<label class="form-control">
 			<span class="label-text font-medium">Salary min</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200"
-				type="number"
-				bind:value={salary_min}
+				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.salary_min
+					? 'input-error'
+					: ''}"
+				type="text"
+				inputmode="numeric"
+				pattern="[0-9]*"
+				autocomplete="off"
+				maxlength="9"
+				value={salaryMinInput}
+				oninput={onSalaryMinInput}
 			/>
+			{#if fieldErrors.salary_min}<span class="label-text-alt text-error"
+					>{fieldErrors.salary_min}</span
+				>{/if}
 		</label>
 		<label class="form-control">
 			<span class="label-text font-medium">Salary max</span>
@@ -125,8 +225,13 @@
 				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.salary_max
 					? 'input-error'
 					: ''}"
-				type="number"
-				bind:value={salary_max}
+				type="text"
+				inputmode="numeric"
+				pattern="[0-9]*"
+				autocomplete="off"
+				maxlength="9"
+				value={salaryMaxInput}
+				oninput={onSalaryMaxInput}
 			/>
 			{#if fieldErrors.salary_max}<span class="label-text-alt text-error"
 					>{fieldErrors.salary_max}</span
@@ -147,27 +252,25 @@
 					? 'select-error'
 					: ''}"
 				bind:value={fetch_schedule_cron}
+				onchange={onFetchScheduleChange}
 			>
 				{#each $presets.data as p (p.id)}
 					<option value={p.fetch_schedule_cron}>{p.label}</option>
 				{/each}
 			</select>
-			<span class="label-text-alt text-base-content/60">Runs are scheduled in UTC.</span>
 		{/if}
 		{#if fieldErrors.fetch_schedule_cron}
 			<span class="label-text-alt text-error">{fieldErrors.fetch_schedule_cron}</span>
 		{/if}
 	</label>
-	<div class="flex gap-3">
-		<Button type="button" variant="outline" onclick={() => goto('/onboarding/cv')}>Back</Button>
-		<Button
-			type="submit"
-			disabled={$createCfg.isPending ||
-				$runPipe.isPending ||
-				$presets.isPending ||
-				$presets.isError}
-		>
-			{$createCfg.isPending || $runPipe.isPending ? 'Finishing…' : 'Finish setup'}
-		</Button>
-	</div>
+	<Button
+		type="submit"
+		disabled={finishing ||
+			$createCfg.isPending ||
+			$runPipe.isPending ||
+			$presets.isPending ||
+			$presets.isError}
+	>
+		{finishing || $createCfg.isPending || $runPipe.isPending ? 'Finishing…' : 'Finish setup'}
+	</Button>
 </form>

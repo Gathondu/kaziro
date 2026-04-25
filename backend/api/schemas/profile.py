@@ -60,7 +60,7 @@ class ProfileUpdateRequest(BaseModel):
         max_length=200,
         description="Replace the full skills list (no merge semantics).",
     )
-    experience_years: int | None = Field(default=None, ge=0, le=80)
+    experience_years: int | None = Field(default=None, ge=0, le=60)
     domain: str | None = Field(default=None, max_length=100)
     values_statement: str | None = Field(default=None, max_length=2000)
     linkedin_url: AnyHttpUrl | None = None

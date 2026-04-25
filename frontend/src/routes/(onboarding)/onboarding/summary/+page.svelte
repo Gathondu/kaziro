@@ -3,15 +3,13 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { useUpsertProfile } from '$lib/hooks/useProfile';
 	import { onboardingProfessionalSummarySchema } from '$lib/schemas/profile';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
 	import { get } from 'svelte/store';
 
 	let professional_summary = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
-
-	const mutation = useUpsertProfile();
 
 	const summaryFilled = $derived(professional_summary.trim().length > 0);
 	const primaryLabel = $derived(summaryFilled ? 'Next' : 'Skip');
@@ -32,27 +30,25 @@
 		}
 	});
 
-	async function goDomain(summary: string | undefined): Promise<void> {
+	function goDomain(summary: string | undefined): void {
 		const prev = loadOnboardingDraft();
 		if (!prev?.profile?.full_name) {
 			void goto('/onboarding/about-you');
 			return;
 		}
-		const body: Record<string, unknown> = { full_name: prev.profile.full_name };
-		if (summary !== undefined) body.professional_summary = summary;
-		await get(mutation).mutateAsync(body);
+		const profile =
+			summary === undefined
+				? { ...prev.profile, professional_summary: undefined }
+				: { ...prev.profile, professional_summary: summary };
 		saveOnboardingDraft({
 			step: 1,
 			profileSubStep: 'domain',
-			profile: {
-				...prev.profile,
-				professional_summary: summary ?? prev.profile.professional_summary
-			}
+			profile
 		});
-		await goto('/onboarding/domain');
+		void goto('/onboarding/domain');
 	}
 
-	async function skipOrNext(e: Event): Promise<void> {
+	function skipOrNext(e: Event): void {
 		e.preventDefault();
 		fieldErrors = {};
 		if (summaryFilled) {
@@ -65,10 +61,14 @@
 				return;
 			}
 			const text = parsed.data.professional_summary?.trim() ?? '';
-			await goDomain(text === '' ? undefined : text);
+			goDomain(text === '' ? undefined : text);
 			return;
 		}
-		await goDomain(undefined);
+		goDomain(undefined);
+	}
+
+	function onSummaryInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'professional_summary');
 	}
 </script>
 
@@ -88,12 +88,11 @@
 				? 'textarea-error'
 				: ''}"
 			bind:value={professional_summary}
+			oninput={onSummaryInput}
 		></textarea>
 		{#if fieldErrors.professional_summary}<span class="label-text-alt text-error"
 				>{fieldErrors.professional_summary}</span
 			>{/if}
 	</label>
-	<Button type="submit" disabled={$mutation.isPending}>
-		{$mutation.isPending ? 'Saving…' : primaryLabel}
-	</Button>
+	<Button type="submit">{primaryLabel}</Button>
 </form>

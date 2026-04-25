@@ -3,8 +3,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { fade } from 'svelte/transition';
+	import { ChevronLeft } from 'lucide-svelte';
 	import { getUser, isAuthReady } from '$lib/stores/auth';
-	import { onboardingStepMeta } from '$lib/utils/onboarding';
+	import { hasOnboardingBack, onboardingStepMeta, prepareOnboardingBack } from '$lib/utils/onboarding';
 
 	const { children } = $props();
 
@@ -13,6 +14,12 @@
 	const progressPct = $derived(
 		stepMeta ? Math.round((stepMeta.current / stepMeta.total) * 100) : 0
 	);
+	const showBack = $derived(hasOnboardingBack(pathname));
+
+	function onBack(): void {
+		const target = prepareOnboardingBack(pathname);
+		if (target) void goto(target);
+	}
 
 	$effect(() => {
 		if (!browser || !isAuthReady()) return;
@@ -47,6 +54,16 @@
 
 	<main class="flex flex-1 flex-col items-stretch px-4 py-10 sm:items-center sm:py-16">
 		<div class="w-full max-w-xl sm:mx-auto">
+			{#if showBack}
+				<button
+					type="button"
+					class="btn btn-ghost btn-sm -ml-2 mb-4 gap-1 px-2 font-normal text-base-content/80 hover:text-base-content"
+					onclick={onBack}
+				>
+					<ChevronLeft class="size-4 shrink-0" aria-hidden="true" />
+					Back
+				</button>
+			{/if}
 			{#key pathname}
 				<div class="w-full" transition:fade={{ duration: 200 }}>
 					{@render children()}

@@ -3,21 +3,23 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { useUpsertProfile } from '$lib/hooks/useProfile';
 	import { onboardingExperienceSchema } from '$lib/schemas/profile';
 	import {
 		loadOnboardingDraft,
 		resumeOnboardingPath,
 		saveOnboardingDraft
 	} from '$lib/utils/onboarding';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
+	import {
+		EXPERIENCE_YEARS_MAX,
+		sanitizeExperienceYearsInput
+	} from '$lib/utils/experience-years-input.utils';
 	import { get } from 'svelte/store';
 
-	let experience_years = $state<number | ''>('');
+	let yearsInput = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
-	const mutation = useUpsertProfile();
-
-	const yearsFilled = $derived(experience_years !== '' && experience_years !== null);
+	const yearsFilled = $derived(yearsInput.trim() !== '');
 	const primaryLabel = $derived(yearsFilled ? 'Next' : 'Skip');
 
 	$effect(() => {
@@ -32,43 +34,37 @@
 		if (!browser) return;
 		const d = loadOnboardingDraft();
 		const y = d?.profile?.experience_years;
-		if (y !== undefined && y !== null) experience_years = y;
+		if (y !== undefined && y !== null) {
+			const clamped = Math.min(EXPERIENCE_YEARS_MAX, Math.max(0, y));
+			yearsInput = String(clamped);
+		} else {
+			yearsInput = '';
+		}
 	});
 
-	async function goSkills(years: number | undefined): Promise<void> {
+	function goSkills(years: number | undefined): void {
 		const prev = loadOnboardingDraft();
 		if (!prev?.profile?.full_name) {
 			void goto('/onboarding/about-you');
 			return;
 		}
-		const body: Record<string, unknown> = { full_name: prev.profile.full_name };
-		if (prev.profile.professional_summary !== undefined) {
-			body.professional_summary = prev.profile.professional_summary;
-		}
-		if (prev.profile.domain !== undefined) {
-			body.domain = prev.profile.domain;
-		}
-		if (years !== undefined) {
-			body.experience_years = years;
-		}
-		await get(mutation).mutateAsync(body);
 		saveOnboardingDraft({
 			step: 1,
 			profileSubStep: 'skills',
 			profile: {
 				...prev.profile,
-				experience_years: years ?? prev.profile.experience_years
+				experience_years: years
 			}
 		});
-		await goto('/onboarding/skills');
+		void goto('/onboarding/skills');
 	}
 
-	async function skipOrNext(e: Event): Promise<void> {
+	function skipOrNext(e: Event): void {
 		e.preventDefault();
 		fieldErrors = {};
 		if (yearsFilled) {
 			const parsed = onboardingExperienceSchema.safeParse({
-				experience_years: experience_years === '' ? null : experience_years
+				experience_years: yearsInput.trim() === '' ? null : yearsInput
 			});
 			if (!parsed.success) {
 				for (const iss of parsed.error.issues) {
@@ -77,10 +73,10 @@
 				}
 				return;
 			}
-			await goSkills(parsed.data.experience_years ?? undefined);
+			goSkills(parsed.data.experience_years ?? undefined);
 			return;
 		}
-		await goSkills(undefined);
+		goSkills(undefined);
 	}
 </script>
 
@@ -99,16 +95,24 @@
 			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.experience_years
 				? 'input-error'
 				: ''}"
-			type="number"
-			min="0"
-			max="80"
-			bind:value={experience_years}
+			type="text"
+			inputmode="numeric"
+			pattern="[0-9]*"
+			autocomplete="off"
+			maxlength="2"
+			value={yearsInput}
+			oninput={(e) => {
+				const el = e.currentTarget as HTMLInputElement;
+				const next = sanitizeExperienceYearsInput(el.value);
+				yearsInput = next;
+				// If normalized value equals prior state, Svelte may skip a render; keep DOM in sync.
+				if (el.value !== next) el.value = next;
+				fieldErrors = omitFieldErrors(fieldErrors, 'experience_years');
+			}}
 		/>
 		{#if fieldErrors.experience_years}<span class="label-text-alt text-error"
 				>{fieldErrors.experience_years}</span
 			>{/if}
 	</label>
-	<Button type="submit" disabled={$mutation.isPending}>
-		{$mutation.isPending ? 'Saving…' : primaryLabel}
-	</Button>
+	<Button type="submit">{primaryLabel}</Button>
 </form>

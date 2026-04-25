@@ -3,15 +3,34 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { useCvUpload } from '$lib/hooks/useProfile';
+	import {
+		clearOnboardingPendingCv,
+		getOnboardingPendingCv,
+		setOnboardingPendingCv
+	} from '$lib/utils/onboarding-pending-cv';
 	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
+	import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+	import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 	import { get } from 'svelte/store';
+
+	const PREVIEW_MIN_HEIGHT = 360;
+	const PREVIEW_MAX_HEIGHT = 760;
+
+	if (browser) {
+		GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+	}
 
 	let file = $state<File | null>(null);
 	let previewUrl = $state<string | null>(null);
 	let err = $state<string | null>(null);
+	let fileInputEl = $state<HTMLInputElement | null>(null);
+	let previewContainerWidth = $state(0);
+	let previewFrameWidth = $state<number | null>(null);
+	let previewFrameHeight = $state(PREVIEW_MIN_HEIGHT);
+	let allowHorizontalOverflow = $state(false);
 
-	const upload = useCvUpload();
+	const previewSrc = $derived(previewUrl ? `${previewUrl}#page=1&view=FitH` : null);
+	const selectedFileLabel = $derived(file ? file.name : 'No file chosen');
 
 	$effect(() => {
 		if (!browser) return;
@@ -21,17 +40,69 @@
 		if (want !== path) void goto(want);
 	});
 
+	/** Restore staged PDF after Back from config (not stored in sessionStorage). */
+	$effect(() => {
+		if (!browser) return;
+		const pending = getOnboardingPendingCv();
+		if (!pending || file) return;
+		file = pending;
+		previewUrl = URL.createObjectURL(pending);
+	});
+
+	$effect(() => {
+		if (!file || file.type !== 'application/pdf' || previewContainerWidth <= 0) return;
+		void updatePreviewLayout(file, previewContainerWidth);
+	});
+
+	async function updatePreviewLayout(pdfFile: File, containerWidth: number): Promise<void> {
+		try {
+			const bytes = await pdfFile.arrayBuffer();
+			const task = getDocument({ data: bytes });
+			const pdf = await task.promise;
+			const firstPage = await pdf.getPage(1);
+			const viewport = firstPage.getViewport({ scale: 1 });
+			const ratio = viewport.width / viewport.height;
+			const fittedHeight = containerWidth / ratio;
+			const nextHeight = Math.round(
+				Math.min(PREVIEW_MAX_HEIGHT, Math.max(PREVIEW_MIN_HEIGHT, fittedHeight))
+			);
+			const nextWidth = Math.round(nextHeight * ratio);
+
+			previewFrameHeight = nextHeight;
+			allowHorizontalOverflow = nextWidth > containerWidth;
+			previewFrameWidth = nextWidth;
+			await pdf.destroy();
+		} catch {
+			previewFrameHeight = PREVIEW_MIN_HEIGHT;
+			previewFrameWidth = containerWidth;
+			allowHorizontalOverflow = false;
+		}
+	}
+
+	function resetPreviewLayout(): void {
+		previewFrameHeight = PREVIEW_MIN_HEIGHT;
+		previewFrameWidth = null;
+		allowHorizontalOverflow = false;
+	}
+
 	function onPick(e: Event): void {
 		const input = e.currentTarget as HTMLInputElement;
 		const f = input.files?.[0];
 		err = null;
+		clearOnboardingPendingCv();
+		resetPreviewLayout();
 		if (previewUrl) {
 			URL.revokeObjectURL(previewUrl);
 			previewUrl = null;
 		}
 		file = f ?? null;
 		if (file && file.type === 'application/pdf') {
+			// Stage immediately so Back -> Skills -> Next preserves the selected CV.
+			setOnboardingPendingCv(file);
 			previewUrl = URL.createObjectURL(file);
+			if (previewContainerWidth > 0) {
+				void updatePreviewLayout(file, previewContainerWidth);
+			}
 		} else if (file) {
 			err = 'Please choose a PDF file.';
 		}
@@ -42,8 +113,12 @@
 			err = 'Select a PDF to continue.';
 			return;
 		}
-		await get(upload).mutateAsync(file);
-		saveOnboardingDraft({ step: 3 });
+		const d = loadOnboardingDraft();
+		saveOnboardingDraft({
+			step: 3,
+			profile: d?.profile ?? {},
+			...(d?.lastConfigId !== undefined ? { lastConfigId: d.lastConfigId } : {})
+		});
 		await goto('/onboarding/config');
 	}
 </script>
@@ -59,35 +134,32 @@
 <label class="form-control mb-4">
 	<span class="label-text font-medium">PDF file</span>
 	<input
-		class="file-input file-input-bordered rounded-xl border-base-300 bg-base-200"
+		bind:this={fileInputEl}
+		class="hidden"
 		type="file"
 		accept="application/pdf"
 		onchange={onPick}
 	/>
+	<div class="flex items-center gap-3">
+		<Button type="button" variant="outline" onclick={() => fileInputEl?.click()}>Choose file</Button>
+		<span class="text-sm text-base-content/70" title={selectedFileLabel}>{selectedFileLabel}</span>
+	</div>
 </label>
 {#if err}
 	<p class="mb-4 text-sm text-error">{err}</p>
 {/if}
 {#if previewUrl}
-	<div class="mb-6 overflow-hidden rounded-2xl border border-base-300 bg-base-200">
-		<iframe title="CV preview" src={previewUrl} width="100%" height="360" class="min-h-72 w-full"
+	<div
+		bind:clientWidth={previewContainerWidth}
+		class={`mb-6 rounded-2xl border border-base-300 bg-base-200 ${allowHorizontalOverflow ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}
+	>
+		<iframe
+			title="CV preview"
+			src={previewSrc ?? previewUrl}
+			width={allowHorizontalOverflow ? (previewFrameWidth ?? previewContainerWidth) : '100%'}
+			height={previewFrameHeight}
+			class={`min-h-72 ${allowHorizontalOverflow ? 'max-w-none' : 'w-full'}`}
 		></iframe>
 	</div>
 {/if}
-<div class="flex gap-3">
-	<Button
-		type="button"
-		variant="outline"
-		onclick={() => {
-			const d = loadOnboardingDraft();
-			saveOnboardingDraft({
-				step: 1,
-				profileSubStep: 'skills',
-				profile: d?.profile ?? {}
-			});
-			void goto('/onboarding/skills');
-		}}>Back</Button>
-	<Button type="button" disabled={$upload.isPending || !file} onclick={() => next()}>
-		{$upload.isPending ? 'Uploading…' : 'Continue'}
-	</Button>
-</div>
+<Button type="button" disabled={!file} onclick={() => next()}>Next</Button>

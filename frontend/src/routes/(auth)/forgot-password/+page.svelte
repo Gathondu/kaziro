@@ -2,6 +2,7 @@
 	import { forgotSchema } from '$lib/schemas/auth';
 	import { supabase } from '$lib/supabase';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 
 	let email = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
@@ -30,6 +31,10 @@
 		}
 		done = true;
 	}
+
+	function onEmailInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'email');
+	}
 </script>
 
 <svelte:head>
@@ -52,6 +57,7 @@
 				type="email"
 				autocomplete="email"
 				bind:value={email}
+				oninput={onEmailInput}
 			/>
 			{#if fieldErrors.email}<span class="label-text-alt text-error">{fieldErrors.email}</span>{/if}
 		</label>

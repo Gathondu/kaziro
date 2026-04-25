@@ -8,7 +8,7 @@ export const profileBasicsSchema = z.object({
 		.max(100, 'Domain must be at most 100 characters')
 		.optional()
 		.or(z.literal('')),
-	experience_years: z.coerce.number().int().min(0).max(80).optional().nullable(),
+	experience_years: z.coerce.number().int().min(0).max(60).optional().nullable(),
 	skills: z.string().optional()
 });
 
@@ -33,7 +33,7 @@ export const onboardingDomainSchema = z.object({
 
 /** Onboarding step: optional years of experience */
 export const onboardingExperienceSchema = z.object({
-	experience_years: z.coerce.number().int().min(0).max(80).optional().nullable()
+	experience_years: z.coerce.number().int().min(0).max(60).optional().nullable()
 });
 
 /** Onboarding step: optional comma-separated skills */

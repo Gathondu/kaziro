@@ -3,8 +3,8 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { useUpsertProfile } from '$lib/hooks/useProfile';
 	import { onboardingDomainSchema } from '$lib/schemas/profile';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
 	import { get } from 'svelte/store';
 
@@ -13,8 +13,9 @@
 	let domain = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
-	const mutation = useUpsertProfile();
 	const domainLen = $derived(domain.length);
+	const domainFilled = $derived(domain.trim().length > 0);
+	const primaryLabel = $derived(domainFilled ? 'Next' : 'Skip');
 
 	$effect(() => {
 		if (!browser) return;
@@ -32,9 +33,30 @@
 		}
 	});
 
-	async function submit(e: Event): Promise<void> {
+	function goExperience(nextDomain: string | undefined): void {
+		const prev = loadOnboardingDraft();
+		if (!prev?.profile?.full_name) {
+			void goto('/onboarding/about-you');
+			return;
+		}
+		saveOnboardingDraft({
+			step: 1,
+			profileSubStep: 'experience',
+			profile: {
+				...prev.profile,
+				domain: nextDomain
+			}
+		});
+		void goto('/onboarding/experience');
+	}
+
+	function submit(e: Event): void {
 		e.preventDefault();
 		fieldErrors = {};
+		if (!domainFilled) {
+			goExperience(undefined);
+			return;
+		}
 		const parsed = onboardingDomainSchema.safeParse({ domain });
 		if (!parsed.success) {
 			for (const iss of parsed.error.issues) {
@@ -43,26 +65,12 @@
 			}
 			return;
 		}
-		const prev = loadOnboardingDraft();
-		if (!prev?.profile?.full_name) {
-			void goto('/onboarding/about-you');
-			return;
-		}
 		const domainVal = parsed.data.domain?.trim() ?? '';
-		await get(mutation).mutateAsync({
-			full_name: prev.profile.full_name,
-			professional_summary: prev.profile.professional_summary,
-			domain: domainVal === '' ? undefined : domainVal
-		});
-		saveOnboardingDraft({
-			step: 1,
-			profileSubStep: 'experience',
-			profile: {
-				...prev.profile,
-				domain: domainVal === '' ? undefined : domainVal
-			}
-		});
-		await goto('/onboarding/experience');
+		goExperience(domainVal === '' ? undefined : domainVal);
+	}
+
+	function onDomainInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'domain');
 	}
 </script>
 
@@ -86,6 +94,7 @@
 				maxlength={DOMAIN_MAX}
 				rows={4}
 				bind:value={domain}
+				oninput={onDomainInput}
 			></textarea>
 			<span
 				class="pointer-events-none absolute bottom-3 right-3 text-xs tabular-nums text-base-content/60"
@@ -96,7 +105,5 @@
 		</div>
 		{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span>{/if}
 	</label>
-	<Button type="submit" disabled={$mutation.isPending}>
-		{$mutation.isPending ? 'Saving…' : 'Continue'}
-	</Button>
+	<Button type="submit">{primaryLabel}</Button>
 </form>

@@ -5,6 +5,7 @@
 	import { getUser, isAuthReady } from '$lib/stores/auth';
 	import { supabase } from '$lib/supabase';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 	import { saveOnboardingDraft } from '$lib/utils/onboarding';
 
 	let email = $state('');
@@ -44,6 +45,18 @@
 		saveOnboardingDraft({ step: 1, profileSubStep: 'about', profile: {} });
 		await goto('/onboarding/about-you');
 	}
+
+	function onEmailInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'email');
+	}
+
+	function onPasswordInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'password', 'confirm');
+	}
+
+	function onConfirmInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'confirm');
+	}
 </script>
 
 <svelte:head>
@@ -61,6 +74,7 @@
 			type="email"
 			autocomplete="email"
 			bind:value={email}
+			oninput={onEmailInput}
 		/>
 		{#if fieldErrors.email}<span class="label-text-alt text-error">{fieldErrors.email}</span>{/if}
 	</label>
@@ -73,6 +87,7 @@
 			type="password"
 			autocomplete="new-password"
 			bind:value={password}
+			oninput={onPasswordInput}
 		/>
 		{#if fieldErrors.password}<span class="label-text-alt text-error">{fieldErrors.password}</span
 			>{/if}
@@ -86,6 +101,7 @@
 			type="password"
 			autocomplete="new-password"
 			bind:value={confirm}
+			oninput={onConfirmInput}
 		/>
 		{#if fieldErrors.confirm}<span class="label-text-alt text-error">{fieldErrors.confirm}</span
 			>{/if}

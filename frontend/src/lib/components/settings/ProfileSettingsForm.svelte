@@ -3,6 +3,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { useProfile, useUpsertProfile } from '$lib/hooks/useProfile';
 	import { profileSettingsSchema } from '$lib/schemas/profile';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 
 	const profile = useProfile();
 	const save = useUpsertProfile();
@@ -73,6 +74,10 @@ function rowsForText(text: string): number {
 			linkedin_url: parsed.data.linkedin_url || undefined
 		});
 	}
+
+	function clearField(key: string): void {
+		fieldErrors = omitFieldErrors(fieldErrors, key);
+	}
 </script>
 
 {#if $profile.isPending}
@@ -94,21 +99,40 @@ function rowsForText(text: string): number {
 		<label class="form-control">
 			<span class="label-text font-medium">Summary</span>
 			<textarea
-				class="textarea textarea-bordered rounded-xl border-base-300 bg-base-200"
+				class="textarea textarea-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.professional_summary
+					? 'textarea-error'
+					: ''}"
 				rows={rowsForText(professional_summary)}
 				bind:value={professional_summary}
+				oninput={() => clearField('professional_summary')}
 			></textarea>
+			{#if fieldErrors.professional_summary}
+				<span class="label-text-alt text-error">{fieldErrors.professional_summary}</span>
+			{/if}
 		</label>
 		<label class="form-control">
 			<span class="label-text font-medium">Skills (comma-separated)</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200"
+				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.skillsText
+					? 'input-error'
+					: ''}"
 				bind:value={skillsText}
+				oninput={() => clearField('skillsText')}
 			/>
+			{#if fieldErrors.skillsText}
+				<span class="label-text-alt text-error">{fieldErrors.skillsText}</span>
+			{/if}
 		</label>
 		<label class="form-control">
 			<span class="label-text font-medium">Domain</span>
-			<input class="input input-bordered rounded-xl border-base-300 bg-base-200" bind:value={domain} />
+			<input
+				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.domain
+					? 'input-error'
+					: ''}"
+				bind:value={domain}
+				oninput={() => clearField('domain')}
+			/>
+			{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span>{/if}
 		</label>
 		<label class="form-control">
 			<span class="label-text font-medium">Values</span>
@@ -121,9 +145,12 @@ function rowsForText(text: string): number {
 		<label class="form-control">
 			<span class="label-text font-medium">LinkedIn URL</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200"
+				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.linkedin_url
+					? 'input-error'
+					: ''}"
 				placeholder="https://www.linkedin.com/in/your-handle"
 				bind:value={linkedin_url}
+				oninput={() => clearField('linkedin_url')}
 			/>
 			{#if fieldErrors.linkedin_url}
 				<span class="label-text-alt text-error">{fieldErrors.linkedin_url}</span>

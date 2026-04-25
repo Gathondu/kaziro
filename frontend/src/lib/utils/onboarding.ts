@@ -1,3 +1,5 @@
+import { clearOnboardingPendingCv } from '$lib/utils/onboarding-pending-cv';
+
 const KEY = 'kaziro.onboarding.v1';
 
 export type ProfileOnboardingSubStep =
@@ -66,6 +68,8 @@ export function clearOnboardingDraft(): void {
 	} catch {
 		// ignore
 	}
+	// Staged CV lives only in memory; clear with draft so abandoned flows do not leak a File.
+	clearOnboardingPendingCv();
 }
 
 /** Next URL for the onboarding entry redirector and legacy `/onboarding/profile` links. */
@@ -79,4 +83,46 @@ export function resumeOnboardingPath(d: OnboardingDraft | null): string {
 	if (sub === 'experience') return '/onboarding/experience';
 	if (sub === 'skills') return '/onboarding/skills';
 	return '/onboarding/about-you';
+}
+
+type OnboardingBackSpec = {
+	path: string;
+	step: 1 | 2 | 3;
+	profileSubStep?: ProfileOnboardingSubStep;
+};
+
+/** Linear back chain (step 1 = about-you has no back). */
+const ONBOARDING_BACK: Record<string, OnboardingBackSpec> = {
+	'/onboarding/summary': { path: '/onboarding/about-you', step: 1, profileSubStep: 'about' },
+	'/onboarding/domain': { path: '/onboarding/summary', step: 1, profileSubStep: 'summary' },
+	'/onboarding/experience': { path: '/onboarding/domain', step: 1, profileSubStep: 'domain' },
+	'/onboarding/skills': { path: '/onboarding/experience', step: 1, profileSubStep: 'experience' },
+	'/onboarding/cv': { path: '/onboarding/skills', step: 1, profileSubStep: 'skills' },
+	'/onboarding/config': { path: '/onboarding/cv', step: 2 }
+};
+
+export function hasOnboardingBack(pathname: string): boolean {
+	return pathname in ONBOARDING_BACK;
+}
+
+/**
+ * Rewrites the session draft for the previous onboarding step and returns its path.
+ * Keeps `profile` / `lastConfigId` so fields refill when the prior screen remounts.
+ */
+export function prepareOnboardingBack(pathname: string): string | null {
+	const spec = ONBOARDING_BACK[pathname];
+	if (!spec) return null;
+	const d = loadOnboardingDraft();
+	const next: OnboardingDraft = {
+		step: spec.step,
+		profile: d?.profile ?? {}
+	};
+	if (spec.profileSubStep !== undefined) {
+		next.profileSubStep = spec.profileSubStep;
+	}
+	if (d?.lastConfigId !== undefined) {
+		next.lastConfigId = d.lastConfigId;
+	}
+	saveOnboardingDraft(next);
+	return spec.path;
 }

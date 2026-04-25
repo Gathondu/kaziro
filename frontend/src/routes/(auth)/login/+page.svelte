@@ -6,6 +6,7 @@
 	import { getUser, isAuthReady } from '$lib/stores/auth';
 	import { supabase } from '$lib/supabase';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 
 	let email = $state('');
 	let password = $state('');
@@ -46,6 +47,14 @@
 		const next = $page.url.searchParams.get('next') || '/dashboard';
 		await goto(next);
 	}
+
+	function onEmailInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'email');
+	}
+
+	function onPasswordInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'password');
+	}
 </script>
 
 <svelte:head>
@@ -63,6 +72,7 @@
 			type="email"
 			autocomplete="email"
 			bind:value={email}
+			oninput={onEmailInput}
 		/>
 		{#if fieldErrors.email}<span class="label-text-alt text-error">{fieldErrors.email}</span>{/if}
 	</label>
@@ -75,6 +85,7 @@
 			type="password"
 			autocomplete="current-password"
 			bind:value={password}
+			oninput={onPasswordInput}
 		/>
 		{#if fieldErrors.password}<span class="label-text-alt text-error">{fieldErrors.password}</span
 			>{/if}

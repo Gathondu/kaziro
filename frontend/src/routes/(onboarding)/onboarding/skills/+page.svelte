@@ -3,8 +3,8 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { useUpsertProfile } from '$lib/hooks/useProfile';
-	import { onboardingSkillsSchema } from '$lib/schemas/profile';
+	import { validateProfileDraftForSubmit } from '$lib/utils/onboarding-profile.functions';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 	import {
 		loadOnboardingDraft,
 		resumeOnboardingPath,
@@ -14,8 +14,6 @@
 
 	let skillsText = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
-
-	const mutation = useUpsertProfile();
 
 	const skillsFilled = $derived(skillsText.trim().length > 0);
 	const primaryLabel = $derived(skillsFilled ? 'Next' : 'Skip');
@@ -43,49 +41,39 @@
 			.filter(Boolean);
 	}
 
-	async function goCv(skills: string[] | undefined): Promise<void> {
+	function goCv(): void {
 		const prev = loadOnboardingDraft();
 		if (!prev?.profile?.full_name) {
 			void goto('/onboarding/about-you');
 			return;
 		}
-		const body: Record<string, unknown> = {
-			full_name: prev.profile.full_name,
-			professional_summary: prev.profile.professional_summary,
-			domain: prev.profile.domain,
-			experience_years: prev.profile.experience_years ?? undefined
+		const mergedProfile = {
+			...prev.profile,
+			skillsText: skillsFilled ? skillsText.trim() : undefined
 		};
-		if (skills !== undefined) {
-			body.skills = skills;
+		const validated = validateProfileDraftForSubmit(mergedProfile);
+		if (!validated.ok) {
+			fieldErrors = validated.fieldErrors;
+			return;
 		}
-		await get(mutation).mutateAsync(body);
+		fieldErrors = {};
 		saveOnboardingDraft({
 			step: 2,
 			profile: {
-				...prev.profile,
-				skillsText: skills === undefined ? prev.profile.skillsText : skills.join(', ')
+				...mergedProfile,
+				skillsText: skillsFilled ? skillsListFromText(skillsText).join(', ') : undefined
 			}
 		});
-		await goto('/onboarding/cv');
+		void goto('/onboarding/cv');
 	}
 
-	async function skipOrNext(e: Event): Promise<void> {
+	function skipOrNext(e: Event): void {
 		e.preventDefault();
-		fieldErrors = {};
-		if (skillsFilled) {
-			const parsed = onboardingSkillsSchema.safeParse({ skills: skillsText });
-			if (!parsed.success) {
-				for (const iss of parsed.error.issues) {
-					const k = String(iss.path[0] ?? 'form');
-					fieldErrors = { ...fieldErrors, [k]: iss.message };
-				}
-				return;
-			}
-			const list = skillsListFromText(parsed.data.skills ?? '');
-			await goCv(list);
-			return;
-		}
-		await goCv([]);
+		goCv();
+	}
+
+	function onSkillsInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'skills', 'form');
 	}
 </script>
 
@@ -99,6 +87,9 @@
 	leadership). Skip if you want to add these later in Settings.
 </p>
 <form class="space-y-4" onsubmit={skipOrNext}>
+	{#if fieldErrors.form}
+		<p class="text-sm text-error" role="alert">{fieldErrors.form}</p>
+	{/if}
 	<label class="form-control">
 		<span class="label-text font-medium">Skills (comma-separated)</span>
 		<input
@@ -107,10 +98,9 @@
 				: ''}"
 			autocomplete="off"
 			bind:value={skillsText}
+			oninput={onSkillsInput}
 		/>
 		{#if fieldErrors.skills}<span class="label-text-alt text-error">{fieldErrors.skills}</span>{/if}
 	</label>
-	<Button type="submit" disabled={$mutation.isPending}>
-		{$mutation.isPending ? 'Saving…' : primaryLabel}
-	</Button>
+	<Button type="submit">{primaryLabel}</Button>
 </form>

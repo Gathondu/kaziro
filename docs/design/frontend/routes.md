@@ -69,7 +69,9 @@ src/routes/
 - Progress is tracked in `sessionStorage` via `kaziro.onboarding.v1`
   (`saveOnboardingDraft` / `loadOnboardingDraft` in
   `frontend/src/lib/utils/onboarding.ts`). `/onboarding` redirects to
-  the correct step from that draft.
+  the correct step from that draft. Profile fields through **skills**
+  are held in the draft only; a **single** `PUT /api/v1/profile` runs at
+  the end of the skills step (before CV upload).
 - **New users** land on `/onboarding/about-you` immediately after
   successful signup. Returning users are not auto-routed into onboarding
   from login; the sidebar **Onboarding** link (`/onboarding`) is kept for

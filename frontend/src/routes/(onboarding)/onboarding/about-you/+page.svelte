@@ -3,15 +3,13 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { useUpsertProfile } from '$lib/hooks/useProfile';
 	import { onboardingNameSchema } from '$lib/schemas/profile';
+	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
 	import { get } from 'svelte/store';
 
 	let full_name = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
-
-	const mutation = useUpsertProfile();
 
 	$effect(() => {
 		if (!browser) return;
@@ -24,10 +22,12 @@
 	$effect(() => {
 		if (!browser) return;
 		const d = loadOnboardingDraft();
-		if (d?.profile?.full_name) full_name = d.profile.full_name;
+		if (d?.profile && d.profile.full_name !== undefined && d.profile.full_name !== null) {
+			full_name = d.profile.full_name;
+		}
 	});
 
-	async function submit(e: Event): Promise<void> {
+	function submit(e: Event): void {
 		e.preventDefault();
 		fieldErrors = {};
 		const parsed = onboardingNameSchema.safeParse({ full_name });
@@ -38,7 +38,6 @@
 			}
 			return;
 		}
-		await get(mutation).mutateAsync({ full_name: parsed.data.full_name });
 		const prev = loadOnboardingDraft();
 		saveOnboardingDraft({
 			step: 1,
@@ -48,7 +47,11 @@
 				full_name: parsed.data.full_name
 			}
 		});
-		await goto('/onboarding/summary');
+		void goto('/onboarding/summary');
+	}
+
+	function onFullNameInput(): void {
+		fieldErrors = omitFieldErrors(fieldErrors, 'full_name');
 	}
 </script>
 
@@ -69,10 +72,9 @@
 				: ''}"
 			autocomplete="name"
 			bind:value={full_name}
+			oninput={onFullNameInput}
 		/>
 		{#if fieldErrors.full_name}<span class="label-text-alt text-error">{fieldErrors.full_name}</span>{/if}
 	</label>
-	<Button type="submit" disabled={$mutation.isPending || full_name.trim().length === 0}>
-		{$mutation.isPending ? 'Saving…' : 'Continue'}
-	</Button>
+	<Button type="submit" disabled={full_name.trim().length === 0}>Next</Button>
 </form>
