@@ -1,10 +1,16 @@
 <!doctype html>
-<html lang="en" data-theme="terracotta">
+<html lang="en">
 	<head>
-		<!-- Pre-paint theme from cookie; logic mirrors `lib/stores/appearance.svelte.ts` (APPEARANCE_COOKIE_KEY). -->
+		<!-- Pre-paint theme from cookie; logic mirrors `lib/stores/appearance.svelte.ts` (APPEARANCE_COOKIE_KEY). Default is system (prefers-color-scheme), not light. -->
 		<script>
 			(function () {
 				try {
+					function themeForSystem() {
+						if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches) {
+							return 'terracotta_dark';
+						}
+						return 'terracotta';
+					}
 					var k = 'appearance=';
 					var raw = null;
 					var cookies = document.cookie ? document.cookie.split(';') : [];
@@ -20,21 +26,15 @@
 						}
 						break;
 					}
-					var theme = 'terracotta';
+					var theme = themeForSystem();
 					if (raw === 'dark') {
 						theme = 'terracotta_dark';
 					} else if (raw === 'light') {
 						theme = 'terracotta';
 					} else if (raw === 'system') {
-						if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches) {
-							theme = 'terracotta_dark';
-						}
-					} else {
-						// Unknown or missing value falls back to system behavior.
-						if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches) {
-							theme = 'terracotta_dark';
-						}
+						theme = themeForSystem();
 					}
+					// missing / unknown cookie: keep themeForSystem() (default = system)
 					document.documentElement.setAttribute('data-theme', theme);
 				} catch {
 					/* ignore */
