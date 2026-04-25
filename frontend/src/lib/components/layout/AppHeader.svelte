@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { UserRound } from 'lucide-svelte';
+	import { useProfile } from '$lib/hooks/useProfile';
 	import { signOutEverywhere } from '$lib/stores/auth';
 	import { isNotificationsConnected, subscribeConnection } from '$lib/stores/notifications';
+
+	const profile = useProfile();
 
 	let wsOk = $state(false);
 	$effect(() =>
@@ -40,6 +43,16 @@
 			<ul
 				class="menu dropdown-content z-50 mt-2 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-sm"
 			>
+				{#if $profile.isSuccess && $profile.data.full_name?.trim()}
+					<li class="pointer-events-none border-b border-base-200 pb-2">
+						<span
+							class="block whitespace-normal break-words px-1 py-0.5 text-center text-xs font-semibold uppercase leading-snug text-base-content/70"
+							aria-label="Signed in as {$profile.data.full_name}"
+						>
+							{$profile.data.full_name.trim()}
+						</span>
+					</li>
+				{/if}
 				<li>
 					<a href="/settings?tab=profile" class="rounded-lg">Profile</a>
 				</li>
