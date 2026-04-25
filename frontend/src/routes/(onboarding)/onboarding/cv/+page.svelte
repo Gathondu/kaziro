@@ -151,7 +151,7 @@
 {#if previewUrl}
 	<div
 		bind:clientWidth={previewContainerWidth}
-		class={`mb-6 rounded-2xl border border-base-300 bg-base-200 ${allowHorizontalOverflow ? 'overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}
+		class={`mb-6 rounded-2xl border border-base-300 bg-base-200 ${allowHorizontalOverflow ? 'scroll-region overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}
 	>
 		<iframe
 			title="CV preview"

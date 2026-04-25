@@ -64,7 +64,7 @@
 	}
 </script>
 
-<div class="flex gap-3 overflow-x-auto pb-4">
+<div class="scroll-region flex gap-3 overflow-x-auto pb-4">
 	{#each columns as col (col.status)}
 		<div class="flex w-64 shrink-0 flex-col rounded-2xl border border-base-300 bg-base-200 p-2">
 			<h3 class="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/70">

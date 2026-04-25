@@ -63,7 +63,7 @@
 	<title>{$jobQ.data?.title ?? 'Job'} — Kaziro</title>
 </svelte:head>
 
-<div class="h-full min-h-0 overflow-y-auto pr-1">
+<div class="scroll-region h-full min-h-0 overflow-y-auto pr-1">
 	{#if $jobQ.isPending || $evQ.isPending}
 		<p class="text-sm text-base-content/60">Loading…</p>
 	{:else if $jobQ.isError || $evQ.isError}

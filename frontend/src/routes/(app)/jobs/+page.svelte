@@ -72,7 +72,7 @@
 	{:else if $q.isError}
 		<p class="pt-6 text-sm text-error">Could not load jobs.</p>
 	{:else}
-		<div class="flex-1 min-h-0 overflow-y-auto px-2">
+		<div class="scroll-region flex-1 min-h-0 overflow-y-auto px-2">
 			{#if flat.length > 100}
 				<p class="mb-2 text-xs text-base-content/60" role="status">
 					Showing {flat.length} loaded jobs — refine filters to narrow results.
