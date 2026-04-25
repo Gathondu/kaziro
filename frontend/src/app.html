@@ -1,18 +1,36 @@
 <!doctype html>
 <html lang="en" data-theme="terracotta">
 	<head>
-		<!-- Pre-paint theme from localStorage; logic mirrors `lib/stores/appearance.svelte.ts` (APPEARANCE_STORAGE_KEY). -->
+		<!-- Pre-paint theme from cookie; logic mirrors `lib/stores/appearance.svelte.ts` (APPEARANCE_COOKIE_KEY). -->
 		<script>
 			(function () {
 				try {
-					var k = 'kaziro-appearance';
-					var raw = localStorage.getItem(k);
+					var k = 'appearance=';
+					var raw = null;
+					var cookies = document.cookie ? document.cookie.split(';') : [];
+					for (var i = 0; i < cookies.length; i++) {
+						var entry = cookies[i].trim();
+						if (!entry.startsWith(k)) {
+							continue;
+						}
+						try {
+							raw = decodeURIComponent(entry.slice(k.length));
+						} catch {
+							raw = null;
+						}
+						break;
+					}
 					var theme = 'terracotta';
 					if (raw === 'dark') {
 						theme = 'terracotta_dark';
 					} else if (raw === 'light') {
 						theme = 'terracotta';
+					} else if (raw === 'system') {
+						if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches) {
+							theme = 'terracotta_dark';
+						}
 					} else {
+						// Unknown or missing value falls back to system behavior.
 						if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches) {
 							theme = 'terracotta_dark';
 						}

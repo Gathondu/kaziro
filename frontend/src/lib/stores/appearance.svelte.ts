@@ -2,15 +2,42 @@ import { browser } from '$app/environment';
 
 export type Appearance = 'light' | 'dark' | 'system';
 
-/** Keep the inline script in `src/app.html` in sync (same string). */
-export const APPEARANCE_STORAGE_KEY = 'kaziro-appearance';
+/** Keep server/client appearance cookie usage in sync (same key). */
+export const APPEARANCE_COOKIE_KEY = 'appearance';
 
-const STORAGE_KEY = APPEARANCE_STORAGE_KEY;
+const COOKIE_KEY = APPEARANCE_COOKIE_KEY;
 
 export const appearance = $state<{ value: Appearance }>({ value: 'system' });
 
 let mediaCleanup: (() => void) | null = null;
 let started = false;
+
+function isAppearance(value: string | null | undefined): value is Appearance {
+	return value === 'light' || value === 'dark' || value === 'system';
+}
+
+export function readAppearanceCookie(): Appearance | null {
+	if (!browser) return null;
+	const cookiePrefix = `${COOKIE_KEY}=`;
+	const cookies = document.cookie ? document.cookie.split(';') : [];
+	for (const cookie of cookies) {
+		const entry = cookie.trim();
+		if (!entry.startsWith(cookiePrefix)) continue;
+		const encodedValue = entry.slice(cookiePrefix.length);
+		try {
+			const decoded = decodeURIComponent(encodedValue);
+			return isAppearance(decoded) ? decoded : null;
+		} catch {
+			return null;
+		}
+	}
+	return null;
+}
+
+export function writeAppearanceCookie(value: Appearance): void {
+	if (!browser) return;
+	document.cookie = `${COOKIE_KEY}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
+}
 
 function daisyThemeFor(mode: Appearance): 'terracotta' | 'terracotta_dark' {
 	if (mode === 'light') return 'terracotta';
@@ -48,18 +75,24 @@ function attachMediaListener(): void {
 export function setAppearance(next: Appearance): void {
 	appearance.value = next;
 	clearMediaListener();
-	localStorage.setItem(STORAGE_KEY, next);
+	if (browser) {
+		writeAppearanceCookie(next);
+	}
 	applyDomTheme();
 	attachMediaListener();
 }
 
-export function initAppearance(): void {
+export function initAppearance(initial?: Appearance): void {
 	if (!browser || started) return;
 	started = true;
 	let loaded: Appearance = 'system';
-	const raw = localStorage.getItem(STORAGE_KEY);
-	if (raw === 'light' || raw === 'dark' || raw === 'system') {
-		loaded = raw;
+	if (isAppearance(initial)) {
+		loaded = initial;
+	} else {
+		const cookieValue = readAppearanceCookie();
+		if (cookieValue !== null) {
+			loaded = cookieValue;
+		}
 	}
 	appearance.value = loaded;
 	clearMediaListener();
