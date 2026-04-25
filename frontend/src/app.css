@@ -8,4 +8,8 @@
 	html {
 		@apply font-sans font-normal antialiased;
 	}
+
+	.form-control .label-text {
+		@apply mb-1 inline-block;
+	}
 }
