@@ -23,21 +23,37 @@
 </script>
 
 <div class="flex flex-col gap-3 rounded-2xl border border-base-300 bg-base-200 p-4">
-	<label class="form-control w-full max-w-md">
-		<span class="label-text text-sm font-medium">Keyword</span>
-		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-100"
-			type="search"
-			placeholder="Title, company, description…"
-			value={keyword}
-			oninput={(e) =>
-				onChange({
-					classification,
-					keyword: (e.currentTarget as HTMLInputElement).value,
-					postedAfter
-				})}
-		/>
-	</label>
+	<div class="flex flex-wrap items-end gap-3">
+		<label class="form-control w-full min-w-64 flex-1">
+			<span class="label-text text-sm font-medium">Keyword</span>
+			<input
+				class="input input-bordered rounded-xl border-base-300 bg-base-100"
+				type="search"
+				placeholder="Title, company, description…"
+				value={keyword}
+				oninput={(e) =>
+					onChange({
+						classification,
+						keyword: (e.currentTarget as HTMLInputElement).value,
+						postedAfter
+					})}
+			/>
+		</label>
+		<label class="form-control w-full max-w-xs">
+			<span class="label-text text-sm font-medium">Posted after</span>
+			<input
+				class="input input-bordered rounded-xl border-base-300 bg-base-100"
+				type="date"
+				value={postedAfter}
+				oninput={(e) =>
+					onChange({
+						classification,
+						keyword,
+						postedAfter: (e.currentTarget as HTMLInputElement).value
+					})}
+			/>
+		</label>
+	</div>
 	<div class="flex flex-wrap gap-2">
 		<span class="self-center text-sm font-medium">Fit:</span>
 		<button
@@ -61,18 +77,4 @@
 			onclick={() => setClass('REJECT')}>Reject</button
 		>
 	</div>
-	<label class="form-control w-full max-w-xs">
-		<span class="label-text text-sm font-medium">Posted after</span>
-		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-100"
-			type="date"
-			value={postedAfter}
-			oninput={(e) =>
-				onChange({
-					classification,
-					keyword,
-					postedAfter: (e.currentTarget as HTMLInputElement).value
-				})}
-		/>
-	</label>
 </div>
