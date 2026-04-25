@@ -20,6 +20,7 @@ from celery import Celery
 from celery.schedules import crontab
 
 from backend.config import Settings, get_settings
+from backend.services.langsmith_tracing import apply_langsmith_tracing_from_settings
 
 # ---------------------------------------------------------------------------
 # Queue definitions
@@ -114,6 +115,8 @@ def create_celery_app(settings: Settings | None = None) -> Celery:
         task_always_eager=settings.CELERY_TASK_ALWAYS_EAGER,
         beat_schedule=_build_beat_schedule(),
     )
+
+    apply_langsmith_tracing_from_settings(settings)
 
     return app
 

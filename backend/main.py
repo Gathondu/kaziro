@@ -17,6 +17,7 @@ from backend.api.middleware import RateLimitMiddleware, RequestIdMiddleware
 from backend.api.router import api_v1_router, auth_router
 from backend.config import AppEnv, Settings, get_settings
 from backend.logging_config import configure_logging, get_logger
+from backend.services.langsmith_tracing import apply_langsmith_tracing_from_settings
 
 log = get_logger(__name__)
 
@@ -25,6 +26,7 @@ log = get_logger(__name__)
 async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     configure_logging(settings)
+    apply_langsmith_tracing_from_settings(settings)
     log.info(
         "app.startup",
         app_env=str(settings.APP_ENV),

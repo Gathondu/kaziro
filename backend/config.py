@@ -176,6 +176,24 @@ class Settings(BaseSettings):
     SENTRY_ENV: str | None = None
     SENTRY_TRACES_SAMPLE_RATE: float = 0.05
 
+    # -- LangSmith (optional; @traceable + LangChain) ----------------------
+    LANGSMITH_TRACING: bool = Field(
+        default=False,
+        description="When true and LANGSMITH_API_KEY is set, enables LangSmith tracing.",
+    )
+    LANGSMITH_API_KEY: SecretStr | None = Field(
+        default=None,
+        description="LangSmith API key (required for export when LANGSMITH_TRACING).",
+    )
+    LANGSMITH_PROJECT: str | None = Field(
+        default=None,
+        description="LangSmith project / session name (optional).",
+    )
+    LANGSMITH_ENDPOINT: AnyHttpUrl | None = Field(
+        default=None,
+        description="Override LangSmith API URL (default: https://api.smith.langchain.com).",
+    )
+
     # -- Local dev only ----------------------------------------------------
     RELOAD: bool = True
     MOCK_LLM: bool = False
