@@ -44,6 +44,7 @@ from jose import JWTError, jwk, jwt
 from jose.exceptions import ExpiredSignatureError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.exceptions import ForbiddenError
 from backend.config import Settings, get_settings
 from backend.db.models.user import User
 from backend.db.repositories import user_repository
@@ -267,7 +268,10 @@ async def get_current_user(
     )
     if not user.is_active:
         log.warning("auth.user_deactivated", user_id=str(user.id))
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="user is deactivated")
+        raise ForbiddenError(
+            "This account has been deactivated.",
+            code="user_deactivated",
+        )
     return user
 
 

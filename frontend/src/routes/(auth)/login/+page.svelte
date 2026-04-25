@@ -3,6 +3,8 @@
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
 	import { loginSchema } from '$lib/schemas/auth';
+	import { ApiError } from '$lib/api/errors';
+	import { assertAppAccountWithAccessToken } from '$lib/api/me';
 	import { getUser, isAuthReady } from '$lib/stores/auth';
 	import { supabase } from '$lib/supabase';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -13,9 +15,20 @@
 	let fieldErrors = $state<Record<string, string>>({});
 	let formError = $state<string | null>(null);
 	let pending = $state(false);
+	/** Blocks auto-redirect while we verify app account (Supabase can be valid when Kaziro user is off). */
+	let verifyingAppAccount = $state(false);
+	let showedDeactivatedFromQuery = $state(false);
 
 	$effect(() => {
-		if (!browser || !isAuthReady()) return;
+		if (!browser || !isAuthReady() || verifyingAppAccount) return;
+		if (
+			!showedDeactivatedFromQuery &&
+			$page.url.searchParams.get('deactivated') === '1'
+		) {
+			showedDeactivatedFromQuery = true;
+			formError =
+				'This account has been deactivated. Contact support if you believe this is a mistake.';
+		}
 		if (getUser()) {
 			const next = $page.url.searchParams.get('next') || '/dashboard';
 			void goto(next);
@@ -35,15 +48,39 @@
 			return;
 		}
 		pending = true;
-		const { error } = await supabase.auth.signInWithPassword({
+		verifyingAppAccount = true;
+		const { data, error } = await supabase.auth.signInWithPassword({
 			email: parsed.data.email,
 			password: parsed.data.password
 		});
-		pending = false;
 		if (error) {
+			verifyingAppAccount = false;
+			pending = false;
 			formError = error.message;
 			return;
 		}
+		const accessToken = data.session?.access_token;
+		if (!accessToken) {
+			verifyingAppAccount = false;
+			pending = false;
+			formError = 'No session returned. Try again.';
+			return;
+		}
+		try {
+			await assertAppAccountWithAccessToken(accessToken);
+		} catch (e) {
+			verifyingAppAccount = false;
+			pending = false;
+			formError =
+				e instanceof ApiError && e.code === 'user_deactivated'
+					? e.message
+					: e instanceof ApiError
+						? e.message
+						: 'Could not verify your account. Try again.';
+			return;
+		}
+		verifyingAppAccount = false;
+		pending = false;
 		const next = $page.url.searchParams.get('next') || '/dashboard';
 		await goto(next);
 	}

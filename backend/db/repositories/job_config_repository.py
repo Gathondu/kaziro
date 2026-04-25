@@ -7,9 +7,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import delete, select
+from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models.job_search_config import JobSearchConfig
+from backend.db.models.user import User
 from backend.db.pagination import Page, paginate
 
 
@@ -49,9 +51,27 @@ async def list_for_user(
 async def list_active_for_scheduler(
     session: AsyncSession,
 ) -> list[JobSearchConfig]:
-    """Return every active config across **all** users — used by Beat."""
-    stmt = select(JobSearchConfig).where(JobSearchConfig.is_active.is_(True))
+    """Return active configs whose owning user is still active — used by Beat."""
+    stmt = (
+        select(JobSearchConfig)
+        .join(User, User.id == JobSearchConfig.user_id)
+        .where(JobSearchConfig.is_active.is_(True), User.is_active.is_(True))
+    )
     return list((await session.execute(stmt)).scalars().all())
+
+
+async def deactivate_all_for_user(session: AsyncSession, user_id: uuid.UUID) -> int:
+    """Set ``is_active=false`` on all of the user's job-search configs (Beat gate)."""
+    stmt = (
+        sql_update(JobSearchConfig)
+        .where(
+            JobSearchConfig.user_id == user_id,
+            JobSearchConfig.is_active.is_(True),
+        )
+        .values(is_active=False, updated_at=datetime.now(UTC))
+    )
+    result = await session.execute(stmt)
+    return int(result.rowcount or 0)
 
 
 async def get_by_id_unscoped(
@@ -113,6 +133,7 @@ async def delete_by_id(
 
 __all__ = [
     "create",
+    "deactivate_all_for_user",
     "delete_by_id",
     "get_by_id",
     "get_by_id_unscoped",

@@ -11,9 +11,9 @@ from backend.api.exceptions import NotFoundError
 from backend.db.repositories import (
     company_summary_repository,
     job_config_repository,
-    user_repository,
 )
 from backend.logging_config import get_logger
+from backend.services import user_lifecycle
 from backend.tasks.pipeline import (
     run_pipeline_for_config_task,
     run_pipeline_for_single_job_task,
@@ -31,7 +31,7 @@ async def trigger_fetch_for_config(session: AsyncSession, config_id: uuid.UUID) 
 
 
 async def disable_user(session: AsyncSession, user_id: uuid.UUID) -> None:
-    user = await user_repository.set_active(session, user_id, is_active=False)
+    user = await user_lifecycle.deactivate_user_and_job_schedules(session, user_id)
     if user is None:
         raise NotFoundError("user not found", code="user_not_found")
     log.info("admin.user_disabled", user_id=str(user_id))

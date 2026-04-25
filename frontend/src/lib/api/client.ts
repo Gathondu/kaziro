@@ -17,7 +17,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === 'object' && v !== null;
 }
 
-function parseErrorBody(json: unknown, status: number): ApiError {
+export function parseErrorBody(json: unknown, status: number): ApiError {
 	if (!isRecord(json)) {
 		return new ApiError('Request failed', { code: 'http_error', status });
 	}
@@ -31,6 +31,19 @@ function parseErrorBody(json: unknown, status: number): ApiError {
 		details: 'details' in err ? err.details : undefined,
 		traceId: typeof err.trace_id === 'string' ? err.trace_id : undefined
 	});
+}
+
+/** App user disabled in DB while Supabase session is still valid — end client session. */
+export async function flushSessionIfDeactivatedAccount(
+	status: number,
+	json: unknown
+): Promise<boolean> {
+	if (!browser || status !== 403 || !isRecord(json)) return false;
+	const err = json.error;
+	if (!isRecord(err) || err.code !== 'user_deactivated') return false;
+	await signOutEverywhere();
+	await goto('/login?deactivated=1');
+	return true;
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -60,6 +73,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
 	if (!res.ok) {
 		if (isJson && isRecord(json)) {
+			await flushSessionIfDeactivatedAccount(res.status, json);
 			throw parseErrorBody(json, res.status);
 		}
 		throw new ApiError(res.statusText || 'Request failed', {
@@ -114,6 +128,7 @@ export async function apiFetchMeta<T>(
 	const json = (await res.json()) as unknown;
 	if (!res.ok) {
 		if (isRecord(json)) {
+			await flushSessionIfDeactivatedAccount(res.status, json);
 			throw parseErrorBody(json, res.status);
 		}
 		throw new ApiError(res.statusText || 'Request failed', {
@@ -163,6 +178,7 @@ export async function apiFetchEmpty(path: string, init: RequestInit = {}): Promi
 	if (ct.includes('application/json')) {
 		const json = (await res.json()) as unknown;
 		if (isRecord(json) && json.error && isRecord(json.error)) {
+			await flushSessionIfDeactivatedAccount(res.status, json);
 			throw parseErrorBody(json, res.status);
 		}
 	}

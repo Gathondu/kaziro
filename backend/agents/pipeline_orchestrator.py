@@ -30,8 +30,10 @@ from backend.agents.research_agent import run_research_agent
 from backend.db.models.enums import Classification
 from backend.db.repositories import (
     evaluation_repository,
+    job_config_repository,
     job_posting_repository,
     raw_job_repository,
+    user_repository,
 )
 from backend.db.session import async_session_factory
 from backend.logging_config import get_logger
@@ -304,6 +306,26 @@ async def run_full_pipeline_for_config(
         "errors": [],
     }
 
+    cfg_uuid = uuid.UUID(str(config_id))
+    uid = uuid.UUID(str(user_id))
+    async with async_session_factory() as gate_session:
+        user_row = await user_repository.get_by_id(gate_session, uid)
+        cfg_row = await job_config_repository.get_by_id_unscoped(gate_session, cfg_uuid)
+    if user_row is None or not user_row.is_active:
+        bound.info("pipeline.full_skipped", reason="user_inactive_or_missing")
+        summary["skipped_reason"] = "user_inactive_or_missing"
+        summary["completed_at"] = datetime.now(UTC).isoformat()
+        return summary
+    if (
+        cfg_row is None
+        or not cfg_row.is_active
+        or cfg_row.user_id != uid
+    ):
+        bound.info("pipeline.full_skipped", reason="config_inactive_or_mismatch")
+        summary["skipped_reason"] = "config_inactive_or_mismatch"
+        summary["completed_at"] = datetime.now(UTC).isoformat()
+        return summary
+
     active_pipeline_tasks.inc()
     try:
         parsed_ids = await run_fetch_and_parse(config_id, user_id)
@@ -366,6 +388,12 @@ async def run_pipeline_for_single_job(
     posting_uuid = uuid.UUID(job_posting_id)
 
     async with async_session_factory() as session:
+        user_row = await user_repository.get_by_id(session, user_uuid)
+        if user_row is None or not user_row.is_active:
+            return {
+                "job_posting_id": job_posting_id,
+                "error": "user_inactive_or_missing",
+            }
         posting = await job_posting_repository.get_by_id(session, posting_uuid)
         if posting is None:
             return {"error": "Job posting not found"}

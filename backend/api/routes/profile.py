@@ -15,9 +15,9 @@ from backend.api.schemas.profile import (
     ProfileUpdateRequest,
     to_response,
 )
-from backend.db.repositories import profile_repository, user_repository
+from backend.db.repositories import profile_repository
 from backend.logging_config import get_logger
-from backend.services import cv_processor
+from backend.services import cv_processor, user_lifecycle
 
 log = get_logger(__name__)
 
@@ -121,10 +121,9 @@ async def disable_own_account(session: SessionDep, current_user: CurrentUser) ->
     """Soft-deactivate the current user row. The client should sign out of Supabase."""
     log_bound = log.bind(user_id=str(current_user.id))
     log_bound.info("profile.account_disable.start")
-    updated = await user_repository.set_active(
+    updated = await user_lifecycle.deactivate_user_and_job_schedules(
         session,
         current_user.id,
-        is_active=False,
     )
     if updated is None:
         log_bound.warning("profile.account_disable.user_missing")
