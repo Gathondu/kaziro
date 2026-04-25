@@ -1,131 +1,30 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
-	import Button from '$lib/components/ui/Button.svelte';
-	import { useProfile, useUpsertProfile } from '$lib/hooks/useProfile';
-	import { profileSettingsSchema } from '$lib/schemas/profile';
+	import { page } from '$app/stores';
+	import JobConfigsList from '$lib/components/settings/JobConfigsList.svelte';
+	import ProfileSettingsForm from '$lib/components/settings/ProfileSettingsForm.svelte';
 
-	const profile = useProfile();
-	const save = useUpsertProfile();
-
-	let full_name = $state('');
-	let professional_summary = $state('');
-	let skillsText = $state('');
-	let domain = $state('');
-	let values_statement = $state('');
-	let linkedin_url = $state('');
-	let fieldErrors = $state<Record<string, string>>({});
-
-	$effect(() => {
-		const p = $profile.data;
-		if (!p) return;
-		full_name = p.full_name;
-		professional_summary = p.professional_summary ?? '';
-		skillsText = (p.skills ?? []).join(', ');
-		domain = p.domain ?? '';
-		values_statement = p.values_statement ?? '';
-		linkedin_url = p.linkedin_url ?? '';
+	type SettingsTab = 'job-configs' | 'profile';
+	const activeTab = $derived.by<SettingsTab>(() => {
+		const tab = $page.url.searchParams.get('tab');
+		return tab === 'profile' ? 'profile' : 'job-configs';
 	});
-
-	async function submit(e: Event): Promise<void> {
-		e.preventDefault();
-		fieldErrors = {};
-		const parsed = profileSettingsSchema.safeParse({
-			full_name,
-			professional_summary,
-			skillsText,
-			domain,
-			values_statement,
-			linkedin_url
-		});
-		if (!parsed.success) {
-			for (const iss of parsed.error.issues) {
-				const k = String(iss.path[0] ?? 'form');
-				fieldErrors = { ...fieldErrors, [k]: iss.message };
-			}
-			return;
-		}
-		const skills = parsed.data.skillsText
-			? parsed.data.skillsText
-					.split(',')
-					.map((s) => s.trim())
-					.filter(Boolean)
-			: [];
-		await get(save).mutateAsync({
-			full_name: parsed.data.full_name,
-			professional_summary: parsed.data.professional_summary || undefined,
-			skills,
-			domain: parsed.data.domain || undefined,
-			values_statement: parsed.data.values_statement || undefined,
-			linkedin_url: parsed.data.linkedin_url || undefined
-		});
-	}
 </script>
 
 <svelte:head>
 	<title>Settings — Kaziro</title>
 </svelte:head>
 
-{#if $profile.isPending}
-	<p class="text-sm text-base-content/60">Loading profile…</p>
-{:else if $profile.isError}
-	<p class="text-sm text-error">Could not load profile.</p>
+<div class="tabs tabs-boxed mb-6 w-fit rounded-xl border border-base-300 bg-base-200 p-1">
+	<a class="tab rounded-lg {activeTab === 'job-configs' ? 'tab-active' : ''}" href="/settings?tab=job-configs"
+		>Job configs</a
+	>
+	<a class="tab rounded-lg {activeTab === 'profile' ? 'tab-active' : ''}" href="/settings?tab=profile"
+		>Profile</a
+	>
+</div>
+
+{#if activeTab === 'job-configs'}
+	<JobConfigsList />
 {:else}
-	<form class="max-w-xl space-y-4" onsubmit={submit}>
-		<label class="form-control">
-			<span class="label-text font-medium">Full name</span>
-			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200"
-				bind:value={full_name}
-			/>
-			{#if fieldErrors.full_name}<span class="label-text-alt text-error"
-					>{fieldErrors.full_name}</span
-				>{/if}
-		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Summary</span>
-			<textarea
-				class="textarea textarea-bordered min-h-24 rounded-xl border-base-300 bg-base-200"
-				bind:value={professional_summary}
-			></textarea>
-		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Skills (comma-separated)</span>
-			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200"
-				bind:value={skillsText}
-			/>
-		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Domain</span>
-			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200"
-				bind:value={domain}
-			/>
-		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Values</span>
-			<textarea
-				class="textarea textarea-bordered min-h-20 rounded-xl border-base-300 bg-base-200"
-				bind:value={values_statement}
-			></textarea>
-		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">LinkedIn URL</span>
-			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200"
-				bind:value={linkedin_url}
-			/>
-			{#if fieldErrors.linkedin_url}
-				<span class="label-text-alt text-error">{fieldErrors.linkedin_url}</span>
-			{/if}
-		</label>
-		<Button type="submit" disabled={$save.isPending}
-			>{$save.isPending ? 'Saving…' : 'Save profile'}</Button
-		>
-	</form>
-	<p class="mt-6 text-sm">
-		<a class="link link-primary font-medium" href="/settings/job-configs"
-			>Manage job search configs →</a
-		>
-	</p>
+	<ProfileSettingsForm />
 {/if}

@@ -5,10 +5,6 @@
 	const list = useJobConfigs(false);
 </script>
 
-<svelte:head>
-	<title>Job configs — Kaziro</title>
-</svelte:head>
-
 {#if $list.isPending}
 	<p class="text-sm text-base-content/60">Loading…</p>
 {:else if $list.isError}

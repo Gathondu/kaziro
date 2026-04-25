@@ -41,7 +41,7 @@
 				class="menu dropdown-content z-50 mt-2 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-sm"
 			>
 				<li>
-					<a href="/settings" class="rounded-lg">Settings</a>
+					<a href="/settings?tab=profile" class="rounded-lg">Profile</a>
 				</li>
 				<li>
 					<button type="button" class="rounded-lg" onclick={() => logout()}>Log out</button>
