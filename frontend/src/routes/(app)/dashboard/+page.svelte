@@ -16,14 +16,14 @@
 	<p class="text-sm text-error">Could not load dashboard.</p>
 {:else if $dashboard.data}
 	<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+		<KpiTile label="Jobs" value={$dashboard.data.jobsTotal} href="/jobs" />
 		<KpiTile
-			label="Jobs (sample)"
-			value={$dashboard.data.jobsSample}
-			hint="Up to 100 in this window"
+			label="Good fits"
+			value={$dashboard.data.goodFitUninteracted}
+			href="/jobs?fit=GOOD_FIT"
 		/>
-		<KpiTile label="Good fits (sample)" value={$dashboard.data.goodFitSample} />
-		<KpiTile label="Applications (sample)" value={$dashboard.data.applicationsTotalSample} />
-		<KpiTile label="Sent" value={$dashboard.data.sentCount} />
+		<KpiTile label="Applications" value={$dashboard.data.applicationsDraft} href="/applications" />
+		<KpiTile label="Sent" value={$dashboard.data.sentCount} href="/dashboard" />
 	</div>
 	<ActivityFeed items={$dashboard.data.recent} loading={false} error={null} />
 {/if}
