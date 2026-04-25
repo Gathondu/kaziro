@@ -63,14 +63,16 @@
 </svelte:head>
 
 <div class="flex h-full min-h-0 flex-col overflow-hidden">
-	<JobFilters {classification} {keyword} {postedAfter} onChange={pushUrl} />
+	<div class="mb-4">
+		<JobFilters {classification} {keyword} {postedAfter} onChange={pushUrl} />
+	</div>
 
 	{#if $q.isPending}
 		<p class="pt-6 text-sm text-base-content/60">Loading jobs…</p>
 	{:else if $q.isError}
 		<p class="pt-6 text-sm text-error">Could not load jobs.</p>
 	{:else}
-		<div class="flex-1 min-h-0 overflow-y-auto pt-6 pr-1">
+		<div class="flex-1 min-h-0 overflow-y-auto pr-1">
 			{#if flat.length > 100}
 				<p class="mb-2 text-xs text-base-content/60" role="status">
 					Showing {flat.length} loaded jobs — refine filters to narrow results.

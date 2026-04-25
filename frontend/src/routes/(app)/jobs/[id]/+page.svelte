@@ -73,54 +73,58 @@ const backHref = $derived.by(() => {
 	<title>{$jobQ.data?.title ?? 'Job'} — Kaziro</title>
 </svelte:head>
 
-{#if $jobQ.isPending || $evQ.isPending}
-	<p class="text-sm text-base-content/60">Loading…</p>
-{:else if $jobQ.isError || $evQ.isError}
-	<p class="text-sm text-error">Job or evaluation not found.</p>
-{:else if $jobQ.data && $evQ.data}
-	<div class="mb-4">
-		<a
-			href={backHref}
-			class="btn btn-ghost btn-sm gap-2 rounded-xl text-base-content/80 hover:text-base-content"
-			aria-label="Back to jobs list"
-		>
-			<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4" aria-hidden="true">
-				<path
-					d="M15 18L9 12L15 6"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				></path>
-			</svg>
-			Back to jobs
-		</a>
-	</div>
-	<div class="mb-6 flex flex-wrap gap-2">
-		<Button onclick={() => reevaluate()} disabled={$triggerEv.isPending}>Re-run evaluation</Button>
-		<Button variant="secondary" onclick={() => generateDocs()} disabled={$createApp.isPending}>
-			Generate documents
-		</Button>
-		<Button variant="outline" onclick={() => notInterested()}>Not interested</Button>
-	</div>
-	<div class="grid gap-6 lg:grid-cols-2">
-		<section class="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
-			<h1 class="text-2xl font-semibold">{$jobQ.data.title}</h1>
-			<p class="text-base-content/70">{$jobQ.data.company_name}</p>
-			<a
-				class="link link-primary mt-2 inline-block text-sm font-medium"
-				href={$jobQ.data.application_url}
-			>
-				Apply on company site
-			</a>
-			<h2 class="mt-6 text-sm font-semibold">Description</h2>
-			<div class="mt-2 max-w-none whitespace-pre-wrap text-sm leading-relaxed text-base-content/80">
-				{$jobQ.data.description}
+<div class="h-full min-h-0 overflow-y-auto pr-1">
+	{#if $jobQ.isPending || $evQ.isPending}
+		<p class="text-sm text-base-content/60">Loading…</p>
+	{:else if $jobQ.isError || $evQ.isError}
+		<p class="text-sm text-error">Job or evaluation not found.</p>
+	{:else if $jobQ.data && $evQ.data}
+		<div class="sticky top-0 z-10 -mx-1 mb-6 bg-base-100/95 px-1 pb-3 pt-1 backdrop-blur">
+			<div class="mb-3">
+				<a
+					href={backHref}
+					class="btn btn-ghost btn-sm gap-2 rounded-xl text-base-content/80 hover:text-base-content"
+					aria-label="Back to jobs list"
+				>
+					<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4" aria-hidden="true">
+						<path
+							d="M15 18L9 12L15 6"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						></path>
+					</svg>
+					Back to jobs
+				</a>
 			</div>
-		</section>
-		<div class="space-y-6">
-			<EvaluationPanel evaluation={$evQ.data} />
-			<CompanyBrief job={$jobQ.data} />
+			<div class="flex flex-wrap gap-2">
+				<Button onclick={() => reevaluate()} disabled={$triggerEv.isPending}>Re-run evaluation</Button>
+				<Button variant="secondary" onclick={() => generateDocs()} disabled={$createApp.isPending}>
+					Generate documents
+				</Button>
+				<Button variant="outline" onclick={() => notInterested()}>Not interested</Button>
+			</div>
 		</div>
-	</div>
-{/if}
+		<div class="grid gap-6 lg:grid-cols-2">
+			<section class="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+				<h1 class="text-2xl font-semibold">{$jobQ.data.title}</h1>
+				<p class="text-base-content/70">{$jobQ.data.company_name}</p>
+				<a
+					class="link link-primary mt-2 inline-block text-sm font-medium"
+					href={$jobQ.data.application_url}
+				>
+					Apply on company site
+				</a>
+				<h2 class="mt-6 text-sm font-semibold">Description</h2>
+				<div class="mt-2 max-w-none whitespace-pre-wrap text-sm leading-relaxed text-base-content/80">
+					{$jobQ.data.description}
+				</div>
+			</section>
+			<div class="space-y-6">
+				<EvaluationPanel evaluation={$evQ.data} />
+				<CompanyBrief job={$jobQ.data} />
+			</div>
+		</div>
+	{/if}
+</div>
