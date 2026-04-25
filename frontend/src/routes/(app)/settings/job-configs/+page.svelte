@@ -1,15 +1,8 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
-	import Button from '$lib/components/ui/Button.svelte';
-	import { ApiError } from '$lib/api/errors';
-	import { useDisableJobConfig, useJobConfigs, useRunJobConfigPipeline } from '$lib/hooks/useJobConfig';
-	import { toast } from '$lib/stores/toast';
+	import JobConfigActions from '$lib/components/settings/JobConfigActions.svelte';
+	import { useJobConfigs } from '$lib/hooks/useJobConfig';
 
 	const list = useJobConfigs(false);
-	const disable = useDisableJobConfig();
-	const runPipe = useRunJobConfigPipeline();
-
-	let runTargetId = $state<string | null>(null);
 </script>
 
 <svelte:head>
@@ -33,32 +26,7 @@
 					</p>
 				</div>
 				{#if cfg.is_active}
-					<div class="flex flex-wrap gap-2">
-						<Button
-							variant="outline"
-							disabled={$runPipe.isPending || $disable.isPending}
-							onclick={async () => {
-								runTargetId = cfg.id;
-								try {
-									await get(runPipe).mutateAsync(cfg.id);
-									toast.success('Pipeline run queued.');
-								} catch (e) {
-									toast.error(e instanceof ApiError ? e.message : 'Could not start run');
-								} finally {
-									runTargetId = null;
-								}
-							}}
-						>
-							{$runPipe.isPending && runTargetId === cfg.id ? 'Queuing…' : 'Run now'}
-						</Button>
-						<Button
-							variant="outline"
-							disabled={$disable.isPending || $runPipe.isPending}
-							onclick={() => get(disable).mutateAsync(cfg.id)}
-						>
-							Disable
-						</Button>
-					</div>
+					<JobConfigActions configId={cfg.id} />
 				{/if}
 			</li>
 		{/each}
