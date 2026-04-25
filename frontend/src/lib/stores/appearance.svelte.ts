@@ -2,7 +2,10 @@ import { browser } from '$app/environment';
 
 export type Appearance = 'light' | 'dark' | 'system';
 
-const STORAGE_KEY = 'kaziro-appearance';
+/** Keep the inline script in `src/app.html` in sync (same string). */
+export const APPEARANCE_STORAGE_KEY = 'kaziro-appearance';
+
+const STORAGE_KEY = APPEARANCE_STORAGE_KEY;
 
 export const appearance = $state<{ value: Appearance }>({ value: 'system' });
 
