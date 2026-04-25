@@ -80,7 +80,7 @@ export function useJobFromRoute() {
 			queryKey: ['job', id] as const,
 			queryFn: () => getJob(String(id)),
 			enabled: browser && Boolean(id),
-			staleTime: 60_000
+			staleTime: 5 * 60_000
 		};
 	});
 	return createQuery(options);

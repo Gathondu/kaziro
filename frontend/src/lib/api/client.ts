@@ -2,7 +2,7 @@ import { goto } from '$app/navigation';
 import { browser } from '$app/environment';
 import { getPublicApiUrl } from '$lib/env/public';
 import { ApiError } from './errors';
-import { getJwt, signOutEverywhere } from './auth';
+import { getJwt, signOutEverywhere, waitForAuthReady } from './auth';
 import type { Envelope } from '$lib/types/api';
 import { logger } from '$lib/utils/logger';
 
@@ -34,6 +34,9 @@ function parseErrorBody(json: unknown, status: number): ApiError {
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+	if (browser) {
+		await waitForAuthReady();
+	}
 	const headers = new Headers(init.headers);
 	const token = getJwt();
 	if (token) {
@@ -88,6 +91,9 @@ export async function apiFetchMeta<T>(
 	path: string,
 	init?: RequestInit
 ): Promise<{ data: T; nextCursor: string | null }> {
+	if (browser) {
+		await waitForAuthReady();
+	}
 	const headers = new Headers(init?.headers);
 	const token = getJwt();
 	if (token) {
@@ -133,6 +139,9 @@ export async function apiFetchMeta<T>(
 /** Follow auth redirect for PDF downloads; returns final signed URL. */
 /** For ``204 No Content`` responses (e.g. DELETE). */
 export async function apiFetchEmpty(path: string, init: RequestInit = {}): Promise<void> {
+	if (browser) {
+		await waitForAuthReady();
+	}
 	const headers = new Headers(init.headers);
 	const token = getJwt();
 	if (token) {
@@ -166,6 +175,9 @@ export async function apiFetchEmpty(path: string, init: RequestInit = {}): Promi
 }
 
 export async function resolveAuthenticatedRedirect(path: string): Promise<string> {
+	if (browser) {
+		await waitForAuthReady();
+	}
 	const headers = new Headers();
 	const token = getJwt();
 	if (token) {

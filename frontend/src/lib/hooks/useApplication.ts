@@ -8,6 +8,8 @@ import {
 	getApplication,
 	listApplications,
 	markApplicationSent,
+	signedCoverLetterUrl,
+	signedCvUrl,
 	updateApplicationDocs,
 	updateApplicationStatus
 } from '$lib/api/applications';
@@ -21,7 +23,7 @@ export function useApplicationFromRoute() {
 			queryKey: ['application', id] as const,
 			queryFn: () => getApplication(String(id)),
 			enabled: browser && Boolean(id),
-			staleTime: 60_000
+			staleTime: 5 * 60_000
 		};
 	});
 	return createQuery(options);
@@ -34,7 +36,7 @@ export function useApplicationFromQueryParam(paramName: string) {
 			queryKey: ['application', id] as const,
 			queryFn: () => getApplication(id),
 			enabled: browser && Boolean(id),
-			staleTime: 60_000
+			staleTime: 5 * 60_000
 		};
 	});
 	return createQuery(options);
@@ -46,6 +48,27 @@ export function useCreateApplication() {
 		mutationFn: (jobPostingId: string) => createApplication(jobPostingId),
 		onSuccess: () => {
 			void qc.invalidateQueries({ queryKey: ['applications'] });
+		}
+	});
+}
+
+export function useMarkJobNotInterested() {
+	const qc = useQueryClient();
+	return createMutation<Application, Error, string>({
+		mutationFn: async (jobPostingId: string) => {
+			const { items } = await listApplications({ limit: LIST_APPLICATIONS_MAX_LIMIT });
+			const existing = items.find((item) => item.job_posting_id === jobPostingId);
+			if (existing) {
+				return updateApplicationStatus(existing.id, 'WITHDRAWN');
+			}
+			const created = await createApplication(jobPostingId);
+			return updateApplicationStatus(created.id, 'WITHDRAWN');
+		},
+		onSuccess: (application) => {
+			void qc.invalidateQueries({ queryKey: ['application', application.id] });
+			void qc.invalidateQueries({ queryKey: ['applications'] });
+			void qc.invalidateQueries({ queryKey: ['jobs'] });
+			void qc.invalidateQueries({ queryKey: ['dashboard'] });
 		}
 	});
 }
@@ -97,6 +120,30 @@ export function useApplicationsBoard() {
 			const { items } = await listApplications({ limit: LIST_APPLICATIONS_MAX_LIMIT });
 			return items;
 		},
-		staleTime: 30_000
+		staleTime: 5 * 60_000
 	});
+}
+
+export interface ApplicationPdfUrls {
+	cvUrl: string | null;
+	coverLetterUrl: string | null;
+}
+
+export function useApplicationPdfUrlsFromQueryParam(paramName: string) {
+	const options = derived(page, ($p) => {
+		const id = $p.url.searchParams.get(paramName) ?? '';
+		return {
+			queryKey: ['application', id, 'pdf-urls'] as const,
+			queryFn: async (): Promise<ApplicationPdfUrls> => {
+				const [cvUrl, coverLetterUrl] = await Promise.all([
+					signedCvUrl(id),
+					signedCoverLetterUrl(id)
+				]);
+				return { cvUrl, coverLetterUrl };
+			},
+			enabled: browser && Boolean(id),
+			staleTime: 10 * 60_000
+		};
+	});
+	return createQuery(options);
 }

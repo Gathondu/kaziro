@@ -4,5 +4,6 @@ export {
 	getUser,
 	initAuthClient,
 	isAuthReady,
+	waitForAuthReady,
 	signOutEverywhere
 } from './auth.svelte';

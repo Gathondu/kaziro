@@ -48,18 +48,22 @@ function wsUrl(token: string): string {
 
 function dispatch(msg: NotificationMessage): void {
 	const qc = getQueryClient();
-	if (msg.type === 'evaluation_complete' || msg.type === 'documents_ready') {
+	if (msg.type === 'evaluation_complete') {
 		toast.success(
-			msg.type === 'evaluation_complete'
-				? 'Evaluation finished for a job.'
-				: 'Application documents are ready.'
+			'Evaluation finished for a job.'
 		);
 		qc?.invalidateQueries({ queryKey: ['jobs'] });
-		qc?.invalidateQueries({ queryKey: ['job'] });
+		qc?.invalidateQueries({ queryKey: ['job', msg.job_posting_id] });
+		qc?.invalidateQueries({ queryKey: ['job', msg.job_posting_id, 'evaluation'] });
+		qc?.invalidateQueries({ queryKey: ['dashboard'] });
+	}
+	if (msg.type === 'documents_ready') {
+		toast.success('Application documents are ready.');
 		qc?.invalidateQueries({ queryKey: ['applications'] });
 		qc?.invalidateQueries({ queryKey: ['dashboard'] });
 	}
 	if (msg.type === 'application_event') {
+		qc?.invalidateQueries({ queryKey: ['application', msg.application_id] });
 		qc?.invalidateQueries({ queryKey: ['applications'] });
 		qc?.invalidateQueries({ queryKey: ['dashboard'] });
 	}

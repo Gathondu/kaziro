@@ -54,7 +54,7 @@ async function listAllApplications(): Promise<Application[]> {
 export function useDashboard() {
 	return createQuery({
 		queryKey: ['dashboard'],
-		staleTime: 30_000,
+		staleTime: 5 * 60_000,
 		queryFn: async (): Promise<DashboardSnapshot> => {
 			const [allJobs, allGoodFitJobs, allApplications] = await Promise.all([
 				listAllJobs(),

@@ -5,7 +5,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import CompanyBrief from '$lib/components/jobs/CompanyBrief.svelte';
 	import EvaluationPanel from '$lib/components/jobs/EvaluationPanel.svelte';
-	import { useCreateApplication } from '$lib/hooks/useApplication';
+	import { useCreateApplication, useMarkJobNotInterested } from '$lib/hooks/useApplication';
 	import {
 		useJobEvaluationFromRoute,
 		useJobFromRoute,
@@ -20,11 +20,12 @@
 	const evQ = useJobEvaluationFromRoute();
 	const triggerEv = useTriggerEvaluation();
 	const createApp = useCreateApplication();
-const backHref = $derived.by(() => {
-	const requested = $page.url.searchParams.get('backTo');
-	if (!requested) return '/jobs';
-	return requested.startsWith('/jobs') ? requested : '/jobs';
-});
+	const markNotInterested = useMarkJobNotInterested();
+	const backHref = $derived.by(() => {
+		const requested = $page.url.searchParams.get('backTo');
+		if (!requested) return '/jobs';
+		return requested.startsWith('/jobs') ? requested : '/jobs';
+	});
 
 	async function reevaluate(): Promise<void> {
 		if (!jobId) return;
@@ -49,18 +50,7 @@ const backHref = $derived.by(() => {
 	async function notInterested(): Promise<void> {
 		if (!jobId) return;
 		try {
-			const {
-				LIST_APPLICATIONS_MAX_LIMIT,
-				listApplications,
-				createApplication,
-				updateApplicationStatus
-			} = await import('$lib/api/applications');
-			const { items } = await listApplications({ limit: LIST_APPLICATIONS_MAX_LIMIT });
-			let app = items.find((a) => a.job_posting_id === jobId);
-			if (!app) {
-				app = await createApplication(jobId);
-			}
-			await updateApplicationStatus(app.id, 'WITHDRAWN');
+			await get(markNotInterested).mutateAsync(jobId);
 			toast.success('Marked as not interested.');
 			await goto('/jobs');
 		} catch (e) {
@@ -103,7 +93,13 @@ const backHref = $derived.by(() => {
 				<Button variant="secondary" onclick={() => generateDocs()} disabled={$createApp.isPending}>
 					Generate documents
 				</Button>
-				<Button variant="outline" onclick={() => notInterested()}>Not interested</Button>
+				<Button
+					variant="outline"
+					onclick={() => notInterested()}
+					disabled={$markNotInterested.isPending}
+				>
+					{$markNotInterested.isPending ? 'Updating…' : 'Not interested'}
+				</Button>
 			</div>
 		</div>
 		<div class="grid gap-6 lg:grid-cols-2">

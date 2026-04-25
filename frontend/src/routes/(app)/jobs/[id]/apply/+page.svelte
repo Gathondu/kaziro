@@ -6,55 +6,30 @@
 	import PdfPreview from '$lib/components/applications/PdfPreview.svelte';
 	import {
 		useApplicationFromQueryParam,
+		useApplicationPdfUrlsFromQueryParam,
 		useMarkApplicationSent,
 		useUpdateApplicationDocs
 	} from '$lib/hooks/useApplication';
-	import { signedCoverLetterUrl, signedCvUrl } from '$lib/api/applications';
 	import { ApiError } from '$lib/api/errors';
 	import { toast } from '$lib/stores/toast';
 
 	const applicationId = $derived($page.url.searchParams.get('applicationId') ?? '');
 
 	const appQ = useApplicationFromQueryParam('applicationId');
+	const pdfUrlsQ = useApplicationPdfUrlsFromQueryParam('applicationId');
 	const saveDocs = useUpdateApplicationDocs();
 	const markSent = useMarkApplicationSent();
 
 	let cover = $state('');
-	let cvUrl = $state<string | null>(null);
-	let clUrl = $state<string | null>(null);
+	let syncedDocId = $state<string | null>(null);
 
 	$effect(() => {
-		const d = get(appQ).data?.application_doc;
-		if (d) {
-			cover = d.cover_letter_text ?? '';
-		}
-	});
+		const doc = $appQ.data?.application_doc;
+		const docId = doc?.id ?? null;
+		if (!docId || docId === syncedDocId) return;
 
-	$effect(() => {
-		const app = get(appQ).data;
-		if (!app?.id || !app.application_doc?.cv_pdf_path) {
-			cvUrl = null;
-			clUrl = null;
-			return;
-		}
-		let cancelled = false;
-		void (async () => {
-			try {
-				const [cv, cl] = await Promise.all([signedCvUrl(app.id), signedCoverLetterUrl(app.id)]);
-				if (!cancelled) {
-					cvUrl = cv;
-					clUrl = cl;
-				}
-			} catch {
-				if (!cancelled) {
-					cvUrl = null;
-					clUrl = null;
-				}
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
+		syncedDocId = docId;
+		cover = doc?.cover_letter_text ?? '';
 	});
 
 	async function save(): Promise<void> {
@@ -109,11 +84,11 @@
 			</div>
 		</div>
 		<div class="space-y-4">
-			{#if cvUrl}
-				<PdfPreview title="Tailored CV" url={cvUrl} />
+			{#if $pdfUrlsQ.data?.cvUrl}
+				<PdfPreview title="Tailored CV" url={$pdfUrlsQ.data.cvUrl} />
 			{/if}
-			{#if clUrl}
-				<PdfPreview title="Cover letter PDF" url={clUrl} />
+			{#if $pdfUrlsQ.data?.coverLetterUrl}
+				<PdfPreview title="Cover letter PDF" url={$pdfUrlsQ.data.coverLetterUrl} />
 			{/if}
 		</div>
 	</div>
