@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
 from typing import Final
 
@@ -15,6 +16,10 @@ from backend.services.notifications import channel_for_user, get_redis
 
 router: Final[APIRouter] = APIRouter(tags=["websocket"])
 log = get_logger(__name__)
+
+# Short poll so uvicorn reload / shutdown can cancel this handler promptly. Using
+# ``pubsub.listen()`` blocks inside Redis with no timeout, which can stall reload.
+_PUBSUB_POLL_TIMEOUT_S: Final[float] = 1.0
 
 
 @router.websocket("/ws/notifications")
@@ -49,7 +54,11 @@ async def notifications_socket(websocket: WebSocket) -> None:
 
     hb = asyncio.create_task(_heartbeat())
     try:
-        async for message in pubsub.listen():
+        while True:
+            message = await pubsub.get_message(
+                ignore_subscribe_messages=True,
+                timeout=_PUBSUB_POLL_TIMEOUT_S,
+            )
             if message is None:
                 continue
             if message.get("type") != "message":
@@ -66,6 +75,8 @@ async def notifications_socket(websocket: WebSocket) -> None:
         log.info("ws.notifications.disconnect", user_id=user_id)
     finally:
         hb.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await hb
         try:
             await pubsub.unsubscribe(channel)
             await pubsub.close()
