@@ -5,10 +5,12 @@
 
 	const {
 		job,
-		classification
+		classification,
+		detailHref = `/jobs/${job.id}`
 	}: {
 		job: JobPosting;
 		classification?: Classification | null;
+		detailHref?: string;
 	} = $props();
 
 	const badgeVariant = $derived(
@@ -23,7 +25,7 @@
 </script>
 
 <a
-	href="/jobs/{job.id}"
+	href={detailHref}
 	class="block rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm transition-shadow hover:shadow-md"
 >
 	<div class="flex flex-wrap items-start justify-between gap-2">

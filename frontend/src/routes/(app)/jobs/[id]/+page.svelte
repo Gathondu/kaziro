@@ -20,6 +20,11 @@
 	const evQ = useJobEvaluationFromRoute();
 	const triggerEv = useTriggerEvaluation();
 	const createApp = useCreateApplication();
+const backHref = $derived.by(() => {
+	const requested = $page.url.searchParams.get('backTo');
+	if (!requested) return '/jobs';
+	return requested.startsWith('/jobs') ? requested : '/jobs';
+});
 
 	async function reevaluate(): Promise<void> {
 		if (!jobId) return;
@@ -73,6 +78,24 @@
 {:else if $jobQ.isError || $evQ.isError}
 	<p class="text-sm text-error">Job or evaluation not found.</p>
 {:else if $jobQ.data && $evQ.data}
+	<div class="mb-4">
+		<a
+			href={backHref}
+			class="btn btn-ghost btn-sm gap-2 rounded-xl text-base-content/80 hover:text-base-content"
+			aria-label="Back to jobs list"
+		>
+			<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4" aria-hidden="true">
+				<path
+					d="M15 18L9 12L15 6"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				></path>
+			</svg>
+			Back to jobs
+		</a>
+	</div>
 	<div class="mb-6 flex flex-wrap gap-2">
 		<Button onclick={() => reevaluate()} disabled={$triggerEv.isPending}>Re-run evaluation</Button>
 		<Button variant="secondary" onclick={() => generateDocs()} disabled={$createApp.isPending}>
