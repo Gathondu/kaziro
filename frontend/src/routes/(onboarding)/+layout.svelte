@@ -4,8 +4,15 @@
 	import { page } from '$app/stores';
 	import { fade } from 'svelte/transition';
 	import { ChevronLeft } from 'lucide-svelte';
+	import { getProfile } from '$lib/api/profile';
+	import { ApiError } from '$lib/api/errors';
 	import { getUser, isAuthReady } from '$lib/stores/auth';
-	import { hasOnboardingBack, onboardingStepMeta, prepareOnboardingBack } from '$lib/utils/onboarding';
+	import {
+		clearOnboardingDraft,
+		hasOnboardingBack,
+		onboardingStepMeta,
+		prepareOnboardingBack
+	} from '$lib/utils/onboarding';
 
 	const { children } = $props();
 
@@ -27,6 +34,31 @@
 			const next = encodeURIComponent($page.url.pathname + $page.url.search);
 			void goto(`/login?next=${next}`);
 		}
+	});
+
+	/** Finished users have a profile row; new signups do not until onboarding completes. */
+	$effect(() => {
+		if (!browser || !isAuthReady() || !getUser()) return;
+		if (!pathname.startsWith('/onboarding')) return;
+		let cancelled = false;
+		void (async () => {
+			try {
+				await getProfile();
+				if (cancelled) return;
+				clearOnboardingDraft();
+				await goto('/dashboard');
+			} catch (e) {
+				if (
+					e instanceof ApiError &&
+					(e.code === 'profile_not_found' || e.status === 404)
+				) {
+					return;
+				}
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
 	});
 </script>
 
