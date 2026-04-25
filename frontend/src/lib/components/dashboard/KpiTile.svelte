@@ -24,13 +24,17 @@
 				class="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
 			>
 				<span
+					class="absolute -inset-28 animate-spin blur-lg"
+					style="background: conic-gradient(from 0deg, transparent 0deg, transparent 185deg, oklch(var(--p) / 0.72) 235deg, oklch(var(--p) / 1) 275deg, oklch(var(--s) / 1) 315deg, oklch(var(--a) / 1) 345deg, oklch(var(--a) / 0.72) 360deg); animation-duration: 3.4s;"
+				></span>
+				<span
 					class="absolute -inset-24 animate-spin"
-					style="background: conic-gradient(from 0deg, transparent 0deg, transparent 235deg, oklch(var(--p) / 0.45) 270deg, oklch(var(--p) / 0.85) 300deg, oklch(var(--s) / 0.95) 326deg, oklch(var(--a) / 0.85) 348deg, oklch(var(--a) / 0.45) 360deg); animation-duration: 3.4s;"
+					style="background: conic-gradient(from 0deg, transparent 0deg, transparent 195deg, oklch(var(--p) / 0.8) 245deg, oklch(var(--p) / 1) 285deg, oklch(var(--s) / 1) 320deg, oklch(var(--a) / 1) 348deg, oklch(var(--a) / 0.8) 360deg); animation-duration: 3.4s;"
 				></span>
 			</span>
 		{/if}
 		<span
-			class="relative z-10 block m-px rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
+			class="relative z-10 block m-0.5 rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
 		>
 			<p class="text-sm font-medium text-base-content/70">{label}</p>
 			<p class="mt-2 text-3xl font-semibold tabular-nums">{value}</p>
