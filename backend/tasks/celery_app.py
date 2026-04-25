@@ -55,6 +55,7 @@ TASK_ROUTES: Final[dict[str, dict[str, str]]] = {
     "backend.tasks.run_document_for_evaluation": {"queue": QUEUE_DOCUMENT},
     "backend.tasks.run_pipeline_for_config": {"queue": QUEUE_DEFAULT},
     "backend.tasks.run_pipeline_for_single_job": {"queue": QUEUE_DEFAULT},
+    "backend.tasks.run_research_then_document_for_evaluation": {"queue": QUEUE_DEFAULT},
     "backend.tasks.enqueue_active_pipelines": {"queue": QUEUE_DEFAULT},
     "backend.tasks.purge_expired_company_summaries": {"queue": QUEUE_MAINTENANCE},
 }

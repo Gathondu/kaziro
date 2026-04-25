@@ -85,9 +85,23 @@ async def create_application(
 
     doc = await application_doc_repository.get_by_evaluation_id(session, user_id, evaluation.id)
     if doc is None:
-        raise NotFoundError(
-            "application documents are not ready yet",
-            code="application_documents_not_ready",
+        from backend.tasks.pipeline import run_research_then_document_for_evaluation_task
+
+        run_research_then_document_for_evaluation_task.delay(
+            str(job_posting_id),
+            str(evaluation.id),
+            str(user_id),
+        )
+        log.info(
+            "applications.doc_generation_enqueued",
+            user_id=str(user_id),
+            job_posting_id=str(job_posting_id),
+            job_evaluation_id=str(evaluation.id),
+        )
+        raise ConflictError(
+            "Tailored documents are being generated. You will get a notification when "
+            "they are ready — then use Generate documents again to open the editor.",
+            code="application_documents_generating",
         )
 
     existing = await application_repository.get_by_user_posting(session, user_id, job_posting_id)

@@ -43,6 +43,10 @@
 			const app = await get(createApp).mutateAsync(jobId);
 			await goto(`/jobs/${jobId}/apply?applicationId=${app.id}`);
 		} catch (e) {
+			if (e instanceof ApiError && e.code === 'application_documents_generating') {
+				toast.info(e.message);
+				return;
+			}
 			toast.error(e instanceof ApiError ? e.message : 'Could not create application');
 		}
 	}

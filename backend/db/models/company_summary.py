@@ -45,7 +45,7 @@ class CompanySummary(TimestampedBase):
     values: Mapped[str | None] = mapped_column(Text, nullable=True)
     culture: Mapped[str | None] = mapped_column(Text, nullable=True)
     tech_stack: Mapped[str | None] = mapped_column(Text, nullable=True)
-    team_size_approx: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    team_size_approx: Mapped[str | None] = mapped_column(Text, nullable=True)
     recent_news: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_scraped_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True)

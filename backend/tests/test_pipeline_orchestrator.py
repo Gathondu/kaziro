@@ -111,6 +111,27 @@ async def test_full_pipeline_one_eval_failure_continues_batch() -> None:
 
 
 @pytest.mark.asyncio
+async def test_full_pipeline_maybe_gets_documents() -> None:
+    cfg, uid = str(uuid.uuid4()), str(uuid.uuid4())
+    with (
+        _patch_full_pipeline_user_config_gate(cfg, uid),
+        patch.object(orch, "notify_user", new=AsyncMock()),
+        patch.object(orch, "run_fetch_and_parse", new=AsyncMock(return_value=["p1"])),
+        patch.object(
+            orch,
+            "run_evaluation_for_user",
+            new=AsyncMock(return_value=("eval-maybe", Classification.MAYBE)),
+        ),
+        patch.object(orch, "run_research_stage", new=AsyncMock(return_value=True)),
+        patch.object(orch, "run_document_stage", new=AsyncMock(return_value=True)),
+    ):
+        summary = await orch.run_full_pipeline_for_config(cfg, uid)
+
+    assert summary["evaluations_maybe"] == 1
+    assert summary["documents_generated"] == 1
+
+
+@pytest.mark.asyncio
 async def test_full_pipeline_skips_when_user_inactive() -> None:
     cfg, uid = str(uuid.uuid4()), str(uuid.uuid4())
     mock_fetch = AsyncMock()

@@ -29,6 +29,7 @@ from backend.agents.parser_agent import run_parser_agent
 from backend.agents.research_agent import run_research_agent
 from backend.db.models.enums import Classification
 from backend.db.repositories import (
+    application_doc_repository,
     evaluation_repository,
     job_config_repository,
     job_posting_repository,
@@ -49,9 +50,7 @@ EVALUATION_CONCURRENCY: Final[int] = 3
 def _trace_pipeline_basic_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return {
         "config_id": str(inputs.get("config_id")) if "config_id" in inputs else None,
-        "job_posting_id": str(inputs.get("job_posting_id"))
-        if "job_posting_id" in inputs
-        else None,
+        "job_posting_id": str(inputs.get("job_posting_id")) if "job_posting_id" in inputs else None,
         "job_evaluation_id": str(inputs.get("job_evaluation_id"))
         if "job_evaluation_id" in inputs
         else None,
@@ -83,9 +82,7 @@ def _trace_pipeline_outputs(output: Any) -> dict[str, Any]:
     process_inputs=_trace_pipeline_basic_inputs,
     process_outputs=_trace_pipeline_outputs,
 )
-async def run_fetch_and_parse(
-    config_id: str, user_id: str
-) -> list[str]:
+async def run_fetch_and_parse(config_id: str, user_id: str) -> list[str]:
     """Fetch + parse new jobs for a config; return parsed posting ids."""
     bound = log.bind(config_id=config_id, user_id=user_id, stage="fetch_parse")
     bound.info("pipeline.fetch_start")
@@ -107,9 +104,7 @@ async def run_fetch_and_parse(
     user_uuid = uuid.UUID(user_id)
 
     async with async_session_factory() as session:
-        pending = await raw_job_repository.list_pending(
-            session, limit=len(new_payloads) * 2
-        )
+        pending = await raw_job_repository.list_pending(session, limit=len(new_payloads) * 2)
         # Only operate on rows that belong to this user — list_pending
         # returns global pending rows, so filter here for safety.
         pending = [row for row in pending if row.user_id == user_uuid]
@@ -166,9 +161,7 @@ async def run_evaluation_for_user(
     Returns ``(evaluation_id, classification)`` so the orchestrator can
     decide whether to escalate to Research/Document.
     """
-    bound = log.bind(
-        job_posting_id=job_posting_id, user_id=user_id, stage="evaluate"
-    )
+    bound = log.bind(job_posting_id=job_posting_id, user_id=user_id, stage="evaluate")
     bound.info("pipeline.evaluation_start")
 
     try:
@@ -193,9 +186,7 @@ async def run_evaluation_for_user(
         {
             "type": "evaluation_complete",
             "job_posting_id": job_posting_id,
-            "classification": (
-                classification.value if classification else None
-            ),
+            "classification": (classification.value if classification else None),
             "score": result.overall_score,
         },
     )
@@ -216,9 +207,7 @@ async def run_evaluation_for_user(
     process_outputs=_trace_pipeline_outputs,
 )
 async def run_research_stage(job_posting_id: str, user_id: str) -> bool:
-    bound = log.bind(
-        job_posting_id=job_posting_id, user_id=user_id, stage="research"
-    )
+    bound = log.bind(job_posting_id=job_posting_id, user_id=user_id, stage="research")
     bound.info("pipeline.research_start")
     try:
         result = await run_research_agent(job_posting_id)
@@ -245,9 +234,7 @@ async def run_research_stage(job_posting_id: str, user_id: str) -> bool:
     process_outputs=_trace_pipeline_outputs,
 )
 async def run_document_stage(job_evaluation_id: str, user_id: str) -> bool:
-    bound = log.bind(
-        job_evaluation_id=job_evaluation_id, user_id=user_id, stage="document"
-    )
+    bound = log.bind(job_evaluation_id=job_evaluation_id, user_id=user_id, stage="document")
     bound.info("pipeline.document_start")
     try:
         result = await run_document_agent(job_evaluation_id, user_id)
@@ -271,6 +258,64 @@ async def run_document_stage(job_evaluation_id: str, user_id: str) -> bool:
     return True
 
 
+async def run_research_then_document_for_evaluation(
+    job_posting_id: str,
+    evaluation_id: str,
+    user_id: str,
+) -> dict[str, Any]:
+    """Run research then documents when an evaluation exists but docs are absent.
+
+    Used when the UI creates an application but the scheduled pipeline never ran
+    the document stage (e.g. ``MAYBE`` jobs) or research/doc failed earlier.
+
+    Idempotent: if ``application_docs`` already exists for the evaluation, returns
+    ``skipped`` without re-running agents.
+    """
+    bound = log.bind(
+        job_posting_id=job_posting_id,
+        job_evaluation_id=evaluation_id,
+        user_id=user_id,
+        stage="research_then_document",
+    )
+    user_uuid = uuid.UUID(user_id)
+    eval_uuid = uuid.UUID(evaluation_id)
+    async with async_session_factory() as session:
+        existing = await application_doc_repository.get_by_evaluation_id(
+            session, user_uuid, eval_uuid
+        )
+    if existing is not None:
+        bound.info("pipeline.research_then_document_skipped", reason="doc_exists")
+        return {
+            "job_posting_id": job_posting_id,
+            "evaluation_id": evaluation_id,
+            "skipped": True,
+            "research_completed": True,
+            "documents_generated": True,
+        }
+
+    bound.info("pipeline.research_then_document_start")
+    research_ok = await run_research_stage(job_posting_id, user_id)
+    if not research_ok:
+        bound.warning("pipeline.research_then_document_research_failed")
+        return {
+            "job_posting_id": job_posting_id,
+            "evaluation_id": evaluation_id,
+            "research_completed": False,
+            "documents_generated": False,
+        }
+    docs_ok = await run_document_stage(evaluation_id, user_id)
+    bound.info(
+        "pipeline.research_then_document_complete",
+        documents_generated=docs_ok,
+    )
+    return {
+        "job_posting_id": job_posting_id,
+        "evaluation_id": evaluation_id,
+        "research_completed": True,
+        "documents_generated": docs_ok,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Full pipeline
 # ---------------------------------------------------------------------------
@@ -283,13 +328,11 @@ async def run_document_stage(job_evaluation_id: str, user_id: str) -> bool:
     process_inputs=_trace_pipeline_basic_inputs,
     process_outputs=_trace_pipeline_outputs,
 )
-async def run_full_pipeline_for_config(
-    config_id: str, user_id: str
-) -> dict[str, Any]:
-    """Fetch → parse → evaluate (concurrent) → research+docs (sequential).
+async def run_full_pipeline_for_config(config_id: str, user_id: str) -> dict[str, Any]:
+    """Fetch → parse → evaluate (concurrent) → research+docs for non-rejects.
 
-    Used by the Celery beat task. Returns a summary dict suitable for
-    structured logging + observability assertions.
+    ``GOOD_FIT`` and ``MAYBE`` rows get research then documents, matching
+    :func:`run_pipeline_for_single_job`. Used by the Celery beat task.
     """
     bound = log.bind(config_id=config_id, user_id=user_id)
     bound.info("pipeline.full_start")
@@ -316,11 +359,7 @@ async def run_full_pipeline_for_config(
         summary["skipped_reason"] = "user_inactive_or_missing"
         summary["completed_at"] = datetime.now(UTC).isoformat()
         return summary
-    if (
-        cfg_row is None
-        or not cfg_row.is_active
-        or cfg_row.user_id != uid
-    ):
+    if cfg_row is None or not cfg_row.is_active or cfg_row.user_id != uid:
         bound.info("pipeline.full_skipped", reason="config_inactive_or_mismatch")
         summary["skipped_reason"] = "config_inactive_or_mismatch"
         summary["completed_at"] = datetime.now(UTC).isoformat()
@@ -345,18 +384,20 @@ async def run_full_pipeline_for_config(
 
         results = await asyncio.gather(*(_evaluate_one(p) for p in parsed_ids))
 
-        good_fit: list[tuple[str, str]] = []  # (posting_id, evaluation_id)
+        doc_candidates: list[tuple[str, str]] = []  # (posting_id, evaluation_id)
         for posting_id, ev_id, classification in results:
             if classification is Classification.GOOD_FIT:
                 summary["evaluations_good_fit"] += 1
                 if ev_id is not None:
-                    good_fit.append((posting_id, ev_id))
+                    doc_candidates.append((posting_id, ev_id))
             elif classification is Classification.MAYBE:
                 summary["evaluations_maybe"] += 1
+                if ev_id is not None:
+                    doc_candidates.append((posting_id, ev_id))
             elif classification is Classification.REJECT:
                 summary["evaluations_rejected"] += 1
 
-        for posting_id, evaluation_id in good_fit:
+        for posting_id, evaluation_id in doc_candidates:
             research_ok = await run_research_stage(posting_id, user_id)
             if not research_ok:
                 continue
@@ -367,9 +408,7 @@ async def run_full_pipeline_for_config(
         active_pipeline_tasks.dec()
 
     summary["completed_at"] = datetime.now(UTC).isoformat()
-    bound.info("pipeline.full_complete", **{
-        k: v for k, v in summary.items() if k != "errors"
-    })
+    bound.info("pipeline.full_complete", **{k: v for k, v in summary.items() if k != "errors"})
     return summary
 
 
@@ -380,9 +419,7 @@ async def run_full_pipeline_for_config(
     process_inputs=_trace_pipeline_basic_inputs,
     process_outputs=_trace_pipeline_outputs,
 )
-async def run_pipeline_for_single_job(
-    job_posting_id: str, user_id: str
-) -> dict[str, Any]:
+async def run_pipeline_for_single_job(job_posting_id: str, user_id: str) -> dict[str, Any]:
     """Manual single-job entrypoint (admin/API trigger)."""
     user_uuid = uuid.UUID(user_id)
     posting_uuid = uuid.UUID(job_posting_id)
@@ -398,9 +435,7 @@ async def run_pipeline_for_single_job(
         if posting is None:
             return {"error": "Job posting not found"}
 
-    eval_id, classification = await run_evaluation_for_user(
-        job_posting_id, user_id
-    )
+    eval_id, classification = await run_evaluation_for_user(job_posting_id, user_id)
     if eval_id is None or classification is None:
         return {
             "job_posting_id": job_posting_id,
@@ -417,15 +452,11 @@ async def run_pipeline_for_single_job(
         }
 
     research_ok = await run_research_stage(job_posting_id, user_id)
-    docs_ok = (
-        await run_document_stage(eval_id, user_id) if research_ok else False
-    )
+    docs_ok = await run_document_stage(eval_id, user_id) if research_ok else False
 
     # Echo back the latest dimension snapshot (handy for the API response).
     async with async_session_factory() as session:
-        evaluation = await evaluation_repository.get_by_id(
-            session, user_uuid, uuid.UUID(eval_id)
-        )
+        evaluation = await evaluation_repository.get_by_id(session, user_uuid, uuid.UUID(eval_id))
 
     return {
         "job_posting_id": job_posting_id,
@@ -445,4 +476,5 @@ __all__ = [
     "run_full_pipeline_for_config",
     "run_pipeline_for_single_job",
     "run_research_stage",
+    "run_research_then_document_for_evaluation",
 ]

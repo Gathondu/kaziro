@@ -27,6 +27,7 @@ from backend.tasks.pipeline import (
     run_pipeline_for_config_task,
     run_pipeline_for_single_job_task,
     run_research_for_posting,
+    run_research_then_document_for_evaluation_task,
 )
 
 __all__ = [
@@ -46,4 +47,5 @@ __all__ = [
     "run_pipeline_for_config_task",
     "run_pipeline_for_single_job_task",
     "run_research_for_posting",
+    "run_research_then_document_for_evaluation_task",
 ]
