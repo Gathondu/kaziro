@@ -1,10 +1,10 @@
-"""``/profile`` routes — read, partial update, and CV upload."""
+"""``/profile`` routes — read, partial update, CV upload, and self-service disable."""
 
 from __future__ import annotations
 
 from typing import Final
 
-from fastapi import APIRouter, File, UploadFile, status
+from fastapi import APIRouter, File, Response, UploadFile, status
 
 from backend.api.deps import CurrentUser, SessionDep
 from backend.api.exceptions import NotFoundError
@@ -15,8 +15,11 @@ from backend.api.schemas.profile import (
     ProfileUpdateRequest,
     to_response,
 )
-from backend.db.repositories import profile_repository
+from backend.db.repositories import profile_repository, user_repository
+from backend.logging_config import get_logger
 from backend.services import cv_processor
+
+log = get_logger(__name__)
 
 router: Final[APIRouter] = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -105,6 +108,30 @@ async def upload_master_cv(
             embedding_dims=result.embedding_dims,
         )
     )
+
+
+@router.post(
+    "/account/disable",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
+    summary="Disable the authenticated user's account (cannot sign in to the app)",
+)
+async def disable_own_account(session: SessionDep, current_user: CurrentUser) -> Response:
+    """Soft-deactivate the current user row. The client should sign out of Supabase."""
+    log_bound = log.bind(user_id=str(current_user.id))
+    log_bound.info("profile.account_disable.start")
+    updated = await user_repository.set_active(
+        session,
+        current_user.id,
+        is_active=False,
+    )
+    if updated is None:
+        log_bound.warning("profile.account_disable.user_missing")
+        raise NotFoundError("user not found", code="user_not_found")
+    await session.commit()
+    log_bound.info("profile.account_disable.complete")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 __all__ = ["router"]

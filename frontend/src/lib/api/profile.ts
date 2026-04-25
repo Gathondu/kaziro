@@ -1,5 +1,5 @@
 import { getPublicApiUrl } from '$lib/env/public';
-import { apiFetch } from './client';
+import { apiFetch, apiFetchEmpty } from './client';
 import { getJwt } from './auth';
 import type { CvUploadResult, Profile } from '$lib/types/profile';
 
@@ -13,6 +13,11 @@ export function putProfile(body: Record<string, unknown>): Promise<Profile> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body)
 	});
+}
+
+/** Soft-deactivates the app user; caller should sign out and redirect. */
+export function postDisableOwnAccount(): Promise<void> {
+	return apiFetchEmpty(`/api/v1/profile/account/disable`, { method: 'POST' });
 }
 
 export async function uploadCvPdf(file: File): Promise<CvUploadResult> {

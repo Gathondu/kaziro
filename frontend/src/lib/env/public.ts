@@ -12,3 +12,9 @@ export function getPublicSupabaseUrl(): string {
 export function getPublicSupabaseAnonKey(): string {
 	return env.PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder-anon-key';
 }
+
+/** Optional contact for GDPR / data-deletion requests (settings UI, etc.). */
+export function getPublicSupportEmail(): string | undefined {
+	const v = env.PUBLIC_SUPPORT_EMAIL?.trim();
+	return v || undefined;
+}
