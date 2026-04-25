@@ -1,4 +1,4 @@
-"""Job fetcher behaviour (no live RapidAPI when config is absent)."""
+"""Job fetcher: response parsing + integration smoke (no live RapidAPI)."""
 
 from __future__ import annotations
 
@@ -6,10 +6,20 @@ import uuid
 
 import pytest
 from backend.db.session import async_session_factory
-from backend.services.job_fetcher import fetch_jobs_for_config
+from backend.services.job_fetcher import extract_job_list_from_upstream, fetch_jobs_for_config
 from sqlalchemy import text
 
 pytestmark = [pytest.mark.integration]
+
+
+def test_extract_job_list_accepts_list_body() -> None:
+    body = [{"id": "1", "title": "A"}, {"id": "2", "title": "B"}]
+    assert extract_job_list_from_upstream(body) == body
+
+
+def test_extract_job_list_accepts_data_key() -> None:
+    body = {"data": [{"id": "x"}], "meta": 1}
+    assert extract_job_list_from_upstream(body) == [{"id": "x"}]
 
 
 @pytest.mark.asyncio

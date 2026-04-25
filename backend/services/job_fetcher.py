@@ -1,46 +1,49 @@
-"""RapidAPI job-search client (T2.2).
+"""RapidAPI job-search client (JSearch) with Supabase cache.
 
 For a given :class:`JobSearchConfig` row this service:
 
-1. Builds a query from the config's keywords, location, and remote
-   flag.
-2. Calls the configured RapidAPI provider (default: ``jsearch``) with
-   exponential-backoff retries on 429 / 5xx responses.
-3. Dedupes incoming jobs against existing ``raw_jobs`` rows on
-   ``(source_api, external_id)`` and inserts the new ones with
-   ``parse_status=PENDING``.
-4. Records every call in the
-   ``kaziro_external_api_calls_total{service="rapidapi"}`` Prometheus
-   counter.
-
-The Pipeline Orchestrator (T2.8) and the Celery beat task (T2.9) are
-the only callers of :func:`fetch_jobs_for_config`.
+1. Normalizes keywords into sorted slug segments and derives a storage object
+   basename (``slug++slug.json`` in the job-posts bucket).
+2. Lists the Supabase job-posts bucket and **reuses** a prior JSON payload when
+   keyword slugs **overlap** or the cached search is a **superset** of the
+   current keywords (see :func:`job_posts_cache.pick_best_cache_object_name`).
+3. On cache miss, calls OpenRouter (:mod:`rapidapi_query_builder`) with the
+   embedded API reference to obtain a validated path + query params, performs
+   a single RapidAPI GET (retries on 429/5xx with ``Retry-After`` support;
+   see ``RAPIDAPI_FETCH_MAX_ATTEMPTS``), stores the JSON envelope
+   in Storage, and parses job dicts from the upstream body.
+4. Dedupes incoming jobs against existing ``raw_jobs`` rows on
+   ``(source_api, external_id)`` and inserts new ones with ``parse_status=PENDING``.
+5. Records RapidAPI calls in ``kaziro_external_api_calls_total``.
 """
 
 from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import httpx
 from tenacity import (
     AsyncRetrying,
+    RetryCallState,
     retry_if_exception_type,
     stop_after_attempt,
-    wait_exponential,
 )
+from tenacity.wait import wait_base
 
-from backend.config import get_settings
+from backend.config import Settings, get_settings
 from backend.db.models.enums import JobSource
 from backend.db.repositories import job_config_repository, raw_job_repository
 from backend.db.session import async_session_factory
 from backend.logging_config import get_logger
 from backend.metrics import external_api_calls_total
+from backend.services import job_posts_cache, rapidapi_query_builder
+from backend.services.rapidapi_retry_utils import parse_retry_after_seconds
 
 log = get_logger(__name__)
 
-DEFAULT_PAGE_LIMIT: Final[int] = 50
+DEFAULT_PAGE_LIMIT: Final[int] = 100
 RETRYABLE_STATUS: Final[set[int]] = {429, 500, 502, 503, 504}
 
 
@@ -51,102 +54,152 @@ class JobFetchError(RuntimeError):
 class _RetryableUpstream(Exception):
     """Internal marker — caught by tenacity, re-raised as JobFetchError."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        retry_after_seconds: float | None = None,
+        is_rate_limited: bool = False,
+    ) -> None:
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
+        self.is_rate_limited = is_rate_limited
 
-def _build_query(*, keywords: list[str], location: str | None) -> str:
-    """Concatenate keywords + location into the upstream's search string."""
-    parts = list(keywords)
-    if location:
-        parts.append(location)
-    return " ".join(p.strip() for p in parts if p and p.strip()).strip()
+
+class _RapidApiRetryWait(wait_base):
+    """Honor ``Retry-After`` on 429; otherwise back off longer for rate limits than for 5xx."""
+
+    def __init__(
+        self,
+        *,
+        cap_s: float,
+        min_s: float = 2.0,
+        max_s: float = 90.0,
+        default_429_s: float = 20.0,
+    ) -> None:
+        self.cap_s = cap_s
+        self.min_s = min_s
+        self.max_s = max_s
+        self.default_429_s = default_429_s
+
+    def __call__(self, retry_state: RetryCallState) -> float:
+        exc = retry_state.outcome.exception()
+        if not isinstance(exc, _RetryableUpstream):
+            return self.min_s
+        if exc.retry_after_seconds is not None:
+            return min(max(exc.retry_after_seconds, self.min_s), self.cap_s)
+        if exc.is_rate_limited:
+            n = max(1, retry_state.attempt_number)
+            return min(self.max_s, max(self.min_s, self.default_429_s * float(n)))
+        n = max(1, retry_state.attempt_number)
+        return min(self.max_s, max(self.min_s, 2.0 ** float(n - 1)))
+
+
+def extract_job_list_from_upstream(body: Any) -> list[dict[str, Any]]:
+    """Return job dicts from a RapidAPI JSON body (shape-tolerant)."""
+    if isinstance(body, list):
+        return [item for item in body if isinstance(item, dict)]
+    if isinstance(body, dict):
+        for key in ("data", "items", "jobs", "results"):
+            chunk = body.get(key)
+            if isinstance(chunk, list):
+                return [item for item in chunk if isinstance(item, dict)]
+    return []
 
 
 def _normalise_external_id(payload: dict[str, Any]) -> str | None:
     """Extract the upstream's stable identifier from a job payload."""
-    for key in ("job_id", "id", "jobId", "external_id"):
+    for key in ("job_id", "id", "jobId", "external_id", "url", "job_url", "link"):
         value = payload.get(key)
         if value:
             return str(value)
     return None
 
 
-async def _request_page(
+async def _request_rapidapi(
     client: httpx.AsyncClient,
     *,
-    query: str,
-    page: int,
-    remote_only: bool,
-) -> list[dict[str, Any]]:
-    """Issue a single HTTP request to RapidAPI and return the ``data`` list.
-
-    Wraps retryable HTTP outcomes in :class:`_RetryableUpstream` so the
-    outer ``AsyncRetrying`` wrapper can drive exponential backoff.
-    """
+    url: str,
+    query_pairs: list[tuple[str, str]],
+) -> Any:
     settings = get_settings()
     headers = {
         "X-RapidAPI-Key": settings.RAPIDAPI_KEY.get_secret_value(),
         "X-RapidAPI-Host": settings.RAPIDAPI_HOST,
         "Accept": "application/json",
     }
-    params: dict[str, Any] = {
-        "query": query,
-        "page": str(page),
-        "num_pages": "1",
-    }
-    if remote_only:
-        params["remote_jobs_only"] = "true"
-
-    url = f"https://{settings.RAPIDAPI_HOST}/search"
     try:
-        resp = await client.get(url, headers=headers, params=params, timeout=30.0)
+        resp = await client.get(
+            url,
+            headers=headers,
+            params=httpx.QueryParams(cast(Any, query_pairs)),
+            timeout=60.0,
+        )
     except httpx.RequestError as exc:
         external_api_calls_total.labels(service="rapidapi", status="network_error").inc()
         raise _RetryableUpstream(f"network error: {exc}") from exc
 
     if resp.status_code in RETRYABLE_STATUS:
         external_api_calls_total.labels(service="rapidapi", status=str(resp.status_code)).inc()
-        raise _RetryableUpstream(f"upstream returned retryable status {resp.status_code}")
+        ra: float | None = None
+        is_rl = resp.status_code == 429
+        if is_rl:
+            ra = parse_retry_after_seconds(resp.headers, status_code=429)
+        log.warning(
+            "job_fetcher.rapidapi_retryable_response",
+            error=f"http_{resp.status_code}",
+            status_code=resp.status_code,
+            retry_after_s=ra,
+        )
+        raise _RetryableUpstream(
+            f"upstream returned retryable status {resp.status_code}",
+            retry_after_seconds=ra,
+            is_rate_limited=is_rl,
+        )
 
     if resp.status_code >= 400:
         external_api_calls_total.labels(service="rapidapi", status=str(resp.status_code)).inc()
         raise JobFetchError(f"rapidapi returned {resp.status_code}: {resp.text[:200]}")
 
     external_api_calls_total.labels(service="rapidapi", status="200").inc()
-    body = resp.json()
-    data = body.get("data", []) if isinstance(body, dict) else []
-    if not isinstance(data, list):
-        return []
-    return [item for item in data if isinstance(item, dict)]
+    return resp.json()
 
 
 async def _fetch_with_retry(
     client: httpx.AsyncClient,
     *,
-    query: str,
-    page: int,
-    remote_only: bool,
-    max_attempts: int = 3,
-) -> list[dict[str, Any]]:
+    url: str,
+    query_pairs: list[tuple[str, str]],
+    settings: Settings | None = None,
+) -> Any:
+    s = settings or get_settings()
+    wait = _RapidApiRetryWait(cap_s=float(s.RAPIDAPI_FETCH_RETRY_AFTER_CAP_S))
     async for attempt in AsyncRetrying(
         retry=retry_if_exception_type(_RetryableUpstream),
-        stop=stop_after_attempt(max_attempts),
-        wait=wait_exponential(multiplier=1, min=1, max=8),
+        stop=stop_after_attempt(s.RAPIDAPI_FETCH_MAX_ATTEMPTS),
+        wait=wait,
         reraise=True,
     ):
         with attempt:
-            return await _request_page(client, query=query, page=page, remote_only=remote_only)
-    return []
+            return await _request_rapidapi(client, url=url, query_pairs=query_pairs)
+    raise RuntimeError("job_fetcher._fetch_with_retry: unreachable")
 
 
 async def fetch_jobs_for_config(
-    config_id: str | uuid.UUID, *, page_limit: int = DEFAULT_PAGE_LIMIT
+    config_id: str | uuid.UUID,
+    *,
+    page_limit: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Fetch + dedupe jobs for a saved search config.
-
-    Returns the list of newly-inserted ``raw_jobs`` payloads (the same
-    dicts that get persisted into ``raw_jobs.raw_payload`` and forwarded
-    to the Parser Agent). Already-known ``(source_api, external_id)``
-    rows are skipped without raising.
-    """
+    """Fetch + dedupe jobs for a saved search config (cache-aware, one RapidAPI GET per miss)."""
+    settings = get_settings()
+    eff_limit = (
+        page_limit
+        if page_limit is not None
+        else min(
+            DEFAULT_PAGE_LIMIT,
+            settings.RAPIDAPI_JOB_FETCH_LIMIT,
+        )
+    )
     config_uuid = uuid.UUID(str(config_id))
     log_ctx = log.bind(config_id=str(config_uuid))
 
@@ -154,31 +207,96 @@ async def fetch_jobs_for_config(
         config = await job_config_repository.get_by_id_unscoped(session, config_uuid)
         if config is None or not config.is_active:
             log_ctx.warning(
-                "job_fetcher.config_unavailable", active=getattr(config, "is_active", None)
+                "job_fetcher.config_unavailable",
+                active=getattr(config, "is_active", None),
             )
             return []
 
-        query = _build_query(keywords=config.keywords, location=config.location)
-        if not query:
-            log_ctx.warning("job_fetcher.empty_query")
+        log_ctx = log_ctx.bind(user_id=str(config.user_id))
+        slugs = job_posts_cache.keyword_slugs(list(config.keywords))
+        if not slugs:
+            log_ctx.warning("job_fetcher.empty_keywords")
             return []
 
-        async with httpx.AsyncClient() as client:
-            try:
-                payloads = await _fetch_with_retry(
-                    client,
-                    query=query,
-                    page=1,
-                    remote_only=config.remote_only,
-                )
-            except _RetryableUpstream as exc:
-                raise JobFetchError(str(exc)) from exc
+        basename = job_posts_cache.cache_object_basename(list(config.keywords))
+        slug_set = set(slugs)
+        listing: list[dict[str, Any]] = []
+        try:
+            listing = await job_posts_cache.list_cache_objects()
+        except Exception:
+            log_ctx.warning("job_fetcher.cache_list_failed")
 
+        cache_name = job_posts_cache.pick_best_cache_object_name(
+            current_slugs=slug_set,
+            exact_basename=basename,
+            listing=listing,
+        )
+
+        upstream_body: Any | None = None
+        if cache_name:
+            raw_envelope = await job_posts_cache.try_load_cache_json(cache_name)
+            if raw_envelope is not None:
+                upstream_body = job_posts_cache.parse_cache_payload(raw_envelope)
+                log_ctx.info(
+                    "job_fetcher.cache_hit",
+                    cache_object=cache_name,
+                    exact_match=cache_name == f"{basename}.json",
+                )
+
+        if upstream_body is None:
+            log_ctx.info("job_fetcher.cache_miss")
+            try:
+                spec = await rapidapi_query_builder.build_query_spec_via_llm(
+                    keywords=list(config.keywords),
+                    location=config.location,
+                    remote_only=config.remote_only,
+                    employment_types=list(config.employment_types),
+                    salary_min=config.salary_min,
+                    salary_max=config.salary_max,
+                    settings=settings,
+                )
+                url, pairs = rapidapi_query_builder.build_get_url_and_params(
+                    spec, settings=settings
+                )
+            except (ValueError, TypeError) as exc:
+                log_ctx.error("job_fetcher.query_spec_invalid", error=str(exc))
+                raise JobFetchError(f"invalid rapidapi query spec: {exc}") from exc
+            except Exception as exc:
+                log_ctx.exception("job_fetcher.query_spec_failed", error=str(exc))
+                raise JobFetchError("openrouter query build failed") from exc
+
+            async with httpx.AsyncClient() as client:
+                try:
+                    body = await _fetch_with_retry(
+                        client, url=url, query_pairs=pairs, settings=settings
+                    )
+                except _RetryableUpstream as exc:
+                    raise JobFetchError(str(exc)) from exc
+
+            if isinstance(body, dict):
+                upstream_body = body
+            elif isinstance(body, list):
+                upstream_body = {"data": body}
+            else:
+                upstream_body = {}
+            fetched_at = datetime.now(UTC).isoformat()
+            try:
+                await job_posts_cache.save_cache_envelope(
+                    object_name=f"{basename}.json",
+                    keyword_slugs=slugs,
+                    upstream=upstream_body,
+                    fetched_at_iso=fetched_at,
+                )
+            except Exception:
+                log_ctx.exception("job_fetcher.cache_write_failed")
+
+        assert upstream_body is not None
+        payloads = extract_job_list_from_upstream(upstream_body)
         log_ctx.info("job_fetcher.upstream_returned", count=len(payloads))
 
         inserted: list[dict[str, Any]] = []
         now = datetime.now(UTC)
-        for payload in payloads[:page_limit]:
+        for payload in payloads[:eff_limit]:
             external_id = _normalise_external_id(payload)
             if not external_id:
                 continue
@@ -202,5 +320,6 @@ async def fetch_jobs_for_config(
 __all__ = [
     "DEFAULT_PAGE_LIMIT",
     "JobFetchError",
+    "extract_job_list_from_upstream",
     "fetch_jobs_for_config",
 ]

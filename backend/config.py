@@ -100,6 +100,10 @@ class Settings(BaseSettings):
         description="Secret used to verify Supabase-issued JWTs.",
     )
     SUPABASE_STORAGE_BUCKET: str = "documents"
+    SUPABASE_JOB_POSTS_BUCKET: str = Field(
+        default="job_posts",
+        description="Supabase Storage bucket for cached RapidAPI LinkedIn job-search JSON.",
+    )
 
     # -- Redis -------------------------------------------------------------
     REDIS_URL: RedisDsn = Field(..., description="redis://[:pw@]host:port/db")
@@ -142,6 +146,24 @@ class Settings(BaseSettings):
     # -- External integrations --------------------------------------------
     RAPIDAPI_KEY: SecretStr = Field(..., description="RapidAPI job-search key.")
     RAPIDAPI_HOST: str = Field(..., description="RapidAPI host header.")
+    RAPIDAPI_JOB_FETCH_LIMIT: int = Field(
+        default=100,
+        ge=10,
+        le=5000,
+        description="Max jobs requested per RapidAPI call (clamped when building the request).",
+    )
+    RAPIDAPI_FETCH_MAX_ATTEMPTS: int = Field(
+        default=6,
+        ge=2,
+        le=15,
+        description="HTTP retries for RapidAPI GET (429/5xx/transient network).",
+    )
+    RAPIDAPI_FETCH_RETRY_AFTER_CAP_S: int = Field(
+        default=120,
+        ge=5,
+        le=600,
+        description="Upper bound (seconds) when honoring Retry-After on 429.",
+    )
     FIRECRAWL_API_KEY: SecretStr = Field(..., description="Firecrawl API key.")
     FIRECRAWL_BASE_URL: AnyHttpUrl | None = None
 

@@ -34,6 +34,10 @@ if TYPE_CHECKING:
     from backend.db.models.user import User
 
 
+def _enum_values(enum_cls: type[JobSource] | type[ParseStatus]) -> list[str]:
+    return [str(member.value) for member in enum_cls]
+
+
 class RawJob(TimestampedBase):
     __tablename__ = "raw_jobs"
 
@@ -48,7 +52,11 @@ class RawJob(TimestampedBase):
         nullable=False,
     )
     source_api: Mapped[JobSource] = mapped_column(
-        SAEnum(JobSource, name="job_source_enum"),
+        SAEnum(
+            JobSource,
+            name="job_source_enum",
+            values_callable=_enum_values,
+        ),
         nullable=False,
     )
     external_id: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -58,7 +66,11 @@ class RawJob(TimestampedBase):
         nullable=False,
     )
     parse_status: Mapped[ParseStatus] = mapped_column(
-        SAEnum(ParseStatus, name="parse_status_enum"),
+        SAEnum(
+            ParseStatus,
+            name="parse_status_enum",
+            values_callable=_enum_values,
+        ),
         nullable=False,
         default=ParseStatus.PENDING,
     )

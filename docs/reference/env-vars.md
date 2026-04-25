@@ -50,6 +50,7 @@ Conventions:
 | `SUPABASE_SERVICE_KEY`    | Yes      | —       | backend, worker   | Service-role key — bypasses RLS. Backend-only.               |
 | `SUPABASE_JWT_SECRET`     | Yes      | —       | backend           | Secret used to verify Supabase-issued JWTs.                  |
 | `SUPABASE_STORAGE_BUCKET` | No       | `documents` | backend       | Default storage bucket for CV uploads + generated PDFs.      |
+| `SUPABASE_JOB_POSTS_BUCKET` | No    | `job_posts` | backend, worker | Cached RapidAPI LinkedIn job-search JSON (sorted keyword filenames). |
 
 ## Redis
 
@@ -95,6 +96,9 @@ Conventions:
 | ---------------------------- | -------- | ------- | -------- | ---------------------------------------------------- |
 | `RAPIDAPI_KEY`               | Yes      | —       | worker   | RapidAPI key for the JSearch / job-search provider.  |
 | `RAPIDAPI_HOST`              | Yes      | —       | worker   | RapidAPI host header (e.g., `jsearch.p.rapidapi.com`). |
+| `RAPIDAPI_JOB_FETCH_LIMIT`   | No       | `100`   | worker   | Max jobs per RapidAPI request (clamped 10–5000; builder + fetcher). |
+| `RAPIDAPI_FETCH_MAX_ATTEMPTS` | No      | `6`     | worker   | Retries for RapidAPI GET on 429 / 5xx / transient network errors. |
+| `RAPIDAPI_FETCH_RETRY_AFTER_CAP_S` | No | `120` | worker   | Max seconds to honor upstream `Retry-After` on 429. |
 | `FIRECRAWL_API_KEY`          | Yes      | —       | worker   | Firecrawl API key.                                   |
 | `FIRECRAWL_BASE_URL`         | No       | Firecrawl default | worker | Override (self-host or staging).                |
 

@@ -107,9 +107,10 @@ Read the rule itself for full detail.
 - Every task: `@app.task(bind=True, autoretry_for=(...,),
   retry_backoff=True, max_retries=N)`.
 - Tasks are sync wrappers — async work runs via
-  `backend.tasks.async_runner.run_sqlalchemy_async` (wraps `asyncio.run` and
-  disposes the global async engine afterward so pooled connections are not
-  bound to a closed event loop).
+  `backend.tasks.async_runner.run_sqlalchemy_async` (wraps `asyncio.run`,
+  disposes the global async engine, then calls
+  `backend.tasks.loop_bound_reset.reset_loop_bound_clients` so OpenRouter /
+  LangChain singletons are not tied to a closed loop).
 - Use distinct queues per stage so we can scale them independently:
   `parser`, `evaluator`, `research`, `document`, `default`.
 - Beat schedule lives in `backend/tasks/celery_app.py` with explicit cron strings.

@@ -50,6 +50,7 @@ async def upload_bytes(
     storage_path: str,
     content: bytes,
     *,
+    bucket: str | None = None,
     content_type: str = "application/pdf",
     upsert: bool = True,
 ) -> str:
@@ -58,10 +59,12 @@ async def upload_bytes(
     ``storage_path`` should already include the bucket-relative folder
     (e.g. ``"users/<uid>/cv/master.pdf"``). Uploads run in the default
     threadpool because the supabase-py client is synchronous.
+
+    When ``bucket`` is omitted, uses :attr:`Settings.SUPABASE_STORAGE_BUCKET`.
     """
     import asyncio
 
-    bucket = _bucket_name()
+    bucket = bucket or _bucket_name()
     options: dict[str, str] = {
         "content-type": content_type,
         "x-upsert": "true" if upsert else "false",
@@ -90,11 +93,14 @@ async def upload_bytes(
     return storage_path
 
 
-async def download_bytes(storage_path: str) -> bytes:
-    """Fetch raw bytes for the file at ``storage_path``."""
+async def download_bytes(storage_path: str, *, bucket: str | None = None) -> bytes:
+    """Fetch raw bytes for the file at ``storage_path``.
+
+    When ``bucket`` is omitted, uses :attr:`Settings.SUPABASE_STORAGE_BUCKET`.
+    """
     import asyncio
 
-    bucket = _bucket_name()
+    bucket = bucket or _bucket_name()
 
     def _sync_download() -> bytes:
         client = get_client()
@@ -104,9 +110,11 @@ async def download_bytes(storage_path: str) -> bytes:
     return await asyncio.to_thread(_sync_download)
 
 
-async def download_text(storage_path: str, encoding: str = "utf-8") -> str:
+async def download_text(
+    storage_path: str, encoding: str = "utf-8", *, bucket: str | None = None
+) -> str:
     """Convenience: decode the downloaded file as text."""
-    payload = await download_bytes(storage_path)
+    payload = await download_bytes(storage_path, bucket=bucket)
     return payload.decode(encoding, errors="ignore")
 
 
@@ -131,12 +139,30 @@ async def create_signed_url(storage_path: str, *, ttl_seconds: int = DEFAULT_SIG
     return url
 
 
+async def list_bucket_files(
+    bucket: str,
+    *,
+    prefix: str = "",
+    limit: int = 1000,
+) -> list[dict[str, Any]]:
+    """List objects in a bucket (flat path names under ``prefix``)."""
+    import asyncio
+
+    def _sync_list() -> list[dict[str, Any]]:
+        client = get_client()
+        rows = client.storage.from_(bucket).list(prefix, {"limit": limit})
+        return list(rows) if isinstance(rows, list) else []
+
+    return await asyncio.to_thread(_sync_list)
+
+
 __all__ = [
     "DEFAULT_SIGNED_URL_TTL",
     "create_signed_url",
     "download_bytes",
     "download_text",
     "get_client",
+    "list_bucket_files",
     "reset_for_tests",
     "upload_bytes",
 ]

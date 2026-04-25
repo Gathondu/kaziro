@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend.tasks.async_runner import run_sqlalchemy_async
 
 
@@ -12,14 +11,23 @@ def test_run_sqlalchemy_async_always_disposes(
     monkeypatch: pytest.MonkeyPatch, raise_in_work: bool
 ) -> None:
     disposed = False
+    reset_called = False
 
     async def fake_dispose() -> None:
         nonlocal disposed
         disposed = True
 
+    def fake_reset() -> None:
+        nonlocal reset_called
+        reset_called = True
+
     monkeypatch.setattr(
         "backend.tasks.async_runner.dispose_engine",
         fake_dispose,
+    )
+    monkeypatch.setattr(
+        "backend.tasks.async_runner.reset_loop_bound_clients",
+        fake_reset,
     )
 
     async def work() -> int:
@@ -35,3 +43,4 @@ def test_run_sqlalchemy_async_always_disposes(
         assert run_sqlalchemy_async(work) == 7
 
     assert disposed is True
+    assert reset_called is True
