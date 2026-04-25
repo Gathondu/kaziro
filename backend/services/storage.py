@@ -9,7 +9,7 @@ Tests can swap the underlying client by patching :func:`get_client`.
 
 from __future__ import annotations
 
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from supabase import Client, create_client
 
@@ -75,7 +75,7 @@ async def upload_bytes(
         return client.storage.from_(bucket).upload(
             path=storage_path,
             file=content,
-            file_options=options,
+            file_options=cast(Any, options),
         )
 
     try:

@@ -27,6 +27,7 @@ from datetime import UTC, date, datetime
 from typing import Any, Final, Protocol, cast
 
 from langgraph.graph import END, StateGraph
+from langsmith import traceable
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.config import get_settings
@@ -125,7 +126,7 @@ def _build_default_llm() -> _Invokable:
 
 
 def _build_default_embedder() -> _Embeddable:
-    return build_embeddings(get_settings())
+    return cast(_Embeddable, build_embeddings(get_settings()))
 
 
 def get_llm() -> _Invokable:
@@ -320,6 +321,33 @@ def _get_graph() -> Any:
 # ---------------------------------------------------------------------------
 
 
+def _trace_parser_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    payload = inputs.get("raw_payload", {})
+    keys = sorted(payload.keys())[:20] if isinstance(payload, dict) else []
+    return {
+        "raw_job_id": str(inputs.get("raw_job_id")),
+        "raw_payload_keys": keys,
+    }
+
+
+def _trace_parser_outputs(output: Any) -> dict[str, Any]:
+    state = output if isinstance(output, ParserState) else None
+    if state is None:
+        return {"output_type": type(output).__name__}
+    return {
+        "job_posting_id": state.job_posting_id,
+        "has_error": state.error is not None,
+        "retries": state.retries,
+    }
+
+
+@traceable(
+    run_type="chain",
+    name="agent.parser.run",
+    tags=["agent", "parser"],
+    process_inputs=_trace_parser_inputs,
+    process_outputs=_trace_parser_outputs,
+)
 async def run_parser_agent(
     raw_job_id: str, raw_payload: dict[str, Any]
 ) -> ParserState:

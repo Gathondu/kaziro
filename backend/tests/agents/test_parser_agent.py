@@ -6,7 +6,6 @@ import uuid
 from datetime import date
 
 import pytest
-
 from backend.agents.parser_agent import (
     JobPostingSchema,
     run_parser_agent,

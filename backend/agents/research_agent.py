@@ -23,10 +23,11 @@ import asyncio
 import json
 import time
 import uuid
-from typing import Any, Final, Protocol
+from typing import Any, Final, Protocol, cast
 
 import httpx
 from langgraph.graph import END, StateGraph
+from langsmith import traceable
 from pydantic import BaseModel, ConfigDict
 
 from backend.config import get_settings
@@ -186,10 +187,13 @@ _llm: _Invokable | None = None
 
 def _build_default_llm() -> _Invokable:
     settings = get_settings()
-    return build_chat_model(
-        model=settings.LLM_MODEL_RESEARCH,
-        temperature=0.3,
-        settings=settings,
+    return cast(
+        _Invokable,
+        build_chat_model(
+            model=settings.LLM_MODEL_RESEARCH,
+            temperature=0.3,
+            settings=settings,
+        ),
     )
 
 
@@ -468,6 +472,28 @@ def _get_graph() -> Any:
 # ---------------------------------------------------------------------------
 
 
+def _trace_research_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    return {"job_posting_id": str(inputs.get("job_posting_id"))}
+
+
+def _trace_research_outputs(output: Any) -> dict[str, Any]:
+    state = output if isinstance(output, ResearchState) else None
+    if state is None:
+        return {"output_type": type(output).__name__}
+    return {
+        "summary_id": state.summary_id,
+        "skipped": state.skipped,
+        "has_error": state.error is not None,
+    }
+
+
+@traceable(
+    run_type="chain",
+    name="agent.research.run",
+    tags=["agent", "research"],
+    process_inputs=_trace_research_inputs,
+    process_outputs=_trace_research_outputs,
+)
 async def run_research_agent(job_posting_id: str) -> ResearchState:
     """Run the research graph for one ``GOOD_FIT`` posting."""
     initial = ResearchState(job_posting_id=job_posting_id)

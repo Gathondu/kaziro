@@ -7,7 +7,6 @@ import uuid
 from types import SimpleNamespace
 
 import pytest
-
 from backend.agents.document_agent import (
     run_document_agent,
     set_llm_for_tests,
@@ -89,10 +88,6 @@ async def test_document_agent_persists_text_and_pdfs(
 ) -> None:
     eval_id, _pid = await _seed_posting_and_evaluation(test_user_id)
 
-    master = (
-        "WORK EXPERIENCE\nSenior Engineer at Acme Corp using Python "
-        "and PostgreSQL daily.\n"
-    )
     tailored = (
         "WORK EXPERIENCE\nSenior Engineer at Acme Corp using Python "
         "and PostgreSQL daily. Highlighted relevance to data pipelines.\n"

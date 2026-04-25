@@ -7,7 +7,6 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from backend.agents.research_agent import (
     run_research_agent,
     set_firecrawl_client_for_tests,

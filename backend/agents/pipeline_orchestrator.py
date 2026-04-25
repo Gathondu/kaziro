@@ -21,6 +21,8 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, Final
 
+from langsmith import traceable
+
 from backend.agents.document_agent import run_document_agent
 from backend.agents.evaluator_agent import run_evaluator_agent
 from backend.agents.parser_agent import run_parser_agent
@@ -42,11 +44,43 @@ log = get_logger(__name__)
 EVALUATION_CONCURRENCY: Final[int] = 3
 
 
+def _trace_pipeline_basic_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "config_id": str(inputs.get("config_id")) if "config_id" in inputs else None,
+        "job_posting_id": str(inputs.get("job_posting_id"))
+        if "job_posting_id" in inputs
+        else None,
+        "job_evaluation_id": str(inputs.get("job_evaluation_id"))
+        if "job_evaluation_id" in inputs
+        else None,
+        "user_id": str(inputs.get("user_id")) if "user_id" in inputs else None,
+    }
+
+
+def _trace_pipeline_outputs(output: Any) -> dict[str, Any]:
+    if isinstance(output, list):
+        return {"len": len(output)}
+    if isinstance(output, tuple):
+        return {"tuple_len": len(output)}
+    if isinstance(output, dict):
+        return {"keys": sorted(output.keys())}
+    if isinstance(output, bool):
+        return {"ok": output}
+    return {"output_type": type(output).__name__}
+
+
 # ---------------------------------------------------------------------------
 # Stage 1: Fetch + Parse
 # ---------------------------------------------------------------------------
 
 
+@traceable(
+    run_type="chain",
+    name="pipeline.run_fetch_and_parse",
+    tags=["pipeline", "fetch_parse"],
+    process_inputs=_trace_pipeline_basic_inputs,
+    process_outputs=_trace_pipeline_outputs,
+)
 async def run_fetch_and_parse(
     config_id: str, user_id: str
 ) -> list[str]:
@@ -115,6 +149,13 @@ async def _posting_for_raw(session: Any, raw_job_id: uuid.UUID) -> Any:
 # ---------------------------------------------------------------------------
 
 
+@traceable(
+    run_type="chain",
+    name="pipeline.run_evaluation_for_user",
+    tags=["pipeline", "evaluate"],
+    process_inputs=_trace_pipeline_basic_inputs,
+    process_outputs=_trace_pipeline_outputs,
+)
 async def run_evaluation_for_user(
     job_posting_id: str, user_id: str
 ) -> tuple[str | None, Classification | None]:
@@ -165,6 +206,13 @@ async def run_evaluation_for_user(
 # ---------------------------------------------------------------------------
 
 
+@traceable(
+    run_type="chain",
+    name="pipeline.run_research_stage",
+    tags=["pipeline", "research"],
+    process_inputs=_trace_pipeline_basic_inputs,
+    process_outputs=_trace_pipeline_outputs,
+)
 async def run_research_stage(job_posting_id: str, user_id: str) -> bool:
     bound = log.bind(
         job_posting_id=job_posting_id, user_id=user_id, stage="research"
@@ -187,6 +235,13 @@ async def run_research_stage(job_posting_id: str, user_id: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
+@traceable(
+    run_type="chain",
+    name="pipeline.run_document_stage",
+    tags=["pipeline", "document"],
+    process_inputs=_trace_pipeline_basic_inputs,
+    process_outputs=_trace_pipeline_outputs,
+)
 async def run_document_stage(job_evaluation_id: str, user_id: str) -> bool:
     bound = log.bind(
         job_evaluation_id=job_evaluation_id, user_id=user_id, stage="document"
@@ -219,6 +274,13 @@ async def run_document_stage(job_evaluation_id: str, user_id: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
+@traceable(
+    run_type="chain",
+    name="pipeline.run_full_pipeline_for_config",
+    tags=["pipeline", "full"],
+    process_inputs=_trace_pipeline_basic_inputs,
+    process_outputs=_trace_pipeline_outputs,
+)
 async def run_full_pipeline_for_config(
     config_id: str, user_id: str
 ) -> dict[str, Any]:
@@ -289,6 +351,13 @@ async def run_full_pipeline_for_config(
     return summary
 
 
+@traceable(
+    run_type="chain",
+    name="pipeline.run_pipeline_for_single_job",
+    tags=["pipeline", "single_job"],
+    process_inputs=_trace_pipeline_basic_inputs,
+    process_outputs=_trace_pipeline_outputs,
+)
 async def run_pipeline_for_single_job(
     job_posting_id: str, user_id: str
 ) -> dict[str, Any]:

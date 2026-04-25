@@ -22,9 +22,10 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from typing import Any, Final, Protocol
+from typing import Any, Final, Protocol, cast
 
 from langgraph.graph import END, StateGraph
+from langsmith import traceable
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.config import get_settings
@@ -135,10 +136,13 @@ _llm: _Invokable | None = None
 
 def _build_default_llm() -> _Invokable:
     settings = get_settings()
-    return build_chat_model(
-        model=settings.LLM_MODEL_EVALUATOR,
-        temperature=0.2,
-        settings=settings,
+    return cast(
+        _Invokable,
+        build_chat_model(
+            model=settings.LLM_MODEL_EVALUATOR,
+            temperature=0.2,
+            settings=settings,
+        ),
     )
 
 
@@ -220,7 +224,10 @@ async def _invoke_json(prompt: str) -> dict[str, Any]:
     raw = getattr(response, "content", response)
     if not isinstance(raw, str):
         raw = str(raw)
-    return json.loads(_strip_json_fence(raw))
+    payload = json.loads(_strip_json_fence(raw))
+    if not isinstance(payload, dict):
+        raise ValueError("evaluator expected JSON object response")
+    return cast(dict[str, Any], payload)
 
 
 # ---------------------------------------------------------------------------
@@ -509,7 +516,10 @@ def build_evaluator_graph() -> Any:
     graph.add_node("pass2", pass2_critic_node)
     graph.add_node("pass3", pass3_judge_node)
     graph.add_node("persist", persist_evaluation_node)
-    graph.add_node("error_end", lambda s: s)
+    async def _error_end_node(state: EvaluatorState) -> EvaluatorState:
+        return state
+
+    graph.add_node("error_end", _error_end_node)
     graph.set_entry_point("load_data")
     graph.add_conditional_edges(
         "load_data", _route_after_load, {"pass1": "pass1", "error_end": END}
@@ -542,6 +552,34 @@ def _get_graph() -> Any:
 # ---------------------------------------------------------------------------
 
 
+def _trace_evaluator_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "job_posting_id": str(inputs.get("job_posting_id")),
+        "user_id": str(inputs.get("user_id")),
+    }
+
+
+def _trace_evaluator_outputs(output: Any) -> dict[str, Any]:
+    state = output if isinstance(output, EvaluatorState) else None
+    if state is None:
+        return {"output_type": type(output).__name__}
+    return {
+        "job_evaluation_id": state.job_evaluation_id,
+        "classification": (
+            state.final_classification.value if state.final_classification else None
+        ),
+        "overall_score": state.overall_score,
+        "has_error": state.error is not None,
+    }
+
+
+@traceable(
+    run_type="chain",
+    name="agent.evaluator.run",
+    tags=["agent", "evaluator"],
+    process_inputs=_trace_evaluator_inputs,
+    process_outputs=_trace_evaluator_outputs,
+)
 async def run_evaluator_agent(
     job_posting_id: str, user_id: str
 ) -> EvaluatorState:

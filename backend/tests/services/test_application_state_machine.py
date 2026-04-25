@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from backend.db.models.enums import ApplicationStatus
 from backend.services.application_state_machine import can_transition
 

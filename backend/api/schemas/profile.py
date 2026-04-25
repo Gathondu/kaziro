@@ -4,11 +4,26 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Protocol
 
 from pydantic import AnyHttpUrl, BaseModel, Field
 
 from backend.api.schemas.common import ORMModel
 
+
+class _ProfileLike(Protocol):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    full_name: str
+    professional_summary: str | None
+    skills: list[str]
+    experience_years: int | None
+    domain: str | None
+    values_statement: str | None
+    linkedin_url: str | None
+    master_cv_text: str | None
+    created_at: datetime
+    updated_at: datetime
 
 class ProfileResponse(ORMModel):
     """Public projection of a :class:`UserProfile` row.
@@ -71,23 +86,23 @@ class CvUploadResponse(BaseModel):
     has_master_cv: bool = True
 
 
-def to_response(profile: object) -> ProfileResponse:
+def to_response(profile: _ProfileLike) -> ProfileResponse:
     """Adapter so the route stays one expression long."""
     has_master_cv = bool(getattr(profile, "master_cv_text", None))
     return ProfileResponse.model_validate(
         {
-            "id": profile.id,  # type:ignore[unresolved-attribute]
-            "user_id": profile.user_id,  # type:ignore[unresolved-attribute]
-            "full_name": profile.full_name,  # type:ignore[unresolved-attribute]
-            "professional_summary": profile.professional_summary,  # type:ignore[unresolved-attribute]
-            "skills": profile.skills or [],  # type:ignore[unresolved-attribute]
-            "experience_years": profile.experience_years,  # type:ignore[unresolved-attribute]
-            "domain": profile.domain,  # type:ignore[unresolved-attribute]
-            "values_statement": profile.values_statement,  # type:ignore[unresolved-attribute]
-            "linkedin_url": profile.linkedin_url,  # type:ignore[unresolved-attribute]
+            "id": profile.id,
+            "user_id": profile.user_id,
+            "full_name": profile.full_name,
+            "professional_summary": profile.professional_summary,
+            "skills": profile.skills or [],
+            "experience_years": profile.experience_years,
+            "domain": profile.domain,
+            "values_statement": profile.values_statement,
+            "linkedin_url": profile.linkedin_url,
             "has_master_cv": has_master_cv,
-            "created_at": profile.created_at,  # type:ignore[unresolved-attribute]
-            "updated_at": profile.updated_at,  # type:ignore[unresolved-attribute]
+            "created_at": profile.created_at,
+            "updated_at": profile.updated_at,
         }
     )
 

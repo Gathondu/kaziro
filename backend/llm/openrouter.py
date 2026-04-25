@@ -47,11 +47,12 @@ def build_embeddings(settings: Settings | None = None) -> OpenAIEmbeddings:
         if s.OPENROUTER_API_BASE is not None
         else OPENROUTER_OPENAI_COMPAT_BASE
     )
-    return OpenAIEmbeddings(
-        model=s.LLM_EMBEDDING_MODEL,
-        openai_api_key=s.OPENROUTER_API_KEY,
-        openai_api_base=base,
-        encoding_format="float",  # type:ignore[arg-type]
-        check_embedding_ctx_length=False,
-        dimensions=EMBEDDING_DIM,
-    )
+    kwargs: dict[str, Any] = {
+        "model": s.LLM_EMBEDDING_MODEL,
+        "openai_api_key": s.OPENROUTER_API_KEY,
+        "openai_api_base": base,
+        "encoding_format": "float",
+        "check_embedding_ctx_length": False,
+        "dimensions": EMBEDDING_DIM,
+    }
+    return OpenAIEmbeddings(**kwargs)

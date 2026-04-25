@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import sys
 from collections.abc import MutableMapping
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import structlog
 from structlog.types import EventDict, Processor, WrappedLogger
@@ -60,7 +60,7 @@ def _redact_sensitive_fields(
             return [_walk(item) for item in node]
         return node
 
-    return _walk(event_dict)
+    return cast(EventDict, _walk(event_dict))
 
 
 def _build_processor_chain(settings: Settings) -> list[Processor]:

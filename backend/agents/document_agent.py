@@ -19,9 +19,10 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from typing import Any, Final, Protocol
+from typing import Any, Final, Protocol, cast
 
 from langgraph.graph import END, StateGraph
+from langsmith import traceable
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.config import get_settings
@@ -137,10 +138,13 @@ _pdf_renderer: PdfRendererProtocol | None = None
 
 def _build_default_llm() -> _Invokable:
     settings = get_settings()
-    return build_chat_model(
-        model=settings.LLM_MODEL_DOCUMENT,
-        temperature=0.4,
-        settings=settings,
+    return cast(
+        _Invokable,
+        build_chat_model(
+            model=settings.LLM_MODEL_DOCUMENT,
+            temperature=0.4,
+            settings=settings,
+        ),
     )
 
 
@@ -497,6 +501,10 @@ def _route_after_cl(state: DocumentState) -> str:
     return "error_end" if state.error else "quality_check"
 
 
+async def _error_end_node(state: DocumentState) -> DocumentState:
+    return state
+
+
 def build_document_graph() -> Any:
     graph = StateGraph(DocumentState)
     graph.add_node("load_context", load_context_node)
@@ -504,7 +512,7 @@ def build_document_graph() -> Any:
     graph.add_node("cover_letter", cover_letter_node)
     graph.add_node("quality_check", quality_check_node)
     graph.add_node("render_persist", render_and_persist_node)
-    graph.add_node("error_end", lambda s: s)
+    graph.add_node("error_end", _error_end_node)
 
     graph.set_entry_point("load_context")
     graph.add_conditional_edges(
@@ -542,6 +550,31 @@ def _get_graph() -> Any:
 # ---------------------------------------------------------------------------
 
 
+def _trace_document_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "job_evaluation_id": str(inputs.get("job_evaluation_id")),
+        "user_id": str(inputs.get("user_id")),
+    }
+
+
+def _trace_document_outputs(output: Any) -> dict[str, Any]:
+    state = output if isinstance(output, DocumentState) else None
+    if state is None:
+        return {"output_type": type(output).__name__}
+    return {
+        "application_doc_id": state.application_doc_id,
+        "quality_passed": state.quality_passed,
+        "has_error": state.error is not None,
+    }
+
+
+@traceable(
+    run_type="chain",
+    name="agent.document.run",
+    tags=["agent", "document"],
+    process_inputs=_trace_document_inputs,
+    process_outputs=_trace_document_outputs,
+)
 async def run_document_agent(
     job_evaluation_id: str, user_id: str
 ) -> DocumentState:

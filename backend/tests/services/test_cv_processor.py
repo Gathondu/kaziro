@@ -6,9 +6,9 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from backend.services import cv_processor
 from fastapi import status
 
-from backend.services import cv_processor
 from tests.support.pdf_minimal import pdf_bytes_with_text
 
 

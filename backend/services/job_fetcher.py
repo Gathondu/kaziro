@@ -24,6 +24,7 @@ from datetime import UTC, datetime
 from typing import Any, Final, cast
 
 import httpx
+from langsmith import traceable
 from tenacity import (
     AsyncRetrying,
     RetryCallState,
@@ -83,16 +84,23 @@ class _RapidApiRetryWait(wait_base):
         self.default_429_s = default_429_s
 
     def __call__(self, retry_state: RetryCallState) -> float:
-        exc = retry_state.outcome.exception()
-        if not isinstance(exc, _RetryableUpstream):
+        outcome = retry_state.outcome
+        if outcome is None:
             return self.min_s
+        exc_obj = outcome.exception()
+        if not isinstance(exc_obj, _RetryableUpstream):
+            return self.min_s
+        exc = exc_obj
         if exc.retry_after_seconds is not None:
-            return min(max(exc.retry_after_seconds, self.min_s), self.cap_s)
+            wait = min(max(exc.retry_after_seconds, self.min_s), self.cap_s)
+            return float(wait)
         if exc.is_rate_limited:
             n = max(1, retry_state.attempt_number)
-            return min(self.max_s, max(self.min_s, self.default_429_s * float(n)))
+            wait = min(self.max_s, max(self.min_s, self.default_429_s * float(n)))
+            return float(wait)
         n = max(1, retry_state.attempt_number)
-        return min(self.max_s, max(self.min_s, 2.0 ** float(n - 1)))
+        wait = min(self.max_s, max(self.min_s, 2.0 ** float(n - 1)))
+        return float(wait)
 
 
 def extract_job_list_from_upstream(body: Any) -> list[dict[str, Any]]:
@@ -116,6 +124,29 @@ def _normalise_external_id(payload: dict[str, Any]) -> str | None:
     return None
 
 
+def _trace_request_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    query_pairs = inputs.get("query_pairs", [])
+    return {
+        "url": inputs.get("url"),
+        "query_pairs_count": len(query_pairs) if isinstance(query_pairs, list) else 0,
+    }
+
+
+def _trace_request_outputs(output: Any) -> dict[str, Any]:
+    if isinstance(output, dict):
+        return {"output_keys": sorted(output.keys())}
+    if isinstance(output, list):
+        return {"output_len": len(output)}
+    return {"output_type": type(output).__name__}
+
+
+@traceable(
+    run_type="tool",
+    name="rapidapi.request",
+    tags=["rapidapi", "fetch"],
+    process_inputs=_trace_request_inputs,
+    process_outputs=_trace_request_outputs,
+)
 async def _request_rapidapi(
     client: httpx.AsyncClient,
     *,
@@ -185,6 +216,26 @@ async def _fetch_with_retry(
     raise RuntimeError("job_fetcher._fetch_with_retry: unreachable")
 
 
+def _trace_fetch_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "config_id": str(inputs.get("config_id")),
+        "has_page_limit": inputs.get("page_limit") is not None,
+    }
+
+
+def _trace_fetch_outputs(output: Any) -> dict[str, Any]:
+    if isinstance(output, list):
+        return {"inserted_count": len(output)}
+    return {"output_type": type(output).__name__}
+
+
+@traceable(
+    run_type="chain",
+    name="rapidapi.fetch_jobs_for_config",
+    tags=["rapidapi", "job_fetcher"],
+    process_inputs=_trace_fetch_inputs,
+    process_outputs=_trace_fetch_outputs,
+)
 async def fetch_jobs_for_config(
     config_id: str | uuid.UUID,
     *,

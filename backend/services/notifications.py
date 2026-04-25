@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Any, Final
+from typing import Any, Final, cast
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import redis.asyncio as aioredis
@@ -70,11 +70,12 @@ def get_redis() -> aioredis.Redis:
     """Return the process-wide async Redis client (lazy)."""
     global _redis_client
     if _redis_client is None:
-        _redis_client = aioredis.from_url(
+        from_url = cast(Any, aioredis.from_url)
+        _redis_client = cast(aioredis.Redis, from_url(
             _get_pubsub_url(),
             encoding="utf-8",
             decode_responses=True,
-        )
+        ))
     return _redis_client
 
 

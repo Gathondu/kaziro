@@ -6,6 +6,7 @@ import json
 from typing import Any, Final, Protocol, cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langsmith import traceable
 
 from backend.config import Settings, get_settings
 from backend.llm.openrouter import build_chat_model
@@ -130,6 +131,33 @@ def build_get_url_and_params(
     return url, pairs
 
 
+def _trace_query_builder_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "keywords_count": len(inputs.get("keywords", [])),
+        "has_location": bool(inputs.get("location")),
+        "remote_only": bool(inputs.get("remote_only")),
+        "employment_types_count": len(inputs.get("employment_types", [])),
+        "has_salary_min": inputs.get("salary_min") is not None,
+        "has_salary_max": inputs.get("salary_max") is not None,
+    }
+
+
+def _trace_query_builder_outputs(output: Any) -> dict[str, Any]:
+    if isinstance(output, RapidApiQuerySpec):
+        return {
+            "path": output.path,
+            "query_keys": sorted(output.query_params.keys()),
+        }
+    return {"output_type": type(output).__name__}
+
+
+@traceable(
+    run_type="tool",
+    name="rapidapi.build_query_spec_via_llm",
+    tags=["rapidapi", "query_builder"],
+    process_inputs=_trace_query_builder_inputs,
+    process_outputs=_trace_query_builder_outputs,
+)
 async def build_query_spec_via_llm(
     *,
     keywords: list[str],
@@ -140,6 +168,7 @@ async def build_query_spec_via_llm(
     salary_max: int | None,
     settings: Settings | None = None,
 ) -> RapidApiQuerySpec:
+    """Build one provider-specific RapidAPI query spec via LLM."""
     s = settings or get_settings()
     provider = _resolve_provider(s)
     reference = provider.REFERENCE_PATH.read_text(encoding="utf-8")

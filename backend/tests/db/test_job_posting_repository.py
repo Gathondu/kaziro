@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from backend.db.models.enums import JobSource, ParseStatus
+from backend.db.models.enums import JobSource
 from backend.db.repositories import (
     job_config_repository,
     job_posting_repository,

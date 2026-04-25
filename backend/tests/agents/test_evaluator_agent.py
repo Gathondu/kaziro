@@ -7,7 +7,6 @@ import uuid
 from types import SimpleNamespace
 
 import pytest
-
 from backend.agents.evaluator_agent import run_evaluator_agent, set_llm_for_tests
 from backend.db.models.enums import Classification
 from backend.db.repositories import job_posting_repository, raw_job_repository

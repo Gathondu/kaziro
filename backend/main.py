@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Final
+from typing import Any, Final, cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from langsmith.middleware import TracingMiddleware
 
 from backend.api import health as health_routes
 from backend.api import metrics as metrics_routes
@@ -61,6 +62,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(RequestIdMiddleware)
+    app.add_middleware(cast(Any, TracingMiddleware))
 
     register_exception_handlers(app)
 
