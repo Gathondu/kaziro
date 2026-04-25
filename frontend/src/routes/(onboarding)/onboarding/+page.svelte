@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { loadOnboardingDraft } from '$lib/utils/onboarding';
+	import { browser } from '$app/environment';
+	import { loadOnboardingDraft, resumeOnboardingPath } from '$lib/utils/onboarding';
 
 	$effect(() => {
+		if (!browser) return;
 		const d = loadOnboardingDraft();
-		if (d?.step === 2) void goto('/onboarding/cv');
-		else if (d?.step === 3) void goto('/onboarding/config');
-		else void goto('/onboarding/profile');
+		void goto(resumeOnboardingPath(d));
 	});
 </script>
 

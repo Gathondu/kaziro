@@ -5,6 +5,7 @@
 	import { getUser, isAuthReady } from '$lib/stores/auth';
 	import { supabase } from '$lib/supabase';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { saveOnboardingDraft } from '$lib/utils/onboarding';
 
 	let email = $state('');
 	let password = $state('');
@@ -40,7 +41,8 @@
 			formError = error.message;
 			return;
 		}
-		await goto('/onboarding/profile');
+		saveOnboardingDraft({ step: 1, profileSubStep: 'about', profile: {} });
+		await goto('/onboarding/about-you');
 	}
 </script>
 

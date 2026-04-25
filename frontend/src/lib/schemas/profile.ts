@@ -12,6 +12,35 @@ export const profileBasicsSchema = z.object({
 	skills: z.string().optional()
 });
 
+/** Onboarding step: name only */
+export const onboardingNameSchema = z.object({
+	full_name: z.string().min(1, 'Name is required').max(255)
+});
+
+/** Onboarding step: optional professional summary */
+export const onboardingProfessionalSummarySchema = z.object({
+	professional_summary: z.string().max(4000).optional().or(z.literal(''))
+});
+
+/** Onboarding step: optional domain (max 100 chars) */
+export const onboardingDomainSchema = z.object({
+	domain: z
+		.string()
+		.max(100, 'Domain must be at most 100 characters')
+		.optional()
+		.or(z.literal(''))
+});
+
+/** Onboarding step: optional years of experience */
+export const onboardingExperienceSchema = z.object({
+	experience_years: z.coerce.number().int().min(0).max(80).optional().nullable()
+});
+
+/** Onboarding step: optional comma-separated skills */
+export const onboardingSkillsSchema = z.object({
+	skills: z.string().optional()
+});
+
 export type ProfileBasicsInput = z.infer<typeof profileBasicsSchema>;
 
 export const profileSettingsSchema = z.object({

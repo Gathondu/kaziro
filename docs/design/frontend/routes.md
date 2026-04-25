@@ -61,8 +61,19 @@ src/routes/
 
 ### `/onboarding/*`
 
-- 3-step wizard. Each step's `+page.ts` `load` checks profile completeness
-  and skips ahead if already filled.
+- Full-screen **step flow** (no tab strip): linear profile steps
+  `/onboarding/about-you` → `summary` → `domain` → `experience` →
+  `skills`, then **CV** (`/onboarding/cv`), then **first job search
+  config** (`/onboarding/config`). The `(onboarding)` layout shows **Step
+  N of 7** and a progress bar; step panels use a short cross-fade.
+- Progress is tracked in `sessionStorage` via `kaziro.onboarding.v1`
+  (`saveOnboardingDraft` / `loadOnboardingDraft` in
+  `frontend/src/lib/utils/onboarding.ts`). `/onboarding` redirects to
+  the correct step from that draft.
+- **New users** land on `/onboarding/about-you` immediately after
+  successful signup. Returning users are not auto-routed into onboarding
+  from login; the sidebar **Onboarding** link (`/onboarding`) is kept for
+  manual testing.
 - Final step submits the first `job_search_config` and redirects to
   `/dashboard`.
 

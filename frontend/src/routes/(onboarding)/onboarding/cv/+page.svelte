@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import WizardProgress from '$lib/components/onboarding/WizardProgress.svelte';
+	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { useCvUpload } from '$lib/hooks/useProfile';
-	import { saveOnboardingDraft } from '$lib/utils/onboarding';
+	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
 	import { get } from 'svelte/store';
 
 	let file = $state<File | null>(null);
@@ -11,6 +12,14 @@
 	let err = $state<string | null>(null);
 
 	const upload = useCvUpload();
+
+	$effect(() => {
+		if (!browser) return;
+		const path = get(page).url.pathname;
+		const d = loadOnboardingDraft();
+		const want = resumeOnboardingPath(d);
+		if (want !== path) void goto(want);
+	});
 
 	function onPick(e: Event): void {
 		const input = e.currentTarget as HTMLInputElement;
@@ -43,7 +52,6 @@
 	<title>Onboarding — CV</title>
 </svelte:head>
 
-<WizardProgress step={2} />
 <h1 class="mb-2 text-xl font-semibold">Upload your CV</h1>
 <p class="mb-6 text-sm text-base-content/70">
 	We extract text for embeddings and keep the PDF in secure storage.
@@ -67,7 +75,18 @@
 	</div>
 {/if}
 <div class="flex gap-3">
-	<Button type="button" variant="outline" onclick={() => goto('/onboarding/profile')}>Back</Button>
+	<Button
+		type="button"
+		variant="outline"
+		onclick={() => {
+			const d = loadOnboardingDraft();
+			saveOnboardingDraft({
+				step: 1,
+				profileSubStep: 'skills',
+				profile: d?.profile ?? {}
+			});
+			void goto('/onboarding/skills');
+		}}>Back</Button>
 	<Button type="button" disabled={$upload.isPending || !file} onclick={() => next()}>
 		{$upload.isPending ? 'Uploading…' : 'Continue'}
 	</Button>

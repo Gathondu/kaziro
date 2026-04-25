@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
-	import WizardProgress from '$lib/components/onboarding/WizardProgress.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { FETCH_CRON_DAILY } from '$lib/constants/fetchSchedule';
 	import { useCreateJobConfig, useRunJobConfigPipeline, useSchedulePresets } from '$lib/hooks/useJobConfig';
 	import { jobConfigFormSchema } from '$lib/schemas/jobConfig';
-	import { clearOnboardingDraft, saveOnboardingDraft } from '$lib/utils/onboarding';
+	import {
+		clearOnboardingDraft,
+		loadOnboardingDraft,
+		resumeOnboardingPath,
+		saveOnboardingDraft
+	} from '$lib/utils/onboarding';
 
 	let name = $state('');
 	let keywordsText = $state('');
@@ -20,6 +26,14 @@
 	const presets = useSchedulePresets();
 	const createCfg = useCreateJobConfig();
 	const runPipe = useRunJobConfigPipeline();
+
+	$effect(() => {
+		if (!browser) return;
+		const path = get(page).url.pathname;
+		const d = loadOnboardingDraft();
+		const want = resumeOnboardingPath(d);
+		if (want !== path) void goto(want);
+	});
 
 	async function finish(e: Event): Promise<void> {
 		e.preventDefault();
@@ -64,7 +78,6 @@
 	<title>Onboarding — Job search</title>
 </svelte:head>
 
-<WizardProgress step={3} />
 <h1 class="mb-2 text-xl font-semibold">First job search</h1>
 <p class="mb-6 text-sm text-base-content/70">
 	We will enqueue your first pipeline run so evaluations can start flowing in.

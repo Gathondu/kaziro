@@ -21,7 +21,7 @@
 		<a class={linkCls('/jobs')} href="/jobs">Jobs</a>
 		<a class={linkCls('/applications')} href="/applications">Applications</a>
 		<a class={linkCls('/settings')} href="/settings">Settings</a>
-		<a class={linkCls('/onboarding')} href="/onboarding/profile">Onboarding</a>
+		<a class={linkCls('/onboarding')} href="/onboarding">Onboarding</a>
 	</nav>
 	<div class="flex flex-col gap-2 border-t border-base-300 p-3">
 		<span class="text-xs font-medium uppercase tracking-wide text-base-content/60">Appearance</span>
