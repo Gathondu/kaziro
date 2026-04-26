@@ -95,13 +95,19 @@
 				</a>
 			</div>
 			<div class="flex flex-wrap gap-2">
-				<Button onclick={() => reevaluate()} disabled={$triggerEv.isPending}>Re-run evaluation</Button>
+				<Button onclick={() => reevaluate()} disabled={$triggerEv.isPending}
+					>Re-run evaluation</Button
+				>
 				{#if $evQ.data.application_doc}
 					<Button variant="secondary" onclick={() => (documentsModalOpen = true)}>
 						View documents
 					</Button>
 				{:else}
-					<Button variant="secondary" onclick={() => generateDocs()} disabled={$createApp.isPending}>
+					<Button
+						variant="secondary"
+						onclick={() => generateDocs()}
+						disabled={$createApp.isPending}
+					>
 						Generate documents
 					</Button>
 				{/if}
@@ -121,11 +127,15 @@
 				<a
 					class="link link-primary mt-2 inline-block text-sm font-medium"
 					href={$jobQ.data.application_url}
+					target="_blank"
+					rel="noopener noreferrer"
 				>
 					Apply on company site
 				</a>
 				<h2 class="mt-6 text-sm font-semibold">Description</h2>
-				<div class="mt-2 max-w-none whitespace-pre-wrap text-sm leading-relaxed text-base-content/80">
+				<div
+					class="mt-2 max-w-none whitespace-pre-wrap text-sm leading-relaxed text-base-content/80"
+				>
 					{$jobQ.data.description}
 				</div>
 			</section>
