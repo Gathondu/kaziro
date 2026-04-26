@@ -36,6 +36,8 @@ class JobEvaluationApplicationDocTexts(BaseModel):
 
     tailored_cv_text: str
     cover_letter_text: str
+    cv_pdf_available: bool = False
+    cover_letter_pdf_available: bool = False
 
 
 class JobEvaluationResponse(ORMModel):

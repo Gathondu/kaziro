@@ -152,6 +152,8 @@ empty.
 | GET    | `/jobs`                             | Required | List job postings with filters & pagination |
 | GET    | `/jobs/{id}`                        | Required | Get a single job posting                 |
 | GET    | `/jobs/{id}/evaluation`             | Required | Get the user's evaluation for a job      |
+| GET    | `/jobs/{id}/cv.pdf`                 | Required | Redirect to signed CV PDF (when generated) |
+| GET    | `/jobs/{id}/cover-letter.pdf`       | Required | Redirect to signed cover letter PDF       |
 | POST   | `/jobs/{id}/trigger-evaluation`     | Required | Manually re-trigger the evaluation pipeline |
 
 `GET /jobs/{id}/evaluation` may include optional `application_doc` with

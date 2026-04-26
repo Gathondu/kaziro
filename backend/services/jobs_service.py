@@ -11,7 +11,11 @@ from backend.api.exceptions import NotFoundError
 from backend.db.models.enums import Classification
 from backend.db.models.job_evaluation import JobEvaluation
 from backend.db.models.job_posting import JobPosting
-from backend.db.repositories import evaluation_repository, job_posting_repository
+from backend.db.repositories import (
+    application_doc_repository,
+    evaluation_repository,
+    job_posting_repository,
+)
 from backend.logging_config import get_logger
 from backend.services.notifications import get_redis
 from backend.tasks.pipeline import run_pipeline_for_single_job_task
@@ -125,9 +129,50 @@ async def trigger_evaluation(
         raise
 
 
+async def signed_url_for_job_posting_doc_pdf(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    job_posting_id: uuid.UUID,
+    *,
+    doc_kind: str,
+) -> str:
+    """Signed storage URL for CV or cover letter PDF keyed by job posting.
+
+    ``doc_kind`` is ``cv`` or ``cover_letter`` / ``cover-letter``.
+    """
+    evaluation = await evaluation_repository.get_for_user_posting(
+        session, user_id, job_posting_id
+    )
+    if evaluation is None:
+        raise NotFoundError("evaluation not found", code="evaluation_not_found")
+    doc = await application_doc_repository.get_by_evaluation_id(
+        session, user_id, evaluation.id
+    )
+    if doc is None:
+        raise NotFoundError(
+            "application documents are not ready yet",
+            code="application_documents_not_ready",
+        )
+
+    from backend.services import storage as storage_service
+
+    if doc_kind == "cv":
+        path = doc.cv_pdf_path
+    elif doc_kind in ("cover_letter", "cover-letter"):
+        path = doc.cover_letter_pdf_path
+    else:
+        raise NotFoundError("unknown document kind", code="doc_not_found")
+
+    if not path:
+        raise NotFoundError("pdf not generated yet", code="pdf_not_ready")
+
+    return await storage_service.create_signed_url(path)
+
+
 __all__ = [
     "get_evaluation_for_job",
     "get_job_for_user",
     "list_jobs_for_user",
+    "signed_url_for_job_posting_doc_pdf",
     "trigger_evaluation",
 ]

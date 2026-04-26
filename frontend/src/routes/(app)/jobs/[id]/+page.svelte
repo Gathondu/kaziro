@@ -133,8 +133,12 @@
 				<CompanyBrief job={$jobQ.data} />
 			</div>
 		</div>
-		{#if $evQ.data.application_doc}
-			<JobDocumentsModal bind:open={documentsModalOpen} doc={$evQ.data.application_doc} />
+		{#if $evQ.data.application_doc && jobId}
+			<JobDocumentsModal
+				bind:open={documentsModalOpen}
+				jobPostingId={jobId}
+				doc={$evQ.data.application_doc}
+			/>
 		{/if}
 	{/if}
 </div>

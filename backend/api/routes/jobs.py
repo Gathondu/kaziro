@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import date
 from typing import Final
 
 from fastapi import APIRouter, Query, Request, status
+from fastapi.responses import RedirectResponse
 
 from backend.api.deps import CurrentUser, SessionDep
 from backend.api.schemas.common import Envelope, PageMeta, envelope
@@ -59,8 +61,6 @@ async def get_job(
     session: SessionDep,
     current_user: CurrentUser,
 ) -> Envelope[JobPostingResponse]:
-    import uuid
-
     posting = await jobs_service.get_job_for_user(session, current_user.id, uuid.UUID(job_id))
     return envelope(JobPostingResponse.model_validate(posting))
 
@@ -71,8 +71,6 @@ async def get_job_evaluation(
     session: SessionDep,
     current_user: CurrentUser,
 ) -> Envelope[JobEvaluationResponse]:
-    import uuid
-
     job_uuid = uuid.UUID(job_id)
     ev = await jobs_service.get_evaluation_for_job(session, current_user.id, job_uuid)
     doc = await application_doc_repository.get_by_evaluation_id(session, current_user.id, ev.id)
@@ -90,12 +88,40 @@ async def get_job_evaluation(
             JobEvaluationApplicationDocTexts(
                 tailored_cv_text=doc.tailored_cv_text,
                 cover_letter_text=doc.cover_letter_text,
+                cv_pdf_available=bool(doc.cv_pdf_path),
+                cover_letter_pdf_available=bool(doc.cover_letter_pdf_path),
             )
             if doc is not None
             else None
         ),
     }
     return envelope(JobEvaluationResponse.model_validate(payload))
+
+
+@router.get("/{job_id}/cv.pdf")
+async def download_job_cv_pdf(
+    job_id: str,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> RedirectResponse:
+    await jobs_service.get_job_for_user(session, current_user.id, uuid.UUID(job_id))
+    url = await jobs_service.signed_url_for_job_posting_doc_pdf(
+        session, current_user.id, uuid.UUID(job_id), doc_kind="cv"
+    )
+    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+
+
+@router.get("/{job_id}/cover-letter.pdf")
+async def download_job_cover_letter_pdf(
+    job_id: str,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> RedirectResponse:
+    await jobs_service.get_job_for_user(session, current_user.id, uuid.UUID(job_id))
+    url = await jobs_service.signed_url_for_job_posting_doc_pdf(
+        session, current_user.id, uuid.UUID(job_id), doc_kind="cover_letter"
+    )
+    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
 
 
 @router.post(
@@ -109,8 +135,6 @@ async def trigger_job_evaluation(
     session: SessionDep,
     current_user: CurrentUser,
 ) -> Envelope[TriggerEvaluationResponse]:
-    import uuid
-
     await jobs_service.get_job_for_user(session, current_user.id, uuid.UUID(job_id))
     rid = request.headers.get("x-request-id")
     task_id, dup = await jobs_service.trigger_evaluation(

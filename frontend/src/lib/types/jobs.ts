@@ -22,6 +22,8 @@ export interface JobPosting {
 export interface JobEvaluationApplicationDoc {
 	tailored_cv_text: string;
 	cover_letter_text: string;
+	cv_pdf_available?: boolean;
+	cover_letter_pdf_available?: boolean;
 }
 
 export interface JobEvaluation {

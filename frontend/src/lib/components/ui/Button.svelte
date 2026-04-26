@@ -6,6 +6,7 @@
 		variant = 'primary',
 		disabled = false,
 		class: className = '',
+		ariaLabel = undefined,
 		onclick,
 		children
 	}: {
@@ -13,6 +14,7 @@
 		variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
 		disabled?: boolean;
 		class?: string;
+		ariaLabel?: string;
 		onclick?: (e: MouseEvent) => void;
 		children: Snippet;
 	} = $props();
@@ -29,6 +31,11 @@
 	);
 </script>
 
-<button {type} class="{variantClass} rounded-xl {className}" {disabled} {onclick}
+<button
+	{type}
+	class="{variantClass} rounded-xl {className}"
+	{disabled}
+	{onclick}
+	aria-label={ariaLabel}
 	>{@render children()}</button
 >

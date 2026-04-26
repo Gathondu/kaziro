@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchMeta } from './client';
+import { apiFetch, apiFetchMeta, resolveAuthenticatedRedirect } from './client';
 import { clampListLimit, clampMinScore } from './limits';
 import type { Classification } from '$lib/types/enums';
 import type { JobEvaluation, JobPosting, TriggerEvaluationBody } from '$lib/types/jobs';
@@ -51,4 +51,12 @@ export function triggerJobEvaluation(jobId: string): Promise<TriggerEvaluationBo
 	return apiFetch<TriggerEvaluationBody>(`/api/v1/jobs/${jobId}/trigger-evaluation`, {
 		method: 'POST'
 	});
+}
+
+export function signedJobCvPdfUrl(jobPostingId: string): Promise<string> {
+	return resolveAuthenticatedRedirect(`/api/v1/jobs/${jobPostingId}/cv.pdf`);
+}
+
+export function signedJobCoverLetterPdfUrl(jobPostingId: string): Promise<string> {
+	return resolveAuthenticatedRedirect(`/api/v1/jobs/${jobPostingId}/cover-letter.pdf`);
 }
