@@ -245,10 +245,19 @@ async def run_document_stage(job_evaluation_id: str, user_id: str) -> bool:
         bound.error("pipeline.document_error", error=result.error)
         return False
 
+    job_posting_for_notify = ""
+    async with async_session_factory() as session:
+        ev_row = await evaluation_repository.get_by_id(
+            session, uuid.UUID(user_id), uuid.UUID(job_evaluation_id)
+        )
+        if ev_row is not None:
+            job_posting_for_notify = str(ev_row.job_posting_id)
+
     await notify_user(
         user_id,
         {
             "type": "documents_ready",
+            "job_posting_id": job_posting_for_notify,
             "job_evaluation_id": job_evaluation_id,
             "application_doc_id": result.application_doc_id,
             "quality_passed": result.quality_passed,
@@ -329,10 +338,11 @@ async def run_research_then_document_for_evaluation(
     process_outputs=_trace_pipeline_outputs,
 )
 async def run_full_pipeline_for_config(config_id: str, user_id: str) -> dict[str, Any]:
-    """Fetch → parse → evaluate (concurrent) → research+docs for non-rejects.
+    """Fetch → parse → evaluate (concurrent) → research+docs for ``GOOD_FIT`` only.
 
-    ``GOOD_FIT`` and ``MAYBE`` rows get research then documents, matching
-    :func:`run_pipeline_for_single_job`. Used by the Celery beat task.
+    ``MAYBE`` and ``REJECT`` rows are counted but do not enqueue document
+    generation (users can trigger documents from the job UI). Used by the
+    Celery beat task.
     """
     bound = log.bind(config_id=config_id, user_id=user_id)
     bound.info("pipeline.full_start")
@@ -384,20 +394,18 @@ async def run_full_pipeline_for_config(config_id: str, user_id: str) -> dict[str
 
         results = await asyncio.gather(*(_evaluate_one(p) for p in parsed_ids))
 
-        doc_candidates: list[tuple[str, str]] = []  # (posting_id, evaluation_id)
+        good_fit: list[tuple[str, str]] = []  # (posting_id, evaluation_id)
         for posting_id, ev_id, classification in results:
             if classification is Classification.GOOD_FIT:
                 summary["evaluations_good_fit"] += 1
                 if ev_id is not None:
-                    doc_candidates.append((posting_id, ev_id))
+                    good_fit.append((posting_id, ev_id))
             elif classification is Classification.MAYBE:
                 summary["evaluations_maybe"] += 1
-                if ev_id is not None:
-                    doc_candidates.append((posting_id, ev_id))
             elif classification is Classification.REJECT:
                 summary["evaluations_rejected"] += 1
 
-        for posting_id, evaluation_id in doc_candidates:
+        for posting_id, evaluation_id in good_fit:
             research_ok = await run_research_stage(posting_id, user_id)
             if not research_ok:
                 continue
@@ -451,10 +459,25 @@ async def run_pipeline_for_single_job(job_posting_id: str, user_id: str) -> dict
             "documents_generated": False,
         }
 
+    if classification is Classification.MAYBE:
+        research_ok = await run_research_stage(job_posting_id, user_id)
+        async with async_session_factory() as session:
+            evaluation = await evaluation_repository.get_by_id(
+                session, user_uuid, uuid.UUID(eval_id)
+            )
+        return {
+            "job_posting_id": job_posting_id,
+            "evaluation_id": eval_id,
+            "classification": classification.value,
+            "overall_score": float(evaluation.overall_score) if evaluation else None,
+            "research_completed": research_ok,
+            "documents_generated": False,
+        }
+
+    # GOOD_FIT — research then tailored documents
     research_ok = await run_research_stage(job_posting_id, user_id)
     docs_ok = await run_document_stage(eval_id, user_id) if research_ok else False
 
-    # Echo back the latest dimension snapshot (handy for the API response).
     async with async_session_factory() as session:
         evaluation = await evaluation_repository.get_by_id(session, user_uuid, uuid.UUID(eval_id))
 

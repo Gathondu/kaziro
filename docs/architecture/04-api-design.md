@@ -154,6 +154,12 @@ empty.
 | GET    | `/jobs/{id}/evaluation`             | Required | Get the user's evaluation for a job      |
 | POST   | `/jobs/{id}/trigger-evaluation`     | Required | Manually re-trigger the evaluation pipeline |
 
+`GET /jobs/{id}/evaluation` may include optional `application_doc` with
+`tailored_cv_text` and `cover_letter_text` when the document agent has
+persisted an `application_docs` row for that evaluation (job detail UI).
+Nested `evaluation` objects on `GET /applications` omit full document
+text (`application_doc` is null there) to keep list payloads small.
+
 `GET /jobs` filter query params:
 
 | Param              | Type            | Default | Description                          |
@@ -194,7 +200,7 @@ Inbound messages: none (server → client only). Outbound message shapes:
 
 ```json
 { "type": "evaluation_complete", "job_posting_id": "...", "classification": "GOOD_FIT", "score": 7.8 }
-{ "type": "documents_ready",     "job_evaluation_id": "...", "quality_passed": true }
+{ "type": "documents_ready",     "job_posting_id": "...", "job_evaluation_id": "...", "application_doc_id": "...", "quality_passed": true }
 { "type": "research_complete",   "job_posting_id": "..." }
 { "type": "fetch_complete",      "config_id": "...", "new_jobs": 4 }
 ```

@@ -14,7 +14,10 @@ export type NotificationMessage =
 	| { type: 'research_complete'; job_posting_id: string }
 	| {
 			type: 'documents_ready';
+			/** Present when the evaluation row was resolved for fan-out. */
+			job_posting_id?: string;
 			job_evaluation_id: string;
+			application_doc_id?: string | null;
 			quality_passed: boolean;
 	  }
 	| {

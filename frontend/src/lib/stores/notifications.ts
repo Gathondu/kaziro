@@ -61,6 +61,9 @@ function dispatch(msg: NotificationMessage): void {
 		toast.success('Application documents are ready.');
 		qc?.invalidateQueries({ queryKey: ['applications'] });
 		qc?.invalidateQueries({ queryKey: ['dashboard'] });
+		if (msg.job_posting_id) {
+			qc?.invalidateQueries({ queryKey: ['job', msg.job_posting_id, 'evaluation'] });
+		}
 	}
 	if (msg.type === 'application_event') {
 		qc?.invalidateQueries({ queryKey: ['application', msg.application_id] });

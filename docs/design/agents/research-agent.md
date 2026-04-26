@@ -4,12 +4,15 @@
 **Last updated**: 2026-04-22
 **Source**: Section 3.4 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
 **Code**: [`backend/agents/research_agent.py`](../../../backend/agents/research_agent.py)
-**Pipeline position**: Stage 3 (gated by Evaluator: only `GOOD_FIT`/`MAYBE`)
+**Pipeline position**: Stage 3 — **batch / scheduled**: after `GOOD_FIT` only.
+**Manual** `POST /jobs/{id}/trigger-evaluation`: also runs for `MAYBE` (research
+only; no auto document stage).
 **Related ADR**: [ADR-0005](../../decisions/ADR-0005-web-scraping-firecrawl.md)
 
 ## Purpose
 
-For every classified-good-fit job, gathers structured intelligence about the
+For jobs that reach the research stage (`GOOD_FIT` in batch; `GOOD_FIT` or
+`MAYBE` on a manual single-job re-run), gathers structured intelligence about the
 hiring company so the Document Agent can write a personalised cover letter
 and the user gets a useful pre-application brief.
 

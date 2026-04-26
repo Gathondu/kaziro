@@ -44,9 +44,9 @@ flowchart TD
   scheduler --> fetch --> rawT
   rawT --> parser --> postingsT
   postingsT --> evaluator --> evalT
-  evalT -->|"GOOD_FIT or MAYBE"| research --> companyT
+  evalT -->|"GOOD_FIT"| research --> companyT
   companyT --> document --> docsT
-  evalT -.->|"REJECT"| stop["Stop"]
+  evalT -.->|"MAYBE / REJECT"| stop["No auto documents<br/>(MAYBE: research on manual re-run only)"]
   evaluator --> ws
   document --> ws
 ```
@@ -138,7 +138,11 @@ check_cache ──fresh?──→ END
    scrape (parallel: company website + job page) → generate_brief → persist → END
 ```
 
-- Runs only for `GOOD_FIT` (and optionally `MAYBE`) classifications.
+- **Scheduled / batch pipeline**: research and documents run only for
+  `GOOD_FIT`. `MAYBE` / `REJECT` stop after evaluation (no auto documents).
+- **Manual re-run** (`POST /jobs/{id}/trigger-evaluation`): `MAYBE` runs
+  research only (company brief); documents are created from the job UI or
+  backfill task, not automatically.
 - **Cache**: if a `company_summaries` row exists for the same `job_posting_id`
   and is younger than 30 days, the agent short-circuits.
 - **Fan-in**: the parallel scrape uses `asyncio.gather` so the slowest URL

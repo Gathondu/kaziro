@@ -78,7 +78,9 @@ await notify_user(user_id, {
 
 await notify_user(user_id, {
     "type": "documents_ready",
+    "job_posting_id": job_posting_id,
     "job_evaluation_id": evaluation_id,
+    "application_doc_id": application_doc_id,
     "quality_passed": True,
 })
 ```

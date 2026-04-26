@@ -18,6 +18,12 @@ export interface JobPosting {
 	updated_at: string;
 }
 
+/** Populated when the document agent has produced tailored text for this evaluation. */
+export interface JobEvaluationApplicationDoc {
+	tailored_cv_text: string;
+	cover_letter_text: string;
+}
+
 export interface JobEvaluation {
 	id: string;
 	job_posting_id: string;
@@ -28,6 +34,7 @@ export interface JobEvaluation {
 	evaluated_at: string;
 	created_at: string;
 	updated_at: string;
+	application_doc?: JobEvaluationApplicationDoc | null;
 }
 
 export interface TriggerEvaluationBody {

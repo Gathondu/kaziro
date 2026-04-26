@@ -111,8 +111,10 @@ async def test_full_pipeline_one_eval_failure_continues_batch() -> None:
 
 
 @pytest.mark.asyncio
-async def test_full_pipeline_maybe_gets_documents() -> None:
+async def test_full_pipeline_maybe_skips_documents() -> None:
     cfg, uid = str(uuid.uuid4()), str(uuid.uuid4())
+    mock_research = AsyncMock(return_value=True)
+    mock_doc = AsyncMock(return_value=True)
     with (
         _patch_full_pipeline_user_config_gate(cfg, uid),
         patch.object(orch, "notify_user", new=AsyncMock()),
@@ -122,13 +124,15 @@ async def test_full_pipeline_maybe_gets_documents() -> None:
             "run_evaluation_for_user",
             new=AsyncMock(return_value=("eval-maybe", Classification.MAYBE)),
         ),
-        patch.object(orch, "run_research_stage", new=AsyncMock(return_value=True)),
-        patch.object(orch, "run_document_stage", new=AsyncMock(return_value=True)),
+        patch.object(orch, "run_research_stage", mock_research),
+        patch.object(orch, "run_document_stage", mock_doc),
     ):
         summary = await orch.run_full_pipeline_for_config(cfg, uid)
 
     assert summary["evaluations_maybe"] == 1
-    assert summary["documents_generated"] == 1
+    assert summary["documents_generated"] == 0
+    mock_research.assert_not_called()
+    mock_doc.assert_not_called()
 
 
 @pytest.mark.asyncio

@@ -10,11 +10,13 @@ from fastapi import APIRouter, Query, Request, status
 from backend.api.deps import CurrentUser, SessionDep
 from backend.api.schemas.common import Envelope, PageMeta, envelope
 from backend.api.schemas.jobs import (
+    JobEvaluationApplicationDocTexts,
     JobEvaluationResponse,
     JobPostingResponse,
     TriggerEvaluationResponse,
 )
 from backend.db.models.enums import Classification
+from backend.db.repositories import application_doc_repository
 from backend.services import jobs_service
 
 router: Final[APIRouter] = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -71,8 +73,29 @@ async def get_job_evaluation(
 ) -> Envelope[JobEvaluationResponse]:
     import uuid
 
-    ev = await jobs_service.get_evaluation_for_job(session, current_user.id, uuid.UUID(job_id))
-    return envelope(JobEvaluationResponse.model_validate(ev))
+    job_uuid = uuid.UUID(job_id)
+    ev = await jobs_service.get_evaluation_for_job(session, current_user.id, job_uuid)
+    doc = await application_doc_repository.get_by_evaluation_id(session, current_user.id, ev.id)
+    payload = {
+        "id": ev.id,
+        "job_posting_id": ev.job_posting_id,
+        "final_classification": ev.final_classification,
+        "overall_score": float(ev.overall_score),
+        "final_feedback": ev.final_feedback,
+        "dimension_scores": ev.dimension_scores,
+        "evaluated_at": ev.evaluated_at,
+        "created_at": ev.created_at,
+        "updated_at": ev.updated_at,
+        "application_doc": (
+            JobEvaluationApplicationDocTexts(
+                tailored_cv_text=doc.tailored_cv_text,
+                cover_letter_text=doc.cover_letter_text,
+            )
+            if doc is not None
+            else None
+        ),
+    }
+    return envelope(JobEvaluationResponse.model_validate(payload))
 
 
 @router.post(

@@ -29,6 +29,15 @@ class JobPostingResponse(ORMModel):
     updated_at: datetime
 
 
+class JobEvaluationApplicationDocTexts(BaseModel):
+    """Generated CV + cover letter for this evaluation (when present)."""
+
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
+
+    tailored_cv_text: str
+    cover_letter_text: str
+
+
 class JobEvaluationResponse(ORMModel):
     """Evaluator output for API consumers."""
 
@@ -41,6 +50,7 @@ class JobEvaluationResponse(ORMModel):
     evaluated_at: datetime
     created_at: datetime
     updated_at: datetime
+    application_doc: JobEvaluationApplicationDocTexts | None = None
 
     @field_validator("overall_score", mode="before")
     @classmethod
@@ -67,6 +77,7 @@ class TriggerEvaluationResponse(BaseModel):
 
 
 __all__ = [
+    "JobEvaluationApplicationDocTexts",
     "JobEvaluationResponse",
     "JobPostingResponse",
     "TriggerEvaluationResponse",

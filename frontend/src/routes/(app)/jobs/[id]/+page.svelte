@@ -5,6 +5,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import CompanyBrief from '$lib/components/jobs/CompanyBrief.svelte';
 	import EvaluationPanel from '$lib/components/jobs/EvaluationPanel.svelte';
+	import JobDocumentsModal from '$lib/components/jobs/JobDocumentsModal.svelte';
 	import { useCreateApplication, useMarkJobNotInterested } from '$lib/hooks/useApplication';
 	import {
 		useJobEvaluationFromRoute,
@@ -21,6 +22,7 @@
 	const triggerEv = useTriggerEvaluation();
 	const createApp = useCreateApplication();
 	const markNotInterested = useMarkJobNotInterested();
+	let documentsModalOpen = $state(false);
 	const backHref = $derived.by(() => {
 		const requested = $page.url.searchParams.get('backTo');
 		if (!requested) return '/jobs';
@@ -94,6 +96,11 @@
 			</div>
 			<div class="flex flex-wrap gap-2">
 				<Button onclick={() => reevaluate()} disabled={$triggerEv.isPending}>Re-run evaluation</Button>
+				{#if $evQ.data.application_doc}
+					<Button variant="outline" onclick={() => (documentsModalOpen = true)}>
+						View documents
+					</Button>
+				{/if}
 				<Button variant="secondary" onclick={() => generateDocs()} disabled={$createApp.isPending}>
 					Generate documents
 				</Button>
@@ -126,5 +133,8 @@
 				<CompanyBrief job={$jobQ.data} />
 			</div>
 		</div>
+		{#if $evQ.data.application_doc}
+			<JobDocumentsModal bind:open={documentsModalOpen} doc={$evQ.data.application_doc} />
+		{/if}
 	{/if}
 </div>

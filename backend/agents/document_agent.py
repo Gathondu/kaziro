@@ -1,7 +1,9 @@
 """Document Agent — tailored CV + cover letter generator.
 
-Triggered after the Research Agent completes (i.e. for ``GOOD_FIT``
-jobs). Given a ``job_evaluations`` row + the user's profile/CV, it:
+Triggered after the Research Agent completes for ``GOOD_FIT`` jobs in the
+scheduled pipeline; ``MAYBE`` evaluations reach this agent only via explicit
+user actions (e.g. job UI backfill / ``run_research_then_document``).
+Given a ``job_evaluations`` row + the user's profile/CV, it:
 
 1. Loads context (evaluation, posting, company brief, profile, master
    CV text — pulled from Storage if not cached on the profile row).

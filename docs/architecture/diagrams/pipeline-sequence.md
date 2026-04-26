@@ -46,7 +46,7 @@ sequenceDiagram
     Cel->>WS: publish evaluation_complete
     WS-->>Browser: toast (classification + score)
 
-    alt classification in (GOOD_FIT, MAYBE)
+    alt classification is GOOD_FIT
       Cel->>Res: run_research_agent(job_posting_id)
       Res->>DB: check_cache (≤ 30 days?)
 
@@ -68,6 +68,8 @@ sequenceDiagram
       Doc-->>Cel: done
       Cel->>WS: publish documents_ready
       WS-->>Browser: toast ("Open editor")
+    else MAYBE or REJECT
+      Note over Cel,Doc: Scheduled batch skips research and documents
     end
   end
 ```

@@ -103,7 +103,13 @@ type NotificationMessage =
   | { type: 'fetch_complete';      config_id: string;        new_jobs: number }
   | { type: 'evaluation_complete'; job_posting_id: string;   classification: Classification; score: number }
   | { type: 'research_complete';   job_posting_id: string }
-  | { type: 'documents_ready';     job_evaluation_id: string; quality_passed: boolean };
+  | {
+      type: 'documents_ready';
+      job_posting_id?: string;
+      job_evaluation_id: string;
+      application_doc_id?: string | null;
+      quality_passed: boolean;
+    };
 ```
 
 ### 4.2 Connection lifecycle
@@ -166,10 +172,11 @@ own WebSocket.
         toast.info(`New evaluation: ${msg.classification} (${msg.score}/10)`);
         queryClient.invalidateQueries({ queryKey: ['jobs'] });
       } else if (msg.type === 'documents_ready') {
-        toast.success('Documents ready', {
-          action: { label: 'Open editor', href: `/applications/${msg.job_evaluation_id}` },
-        });
+        toast.success('Documents ready');
         queryClient.invalidateQueries({ queryKey: ['applications'] });
+        if (msg.job_posting_id) {
+          queryClient.invalidateQueries({ queryKey: ['job', msg.job_posting_id, 'evaluation'] });
+        }
       }
     });
 

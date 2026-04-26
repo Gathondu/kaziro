@@ -23,14 +23,31 @@ from backend.api.schemas.common import Envelope, PageMeta, envelope
 from backend.api.schemas.jobs import JobEvaluationResponse, JobPostingResponse
 from backend.db.models.application import Application
 from backend.db.models.enums import ApplicationStatus
+from backend.db.models.job_evaluation import JobEvaluation
 from backend.db.repositories import evaluation_repository
 from backend.services import applications_service
 
 router: Final[APIRouter] = APIRouter(prefix="/applications", tags=["applications"])
 
 
+def _job_evaluation_without_documents(ev: JobEvaluation) -> JobEvaluationResponse:
+    """Evaluation payload for application lists (no full CV / cover letter text)."""
+    return JobEvaluationResponse(
+        id=ev.id,
+        job_posting_id=ev.job_posting_id,
+        final_classification=ev.final_classification,
+        overall_score=float(ev.overall_score),
+        final_feedback=ev.final_feedback,
+        dimension_scores=ev.dimension_scores,
+        evaluated_at=ev.evaluated_at,
+        created_at=ev.created_at,
+        updated_at=ev.updated_at,
+        application_doc=None,
+    )
+
+
 def _to_response(
-    app: Application, *, evaluation: object | None = None
+    app: Application, *, evaluation: JobEvaluation | None = None
 ) -> ApplicationResponse:
     return ApplicationResponse(
         id=app.id,
@@ -46,7 +63,7 @@ def _to_response(
         application_doc=ApplicationDocSnippet.model_validate(app.application_doc)
         if app.application_doc
         else None,
-        evaluation=JobEvaluationResponse.model_validate(evaluation) if evaluation else None,
+        evaluation=_job_evaluation_without_documents(evaluation) if evaluation else None,
     )
 
 
