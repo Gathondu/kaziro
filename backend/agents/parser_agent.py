@@ -57,27 +57,23 @@ class JobPostingSchema(BaseModel):
 
     title: str = Field(description="Job title")
     company_name: str = Field(description="Hiring company name")
-    company_website: str | None = Field(
-        default=None, description="Company website URL if present"
-    )
+    company_website: str | None = Field(default=None, description="Company website URL if present")
     location: str | None = Field(
         default=None, description="Job location (city, country, or 'Remote')"
     )
     remote_flag: bool = Field(description="True if the role is remote or hybrid")
     salary_min: int | None = Field(
-        default=None, description="Minimum annual salary in USD if stated"
+        default=None, description="Minimum monthly salary in USD if stated"
     )
     salary_max: int | None = Field(
-        default=None, description="Maximum annual salary in USD if stated"
+        default=None, description="Maximum monthly salary in USD if stated"
     )
     employment_type: str | None = Field(
         default=None,
         description="full-time | part-time | contract | internship",
     )
     description: str = Field(description="Full cleaned job description text")
-    requirements: list[str] = Field(
-        default_factory=list, description="Key requirements as a list"
-    )
+    requirements: list[str] = Field(default_factory=list, description="Key requirements as a list")
     application_url: str = Field(description="Direct application URL")
     posted_date: str | None = Field(
         default=None, description="Date posted as YYYY-MM-DD if available"
@@ -190,7 +186,10 @@ async def parse_node(state: ParserState) -> ParserState:
         "You are a job posting parser. Extract structured information "
         "from the raw job data below.\n"
         "Return ONLY the structured fields. Do not invent data that is "
-        "not present.\n\n"
+        "not present. "
+        "If the salary is not stated, set the salary_min and salary_max to None. "
+        "If the salary is in annual terms, convert it to monthly terms "
+        " and to USD if not in USD.\n\n"
         f"RAW JOB DATA:\n{json.dumps(state.raw_payload, indent=2)}"
     )
 
@@ -206,9 +205,7 @@ async def parse_node(state: ParserState) -> ParserState:
     except Exception as exc:
         external_api_calls_total.labels(service="openrouter", status="error").inc()
         bound.warning("parser.parse_failed", error=str(exc))
-        return state.model_copy(
-            update={"error": str(exc), "retries": state.retries + 1}
-        )
+        return state.model_copy(update={"error": str(exc), "retries": state.retries + 1})
 
 
 async def embed_node(state: ParserState) -> ParserState:
@@ -219,11 +216,7 @@ async def embed_node(state: ParserState) -> ParserState:
     bound = log.bind(raw_job_id=state.raw_job_id, node="embed")
     bound.info("parser.embed_start")
 
-    embed_text = (
-        f"{state.parsed.title}\n"
-        f"{state.parsed.company_name}\n"
-        f"{state.parsed.description}"
-    )
+    embed_text = f"{state.parsed.title}\n{state.parsed.company_name}\n{state.parsed.description}"
 
     try:
         embedding = await get_embedder().aembed_query(embed_text)
@@ -348,9 +341,7 @@ def _trace_parser_outputs(output: Any) -> dict[str, Any]:
     process_inputs=_trace_parser_inputs,
     process_outputs=_trace_parser_outputs,
 )
-async def run_parser_agent(
-    raw_job_id: str, raw_payload: dict[str, Any]
-) -> ParserState:
+async def run_parser_agent(raw_job_id: str, raw_payload: dict[str, Any]) -> ParserState:
     """Run the parser graph for one ``raw_jobs`` row.
 
     LangGraph returns a plain ``dict`` (the final state ``model_dump()``);
@@ -361,9 +352,7 @@ async def run_parser_agent(
     try:
         result = await _get_graph().ainvoke(initial)
     finally:
-        agent_duration_seconds.labels(agent_name=AGENT_NAME).observe(
-            time.perf_counter() - started
-        )
+        agent_duration_seconds.labels(agent_name=AGENT_NAME).observe(time.perf_counter() - started)
     if isinstance(result, ParserState):
         return result
     return ParserState.model_validate(result)

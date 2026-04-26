@@ -105,15 +105,11 @@ class _DefaultFirecrawlClient:
             else (base_url or DEFAULT_FIRECRAWL_BASE)
         ).rstrip("/")
         self._headers = {
-            "Authorization": (
-                f"Bearer {settings.FIRECRAWL_API_KEY.get_secret_value()}"
-            ),
+            "Authorization": (f"Bearer {settings.FIRECRAWL_API_KEY.get_secret_value()}"),
             "Content-Type": "application/json",
         }
 
-    async def scrape(
-        self, url: str, *, max_chars: int = SCRAPE_MAX_CHARS
-    ) -> str:
+    async def scrape(self, url: str, *, max_chars: int = SCRAPE_MAX_CHARS) -> str:
         bound = log.bind(url=url)
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -127,15 +123,11 @@ class _DefaultFirecrawlClient:
                     },
                 )
         except httpx.RequestError as exc:
-            external_api_calls_total.labels(
-                service="firecrawl", status="network_error"
-            ).inc()
+            external_api_calls_total.labels(service="firecrawl", status="network_error").inc()
             bound.warning("firecrawl.network_error", error=str(exc))
             return ""
 
-        external_api_calls_total.labels(
-            service="firecrawl", status=str(resp.status_code)
-        ).inc()
+        external_api_calls_total.labels(service="firecrawl", status=str(resp.status_code)).inc()
         if resp.status_code >= 400:
             bound.warning(
                 "firecrawl.scrape_failed",
@@ -240,9 +232,7 @@ async def check_cache_node(state: ResearchState) -> ResearchState:
         if job is None:
             return state.model_copy(update={"error": "Job posting not found"})
 
-        cached = await company_summary_repository.get_active_for_posting(
-            session, posting_uuid
-        )
+        cached = await company_summary_repository.get_active_for_posting(session, posting_uuid)
 
     if cached is not None:
         bound.info(
@@ -284,12 +274,8 @@ async def scrape_node(state: ResearchState) -> ResearchState:
 
     client = get_firecrawl_client()
     coroutines: list[Any] = []
-    coroutines.append(
-        client.scrape(state.company_website) if state.company_website else _empty()
-    )
-    coroutines.append(
-        client.scrape(state.application_url) if state.application_url else _empty()
-    )
+    coroutines.append(client.scrape(state.company_website) if state.company_website else _empty())
+    coroutines.append(client.scrape(state.application_url) if state.application_url else _empty())
 
     raw_results = await asyncio.gather(*coroutines, return_exceptions=True)
     website_content = _coerce_str(raw_results[0])
@@ -328,7 +314,7 @@ async def generate_brief_node(state: ResearchState) -> ResearchState:
         f"=== JOB POSTING PAGE ===\n{state.job_page_content}"
     )
 
-    prompt = f"""You are a company research analyst helping a job applicant prepare for an application.
+    prompt = f"""You are an expert company research analyst with decades of experience helping a job applicant prepare for an application.
 
 Analyse the content below and extract structured information about the company.
 If information is not present, state "Not available" rather than guessing.
@@ -365,9 +351,7 @@ Provide a structured analysis in this exact JSON format (no other text):
     try:
         data = json.loads(_strip_json_fence(raw))
     except json.JSONDecodeError as exc:
-        bound.error(
-            "research.brief_parse_failed", error=str(exc), preview=raw[:200]
-        )
+        bound.error("research.brief_parse_failed", error=str(exc), preview=raw[:200])
         return state.model_copy(update={"error": f"brief parse error: {exc}"})
 
     bound.info("research.brief_generated")
@@ -501,9 +485,7 @@ async def run_research_agent(job_posting_id: str) -> ResearchState:
     try:
         result = await _get_graph().ainvoke(initial)
     finally:
-        agent_duration_seconds.labels(agent_name=AGENT_NAME).observe(
-            time.perf_counter() - started
-        )
+        agent_duration_seconds.labels(agent_name=AGENT_NAME).observe(time.perf_counter() - started)
     if isinstance(result, ResearchState):
         return result
     return ResearchState.model_validate(result)

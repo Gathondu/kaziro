@@ -190,9 +190,7 @@ def _job_summary(state: EvaluatorState) -> str:
         salary = f"${state.job_salary_min:,}\u2013${state.job_salary_max:,}"
     else:
         salary = "not stated"
-    requirements_block = "\n".join(
-        f"  - {r}" for r in state.job_requirements[:15]
-    )
+    requirements_block = "\n".join(f"  - {r}" for r in state.job_requirements[:15])
     return (
         f"TITLE: {state.job_title}\n"
         f"SALARY: {salary}\n"
@@ -245,12 +243,8 @@ async def load_data_node(state: EvaluatorState) -> EvaluatorState:
     bound.info("evaluator.load_start")
 
     async with async_session_factory() as session:
-        job = await job_posting_repository.get_by_id(
-            session, uuid.UUID(state.job_posting_id)
-        )
-        profile = await profile_repository.get_by_user_id(
-            session, uuid.UUID(state.user_id)
-        )
+        job = await job_posting_repository.get_by_id(session, uuid.UUID(state.job_posting_id))
+        profile = await profile_repository.get_by_user_id(session, uuid.UUID(state.user_id))
 
     if job is None or profile is None:
         bound.error(
@@ -280,7 +274,7 @@ async def pass1_draft_node(state: EvaluatorState) -> EvaluatorState:
     bound = log.bind(job_posting_id=state.job_posting_id, node="pass1_draft")
     bound.info("evaluator.pass1_start")
 
-    prompt = f"""You are an expert career coach evaluating a job posting against a candidate's profile.
+    prompt = f"""You are a career coach with decades of experience evaluating a job posting against a candidate's profile.
 
 Score the job on these 4 dimensions (0-10 each):
 1. skills_match       - How well do the candidate's skills match job requirements?
@@ -308,9 +302,7 @@ Respond in this exact JSON format (no other text):
     try:
         data = await _invoke_json(prompt)
         scores = _scores_from_dict(data)
-        bound.info(
-            "evaluator.pass1_complete", weighted_avg=scores.weighted_average
-        )
+        bound.info("evaluator.pass1_complete", weighted_avg=scores.weighted_average)
         return state.model_copy(
             update={
                 "pass1_scores": scores,
@@ -361,9 +353,7 @@ Respond in this exact JSON format:
     try:
         data = await _invoke_json(prompt)
         revised = _scores_from_dict(data)
-        bound.info(
-            "evaluator.pass2_complete", revised_avg=revised.weighted_average
-        )
+        bound.info("evaluator.pass2_complete", revised_avg=revised.weighted_average)
         return state.model_copy(
             update={
                 "pass2_revised_scores": revised,
@@ -389,7 +379,7 @@ async def pass3_judge_node(state: EvaluatorState) -> EvaluatorState:
     if s1 is None or s2 is None:
         return state.model_copy(update={"error": "missing pass1/pass2 scores"})
 
-    prompt = f"""You are a senior career advisor making a final decision on a job application.
+    prompt = f"""You are a senior career advisor with decades of experience making a final decision on a job application.
 
 You have two evaluations to synthesise:
 
@@ -447,19 +437,13 @@ async def persist_evaluation_node(state: EvaluatorState) -> EvaluatorState:
         return state
 
     pass1 = state.pass1_scores.model_dump() if state.pass1_scores else {}
-    pass2 = (
-        state.pass2_revised_scores.model_dump()
-        if state.pass2_revised_scores
-        else {}
-    )
+    pass2 = state.pass2_revised_scores.model_dump() if state.pass2_revised_scores else {}
     dimension_scores = {
         "weights": _WEIGHTS,
         "draft": pass1,
         "revised": pass2,
         "weighted_average": (
-            state.pass2_revised_scores.weighted_average
-            if state.pass2_revised_scores
-            else None
+            state.pass2_revised_scores.weighted_average if state.pass2_revised_scores else None
         ),
     }
 
@@ -480,9 +464,7 @@ async def persist_evaluation_node(state: EvaluatorState) -> EvaluatorState:
         await session.commit()
         evaluation_id = str(evaluation.id)
 
-    evaluation_classification_total.labels(
-        classification=state.final_classification.value
-    ).inc()
+    evaluation_classification_total.labels(classification=state.final_classification.value).inc()
     pipeline_jobs_total.labels(stage="evaluate", status="success").inc()
     bound.info(
         "evaluator.persisted",
@@ -516,6 +498,7 @@ def build_evaluator_graph() -> Any:
     graph.add_node("pass2", pass2_critic_node)
     graph.add_node("pass3", pass3_judge_node)
     graph.add_node("persist", persist_evaluation_node)
+
     async def _error_end_node(state: EvaluatorState) -> EvaluatorState:
         return state
 
@@ -524,9 +507,7 @@ def build_evaluator_graph() -> Any:
     graph.add_conditional_edges(
         "load_data", _route_after_load, {"pass1": "pass1", "error_end": END}
     )
-    graph.add_conditional_edges(
-        "pass1", _route_after_pass1, {"pass2": "pass2", "error_end": END}
-    )
+    graph.add_conditional_edges("pass1", _route_after_pass1, {"pass2": "pass2", "error_end": END})
     graph.add_edge("pass2", "pass3")
     graph.add_conditional_edges(
         "pass3",
@@ -580,18 +561,14 @@ def _trace_evaluator_outputs(output: Any) -> dict[str, Any]:
     process_inputs=_trace_evaluator_inputs,
     process_outputs=_trace_evaluator_outputs,
 )
-async def run_evaluator_agent(
-    job_posting_id: str, user_id: str
-) -> EvaluatorState:
+async def run_evaluator_agent(job_posting_id: str, user_id: str) -> EvaluatorState:
     """Run the 3-pass evaluator graph for one (user, posting) pair."""
     initial = EvaluatorState(job_posting_id=job_posting_id, user_id=user_id)
     started = time.perf_counter()
     try:
         result = await _get_graph().ainvoke(initial)
     finally:
-        agent_duration_seconds.labels(agent_name=AGENT_NAME).observe(
-            time.perf_counter() - started
-        )
+        agent_duration_seconds.labels(agent_name=AGENT_NAME).observe(time.perf_counter() - started)
     if isinstance(result, EvaluatorState):
         return result
     return EvaluatorState.model_validate(result)
