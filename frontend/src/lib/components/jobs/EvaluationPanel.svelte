@@ -110,7 +110,13 @@
 >
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<h2 class="text-lg font-semibold">Why this match</h2>
-		<Badge variant={badgeVariant}>{evaluation.final_classification}</Badge>
+		<Badge variant={badgeVariant}>
+			{#if evaluation.final_classification === 'REJECT' && evaluation.rejection_source === 'user'}
+				Rejected (by you)
+			{:else}
+				{evaluation.final_classification}
+			{/if}
+		</Badge>
 	</div>
 	<p class="text-sm text-base-content/70">
 		Overall score: <span class="font-semibold tabular-nums"

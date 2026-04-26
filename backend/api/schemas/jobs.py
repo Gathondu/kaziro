@@ -54,6 +54,10 @@ class JobEvaluationResponse(ORMModel):
     created_at: datetime
     updated_at: datetime
     application_doc: JobEvaluationApplicationDocTexts | None = None
+    rejection_source: str | None = Field(
+        default=None,
+        description="``user`` when the candidate marked the job not interested.",
+    )
 
     @field_validator("overall_score", mode="before")
     @classmethod

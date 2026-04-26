@@ -156,9 +156,39 @@ async def list_bucket_files(
     return await asyncio.to_thread(_sync_list)
 
 
+async def delete_storage_paths(paths: list[str], *, bucket: str | None = None) -> None:
+    """Best-effort remove objects at ``paths`` (ignores empty strings).
+
+    Failures are logged at WARNING; callers keep DB consistency even if
+    Supabase returns an error for a missing path.
+    """
+    import asyncio
+
+    bucket = bucket or _bucket_name()
+    cleaned = [p for p in paths if p]
+    if not cleaned:
+        return
+
+    def _sync_remove() -> None:
+        client = get_client()
+        client.storage.from_(bucket).remove(cleaned)
+
+    try:
+        await asyncio.to_thread(_sync_remove)
+        log.info("storage.removed", bucket=bucket, count=len(cleaned))
+    except Exception as exc:
+        log.warning(
+            "storage.remove_failed",
+            bucket=bucket,
+            paths_count=len(cleaned),
+            error=str(exc),
+        )
+
+
 __all__ = [
     "DEFAULT_SIGNED_URL_TTL",
     "create_signed_url",
+    "delete_storage_paths",
     "download_bytes",
     "download_text",
     "get_client",

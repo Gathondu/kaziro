@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.models.application_doc import ApplicationDoc
@@ -86,6 +86,22 @@ async def update(
     return doc
 
 
+async def delete_by_id(
+    session: AsyncSession, user_id: uuid.UUID, doc_id: uuid.UUID
+) -> bool:
+    """Hard-delete a document bundle row. Returns whether a row was removed."""
+    stmt = (
+        delete(ApplicationDoc)
+        .where(
+            ApplicationDoc.id == doc_id,
+            ApplicationDoc.user_id == user_id,
+        )
+        .returning(ApplicationDoc.id)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none() is not None
+
+
 async def attach_pdfs(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -107,6 +123,7 @@ async def attach_pdfs(
 __all__ = [
     "attach_pdfs",
     "create",
+    "delete_by_id",
     "get_by_evaluation_id",
     "get_by_id",
     "update",

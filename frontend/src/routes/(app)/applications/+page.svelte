@@ -32,10 +32,12 @@
 	<title>Applications — Kaziro</title>
 </svelte:head>
 
-{#if $board.isPending}
-	<p class="text-sm text-base-content/60">Loading board…</p>
-{:else if $board.isError}
-	<p class="text-sm text-error">Could not load applications.</p>
-{:else if $board.data}
-	<Kanban applications={$board.data} {onMove} />
-{/if}
+<div class="flex min-h-0 flex-1 flex-col">
+	{#if $board.isPending}
+		<p class="text-sm text-base-content/60">Loading board…</p>
+	{:else if $board.isError}
+		<p class="text-sm text-error">Could not load applications.</p>
+	{:else if $board.data}
+		<Kanban applications={$board.data} {onMove} />
+	{/if}
+</div>

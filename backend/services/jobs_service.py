@@ -3,20 +3,26 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.exceptions import NotFoundError
+from backend.api.exceptions import ConflictError, NotFoundError
 from backend.db.models.enums import Classification
 from backend.db.models.job_evaluation import JobEvaluation
 from backend.db.models.job_posting import JobPosting
 from backend.db.repositories import (
     application_doc_repository,
+    application_repository,
     evaluation_repository,
     job_posting_repository,
 )
 from backend.logging_config import get_logger
+from backend.services import applications_service
+from backend.services.job_evaluation_metadata import (
+    merge_user_rejection_meta,
+    rejection_source_from_dimension_scores,
+)
 from backend.services.notifications import get_redis
 from backend.tasks.pipeline import (
     run_pipeline_for_single_job_task,
@@ -82,6 +88,61 @@ async def get_evaluation_for_job(
     evaluation = await evaluation_repository.get_for_user_posting(session, user_id, job_posting_id)
     if evaluation is None:
         raise NotFoundError("evaluation not found", code="evaluation_not_found")
+    return evaluation
+
+
+async def mark_job_not_interested(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    job_posting_id: uuid.UUID,
+) -> JobEvaluation:
+    """User rejects the job: ``REJECT`` + metadata, remove tailored docs and application."""
+    log_bound = log.bind(user_id=str(user_id), job_posting_id=str(job_posting_id))
+    evaluation = await evaluation_repository.get_for_user_posting(
+        session, user_id, job_posting_id
+    )
+    if evaluation is None:
+        raise NotFoundError("evaluation not found", code="evaluation_not_found")
+
+    if evaluation.final_classification is Classification.REJECT:
+        if rejection_source_from_dimension_scores(evaluation.dimension_scores) == "user":
+            log_bound.info("jobs.mark_not_interested.idempotent")
+            return evaluation
+        raise ConflictError(
+            "This job is already marked as not a match.",
+            code="job_already_rejected",
+        )
+
+    doc = await application_doc_repository.get_by_evaluation_id(
+        session, user_id, evaluation.id
+    )
+    app = await application_repository.get_by_user_posting(session, user_id, job_posting_id)
+
+    if doc is not None:
+        from backend.services import storage as storage_service
+
+        await storage_service.delete_storage_paths(
+            [doc.cv_pdf_path or "", doc.cover_letter_pdf_path or ""],
+        )
+
+    if app is not None:
+        await applications_service.delete_application(session, user_id, app.id)
+
+    if doc is not None:
+        deleted = await application_doc_repository.delete_by_id(session, user_id, doc.id)
+        if not deleted:
+            log_bound.warning(
+                "jobs.mark_not_interested.doc_delete_failed",
+                job_evaluation_id=str(evaluation.id),
+            )
+
+    evaluation.final_classification = Classification.REJECT
+    evaluation.dimension_scores = merge_user_rejection_meta(evaluation.dimension_scores)
+    evaluation.updated_at = datetime.now(UTC)
+    log_bound.info(
+        "jobs.mark_not_interested.done",
+        job_evaluation_id=str(evaluation.id),
+    )
     return evaluation
 
 
@@ -234,6 +295,7 @@ __all__ = [
     "get_evaluation_for_job",
     "get_job_for_user",
     "list_jobs_for_user",
+    "mark_job_not_interested",
     "signed_url_for_job_posting_doc_pdf",
     "trigger_evaluation",
     "trigger_regenerate_documents",

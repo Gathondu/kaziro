@@ -114,7 +114,7 @@ src/routes/
 ### `/(app)/applications`
 
 - Toggle between **Kanban** (columns by status) and **List** view.
-- Kanban columns: DRAFT, SENT, INTERVIEWING, OFFERED, REJECTED, WITHDRAWN.
+- Kanban columns: DRAFT, SENT, INTERVIEWING, OFFERED, REJECTED.
 - Drag-and-drop status changes hit `PUT /applications/{id}/status` —
   invalid transitions surface a toast on 409.
 

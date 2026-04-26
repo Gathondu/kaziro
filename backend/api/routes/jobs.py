@@ -21,6 +21,7 @@ from backend.api.schemas.jobs import (
 from backend.db.models.enums import Classification
 from backend.db.repositories import application_doc_repository
 from backend.services import jobs_service
+from backend.services.job_evaluation_metadata import rejection_source_from_dimension_scores
 
 router: Final[APIRouter] = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -85,6 +86,7 @@ async def get_job_evaluation(
         "evaluated_at": ev.evaluated_at,
         "created_at": ev.created_at,
         "updated_at": ev.updated_at,
+        "rejection_source": rejection_source_from_dimension_scores(ev.dimension_scores),
         "application_doc": (
             JobEvaluationApplicationDocTexts(
                 tailored_cv_text=doc.tailored_cv_text,
@@ -170,6 +172,47 @@ async def regenerate_job_documents(
         regenerate_scope=body.part,
     )
     return envelope(TriggerEvaluationResponse(task_id=task_id, duplicate=dup))
+
+
+@router.post(
+    "/{job_id}/mark-not-interested",
+    response_model=Envelope[JobEvaluationResponse],
+)
+async def mark_job_not_interested(
+    job_id: str,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Envelope[JobEvaluationResponse]:
+    """User rejects the job: evaluation becomes ``REJECT``, tailored docs removed."""
+    job_uuid = uuid.UUID(job_id)
+    await jobs_service.get_job_for_user(session, current_user.id, job_uuid)
+    ev = await jobs_service.mark_job_not_interested(session, current_user.id, job_uuid)
+    await session.commit()
+    await session.refresh(ev)
+    doc = await application_doc_repository.get_by_evaluation_id(session, current_user.id, ev.id)
+    payload = {
+        "id": ev.id,
+        "job_posting_id": ev.job_posting_id,
+        "final_classification": ev.final_classification,
+        "overall_score": float(ev.overall_score),
+        "final_feedback": ev.final_feedback,
+        "dimension_scores": ev.dimension_scores,
+        "evaluated_at": ev.evaluated_at,
+        "created_at": ev.created_at,
+        "updated_at": ev.updated_at,
+        "rejection_source": rejection_source_from_dimension_scores(ev.dimension_scores),
+        "application_doc": (
+            JobEvaluationApplicationDocTexts(
+                tailored_cv_text=doc.tailored_cv_text,
+                cover_letter_text=doc.cover_letter_text,
+                cv_pdf_available=bool(doc.cv_pdf_path),
+                cover_letter_pdf_available=bool(doc.cover_letter_pdf_path),
+            )
+            if doc is not None
+            else None
+        ),
+    }
+    return envelope(JobEvaluationResponse.model_validate(payload))
 
 
 __all__ = ["router"]

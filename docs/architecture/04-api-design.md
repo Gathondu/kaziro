@@ -156,12 +156,15 @@ empty.
 | GET    | `/jobs/{id}/cover-letter.pdf`       | Required | Redirect to signed cover letter PDF       |
 | POST   | `/jobs/{id}/trigger-evaluation`     | Required | Manually re-trigger the evaluation pipeline |
 | POST   | `/jobs/{id}/regenerate-documents`   | Required | Regenerate when `application_docs` exists (`202`, same envelope as trigger-evaluation). Optional JSON body `{ "part": "cv" \| "cover_letter" }` regenerates only that side (skips research); omit `part` for full research + both documents. `404` if no doc row yet |
+| POST   | `/jobs/{id}/mark-not-interested`    | Required | Sets evaluation to `REJECT` with user rejection metadata, deletes tailored docs + application row, best-effort storage cleanup. `409` if the job is already an evaluator `REJECT` |
 
 `GET /jobs/{id}/evaluation` may include optional `application_doc` with
 `tailored_cv_text` and `cover_letter_text` when the document agent has
 persisted an `application_docs` row for that evaluation (job detail UI).
 Nested `evaluation` objects on `GET /applications` omit full document
 text (`application_doc` is null there) to keep list payloads small.
+Evaluations may include `rejection_source: "user"` when the candidate
+dismissed the job (see `dimension_scores._kaziro` in the data model).
 
 `GET /jobs` filter query params:
 

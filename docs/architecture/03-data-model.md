@@ -173,6 +173,12 @@ class ParseStatus(str, enum.Enum):
 job-user pair. Re-evaluation overwrites in place via `INSERT ... ON CONFLICT`
 or a delete-then-insert in `JobEvaluationRepository.upsert(...)`.
 
+The ``dimension_scores`` JSONB may include a reserved object ``_kaziro`` with
+``rejection_source: "user"`` when the candidate marked the job not interested
+(the row stays ``REJECT`` so it appears in the reject filter). Choosing
+**Generate documents** on an evaluator ``REJECT`` promotes the evaluation to
+``MAYBE`` and clears ``_kaziro`` rejection metadata.
+
 ### 3.7 `company_summaries`
 
 | Column                  | Type                | Nullable | Description                                |

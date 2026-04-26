@@ -21,4 +21,14 @@ describe('EvaluationPanel', () => {
 		expect(screen.getByText('GOOD_FIT')).toBeTruthy();
 		expect(screen.getByText(/Strong alignment/)).toBeTruthy();
 	});
+
+	it('labels user-initiated rejections', () => {
+		const userReject: JobEvaluation = {
+			...mockEv,
+			final_classification: 'REJECT',
+			rejection_source: 'user'
+		};
+		render(EvaluationPanel, { props: { evaluation: userReject } });
+		expect(screen.getByText('Rejected (by you)')).toBeTruthy();
+	});
 });

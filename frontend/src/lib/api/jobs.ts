@@ -53,6 +53,12 @@ export function triggerJobEvaluation(jobId: string): Promise<TriggerEvaluationBo
 	});
 }
 
+export function markJobNotInterested(jobId: string): Promise<JobEvaluation> {
+	return apiFetch<JobEvaluation>(`/api/v1/jobs/${jobId}/mark-not-interested`, {
+		method: 'POST'
+	});
+}
+
 export type RegenerateDocumentsPart = 'cv' | 'cover_letter';
 
 export function regenerateJobDocuments(

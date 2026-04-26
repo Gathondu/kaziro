@@ -13,8 +13,10 @@ import {
 	updateApplicationDocs,
 	updateApplicationStatus
 } from '$lib/api/applications';
+import { markJobNotInterested } from '$lib/api/jobs';
 import type { Application } from '$lib/types/applications';
 import type { ApplicationStatus } from '$lib/types/enums';
+import type { JobEvaluation } from '$lib/types/jobs';
 
 export function useApplicationFromRoute() {
 	const options = derived(page, ($p) => {
@@ -55,18 +57,11 @@ export function useCreateApplication() {
 
 export function useMarkJobNotInterested() {
 	const qc = useQueryClient();
-	return createMutation<Application, Error, string>({
-		mutationFn: async (jobPostingId: string) => {
-			const { items } = await listApplications({ limit: LIST_APPLICATIONS_MAX_LIMIT });
-			const existing = items.find((item) => item.job_posting_id === jobPostingId);
-			if (existing) {
-				return updateApplicationStatus(existing.id, 'WITHDRAWN');
-			}
-			const created = await createApplication(jobPostingId);
-			return updateApplicationStatus(created.id, 'WITHDRAWN');
-		},
-		onSuccess: (application) => {
-			void qc.invalidateQueries({ queryKey: ['application', application.id] });
+	return createMutation<JobEvaluation, Error, string>({
+		mutationFn: (jobPostingId: string) => markJobNotInterested(jobPostingId),
+		onSuccess: (_data, jobPostingId) => {
+			void qc.invalidateQueries({ queryKey: ['job', jobPostingId] });
+			void qc.invalidateQueries({ queryKey: ['job', jobPostingId, 'evaluation'] });
 			void qc.invalidateQueries({ queryKey: ['applications'] });
 			void qc.invalidateQueries({ queryKey: ['jobs'] });
 			void qc.invalidateQueries({ queryKey: ['dashboard'] });

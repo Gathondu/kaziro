@@ -36,6 +36,8 @@ export interface JobEvaluation {
 	evaluated_at: string;
 	created_at: string;
 	updated_at: string;
+	/** Present when the user marked the job not interested (still ``REJECT`` classification). */
+	rejection_source?: 'user' | null;
 	application_doc?: JobEvaluationApplicationDoc | null;
 }
 

@@ -111,13 +111,15 @@
 						Generate documents
 					</Button>
 				{/if}
-				<Button
-					variant="outline"
-					onclick={() => notInterested()}
-					disabled={$markNotInterested.isPending}
-				>
-					{$markNotInterested.isPending ? 'Updating…' : 'Not interested'}
-				</Button>
+				{#if $evQ.data.final_classification !== 'REJECT'}
+					<Button
+						variant="outline"
+						onclick={() => notInterested()}
+						disabled={$markNotInterested.isPending}
+					>
+						{$markNotInterested.isPending ? 'Updating…' : 'Not interested'}
+					</Button>
+				{/if}
 			</div>
 		</div>
 		<div class="grid gap-6 lg:grid-cols-2">

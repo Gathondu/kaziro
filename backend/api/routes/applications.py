@@ -26,6 +26,7 @@ from backend.db.models.enums import ApplicationStatus
 from backend.db.models.job_evaluation import JobEvaluation
 from backend.db.repositories import evaluation_repository
 from backend.services import applications_service
+from backend.services.job_evaluation_metadata import rejection_source_from_dimension_scores
 
 router: Final[APIRouter] = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -42,6 +43,7 @@ def _job_evaluation_without_documents(ev: JobEvaluation) -> JobEvaluationRespons
         evaluated_at=ev.evaluated_at,
         created_at=ev.created_at,
         updated_at=ev.updated_at,
+        rejection_source=rejection_source_from_dimension_scores(ev.dimension_scores),
         application_doc=None,
     )
 

@@ -147,6 +147,8 @@ export type ApplicationStatus =
   | 'DRAFT' | 'SENT' | 'INTERVIEWING' | 'OFFERED' | 'REJECTED' | 'WITHDRAWN';
 ```
 
+The applications Kanban omits a **WITHDRAWN** column (status may still exist on legacy rows from the API).
+
 ## 7. Real-time pipeline notifications
 
 Users receive live updates as their jobs progress through the pipeline via a

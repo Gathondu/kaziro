@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ from backend.db.models.application import Application
 from backend.db.models.enums import (
     ApplicationEventType,
     ApplicationStatus,
+    Classification,
 )
 from backend.db.repositories import (
     application_doc_repository,
@@ -23,6 +25,7 @@ from backend.db.repositories import (
 from backend.logging_config import get_logger
 from backend.services import application_events as application_events_service
 from backend.services.application_state_machine import can_transition
+from backend.services.job_evaluation_metadata import clear_rejection_meta_for_maybe
 
 log = get_logger(__name__)
 
@@ -151,6 +154,18 @@ async def create_application(
         raise NotFoundError(
             "no evaluation for this job — run the pipeline first",
             code="evaluation_not_found",
+        )
+
+    if evaluation.final_classification is Classification.REJECT:
+        evaluation.final_classification = Classification.MAYBE
+        evaluation.dimension_scores = clear_rejection_meta_for_maybe(evaluation.dimension_scores)
+        evaluation.updated_at = datetime.now(UTC)
+        await session.flush()
+        log.info(
+            "applications.evaluation_promoted_reject_to_maybe",
+            user_id=str(user_id),
+            job_posting_id=str(job_posting_id),
+            job_evaluation_id=str(evaluation.id),
         )
 
     doc = await application_doc_repository.get_by_evaluation_id(session, user_id, evaluation.id)
