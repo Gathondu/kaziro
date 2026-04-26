@@ -112,4 +112,10 @@
 		background-position: center;
 		background-repeat: no-repeat;
 	}
+
+	/* DaisyUI tooltips: render above modal + scroll stacking contexts */
+	.modal.modal-open .tooltip::before,
+	.modal.modal-open .tooltip::after {
+		z-index: 99999 !important;
+	}
 }

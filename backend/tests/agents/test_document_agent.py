@@ -190,3 +190,69 @@ async def test_document_quality_warning_still_persists(
     assert result.error is None
     assert result.quality_passed is False
     assert result.application_doc_id is not None
+
+
+@pytest.mark.asyncio
+async def test_document_agent_second_run_updates_same_row(
+    test_user_id: uuid.UUID,
+) -> None:
+    """Regeneration path must update the existing row, not insert a second one."""
+    eval_id, _pid = await _seed_posting_and_evaluation(test_user_id)
+
+    class _LLM:
+        def __init__(self, cv: str, cover: str) -> None:
+            self._cv = cv
+            self._cover = cover
+            self.step = 0
+
+        async def ainvoke(self, prompt: str) -> object:
+            self.step += 1
+            if self.step == 1:
+                return SimpleNamespace(content=self._cv)
+            if self.step == 2:
+                return SimpleNamespace(content=self._cover)
+            return SimpleNamespace(
+                content=json.dumps(
+                    {"passed": True, "issues": [], "summary": "ok"}
+                )
+            )
+
+    class _Pdf:
+        async def render_pdf_and_upload(
+            self, content: str, *, title: str, storage_path: str
+        ) -> str:
+            return f"s3:{storage_path}"
+
+        def storage_path_for_doc(
+            self, *, user_id: str | uuid.UUID, doc_kind: str, doc_id: str | uuid.UUID
+        ) -> str:
+            return f"users/{user_id}/docs/{doc_kind}/{doc_id}.pdf"
+
+    set_llm_for_tests(
+        _LLM("FIRST_RUN_CV_UNIQUE", "FIRST_RUN_COVER_UNIQUE")
+    )
+    set_pdf_renderer_for_tests(_Pdf())
+
+    first = await run_document_agent(str(eval_id), str(test_user_id))
+    assert first.error is None
+    first_doc_id = uuid.UUID(first.application_doc_id or "")
+
+    set_llm_for_tests(
+        _LLM("SECOND_RUN_CV_UNIQUE", "SECOND_RUN_COVER_UNIQUE")
+    )
+    set_pdf_renderer_for_tests(_Pdf())
+
+    second = await run_document_agent(str(eval_id), str(test_user_id))
+    assert second.error is None
+    assert uuid.UUID(second.application_doc_id or "") == first_doc_id
+
+    async with async_session_factory() as session:
+        from backend.db.repositories import application_doc_repository
+
+        doc = await application_doc_repository.get_by_evaluation_id(
+            session, test_user_id, eval_id
+        )
+    assert doc is not None
+    assert doc.id == first_doc_id
+    assert "SECOND_RUN_CV_UNIQUE" in doc.tailored_cv_text
+    assert "SECOND_RUN_COVER_UNIQUE" in doc.cover_letter_text

@@ -155,6 +155,7 @@ empty.
 | GET    | `/jobs/{id}/cv.pdf`                 | Required | Redirect to signed CV PDF (when generated) |
 | GET    | `/jobs/{id}/cover-letter.pdf`       | Required | Redirect to signed cover letter PDF       |
 | POST   | `/jobs/{id}/trigger-evaluation`     | Required | Manually re-trigger the evaluation pipeline |
+| POST   | `/jobs/{id}/regenerate-documents`   | Required | Regenerate when `application_docs` exists (`202`, same envelope as trigger-evaluation). Optional JSON body `{ "part": "cv" \| "cover_letter" }` regenerates only that side (skips research); omit `part` for full research + both documents. `404` if no doc row yet |
 
 `GET /jobs/{id}/evaluation` may include optional `application_doc` with
 `tailored_cv_text` and `cover_letter_text` when the document agent has

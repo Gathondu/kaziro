@@ -29,6 +29,7 @@ from backend.agents.parser_agent import run_parser_agent
 from backend.agents.pipeline_orchestrator import (
     run_full_pipeline_for_config,
     run_pipeline_for_single_job,
+    run_regenerate_documents_for_evaluation,
     run_research_then_document_for_evaluation,
 )
 from backend.agents.research_agent import run_research_agent
@@ -251,6 +252,38 @@ def run_research_then_document_for_evaluation_task(
     )
 
 
+@shared_task(
+    name="backend.tasks.run_regenerate_documents_for_evaluation",
+    queue=QUEUE_DEFAULT,
+    bind=True,
+    **_RETRY_KWARGS,
+)
+def run_regenerate_documents_for_evaluation_task(
+    self: Any,
+    job_posting_id: str,
+    evaluation_id: str,
+    user_id: str,
+    regenerate_scope: str | None = None,
+) -> dict[str, Any]:
+    """Refresh company brief and/or one document side for an existing doc row."""
+    log.info(
+        "tasks.regenerate_documents_start",
+        job_posting_id=job_posting_id,
+        job_evaluation_id=evaluation_id,
+        user_id=user_id,
+        regenerate_scope=regenerate_scope or "full",
+        attempt=self.request.retries + 1,
+    )
+    return run_sqlalchemy_async(
+        lambda: run_regenerate_documents_for_evaluation(
+            job_posting_id,
+            evaluation_id,
+            user_id,
+            regenerate_scope=regenerate_scope,
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # Beat fan-out
 # ---------------------------------------------------------------------------
@@ -313,6 +346,7 @@ __all__ = [
     "run_parser_for_raw_job",
     "run_pipeline_for_config_task",
     "run_pipeline_for_single_job_task",
+    "run_regenerate_documents_for_evaluation_task",
     "run_research_for_posting",
     "run_research_then_document_for_evaluation_task",
 ]

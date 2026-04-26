@@ -97,13 +97,14 @@
 			<div class="flex flex-wrap gap-2">
 				<Button onclick={() => reevaluate()} disabled={$triggerEv.isPending}>Re-run evaluation</Button>
 				{#if $evQ.data.application_doc}
-					<Button variant="outline" onclick={() => (documentsModalOpen = true)}>
+					<Button variant="secondary" onclick={() => (documentsModalOpen = true)}>
 						View documents
 					</Button>
+				{:else}
+					<Button variant="secondary" onclick={() => generateDocs()} disabled={$createApp.isPending}>
+						Generate documents
+					</Button>
 				{/if}
-				<Button variant="secondary" onclick={() => generateDocs()} disabled={$createApp.isPending}>
-					Generate documents
-				</Button>
 				<Button
 					variant="outline"
 					onclick={() => notInterested()}

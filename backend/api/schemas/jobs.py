@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -62,6 +63,15 @@ class JobEvaluationResponse(ORMModel):
         return float(v)  # type: ignore[arg-type]
 
 
+class RegenerateDocumentsBody(BaseModel):
+    """Optional scope for document regeneration."""
+
+    part: Literal["cv", "cover_letter"] | None = Field(
+        default=None,
+        description="Regenerate only the CV or only the cover letter; omit for full refresh.",
+    )
+
+
 class TriggerEvaluationResponse(BaseModel):
     """Body for ``202 Accepted`` manual pipeline trigger."""
 
@@ -82,5 +92,6 @@ __all__ = [
     "JobEvaluationApplicationDocTexts",
     "JobEvaluationResponse",
     "JobPostingResponse",
+    "RegenerateDocumentsBody",
     "TriggerEvaluationResponse",
 ]

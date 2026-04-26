@@ -18,11 +18,15 @@ from backend.db.repositories import (
 )
 from backend.logging_config import get_logger
 from backend.services.notifications import get_redis
-from backend.tasks.pipeline import run_pipeline_for_single_job_task
+from backend.tasks.pipeline import (
+    run_pipeline_for_single_job_task,
+    run_regenerate_documents_for_evaluation_task,
+)
 
 log = get_logger(__name__)
 
 _PIPELINE_LOCK_KEY = "pipeline:single:{user_id}:{job_posting_id}"
+_REGENERATE_DOCS_LOCK_KEY = "pipeline:regenerate_docs:{user_id}:{job_posting_id}"
 _PENDING = "PENDING"
 _LOCK_TTL_SEC = 7200
 
@@ -129,6 +133,63 @@ async def trigger_evaluation(
         raise
 
 
+async def trigger_regenerate_documents(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    job_posting_id: uuid.UUID,
+    *,
+    request_id: str | None,
+    regenerate_scope: str | None = None,
+) -> tuple[str, bool]:
+    """Enqueue research + document overwrite when ``application_docs`` exists."""
+    await get_job_for_user(session, user_id, job_posting_id)
+    ev = await get_evaluation_for_job(session, user_id, job_posting_id)
+    doc = await application_doc_repository.get_by_evaluation_id(session, user_id, ev.id)
+    if doc is None:
+        raise NotFoundError(
+            "application documents are not ready yet",
+            code="application_documents_not_ready",
+        )
+    key = _REGENERATE_DOCS_LOCK_KEY.format(
+        user_id=str(user_id), job_posting_id=str(job_posting_id)
+    )
+    r = get_redis()
+    got_lock = await r.set(key, _PENDING, nx=True, ex=_LOCK_TTL_SEC)
+    if not got_lock:
+        existing = await r.get(key)
+        if existing in (None, _PENDING):
+            log.info(
+                "jobs.trigger_regenerate_docs.in_flight",
+                user_id=str(user_id),
+                job_posting_id=str(job_posting_id),
+            )
+            return "", True
+        log.info(
+            "jobs.trigger_regenerate_docs.duplicate",
+            user_id=str(user_id),
+            job_posting_id=str(job_posting_id),
+            task_id=existing,
+        )
+        return str(existing), True
+
+    try:
+        async_result = run_regenerate_documents_for_evaluation_task.apply_async(
+            args=[str(job_posting_id), str(ev.id), str(user_id), regenerate_scope],
+            headers={"request_id": request_id or ""},
+        )
+        await r.set(key, async_result.id, ex=_LOCK_TTL_SEC)
+        log.info(
+            "jobs.trigger_regenerate_docs.enqueued",
+            user_id=str(user_id),
+            job_posting_id=str(job_posting_id),
+            task_id=async_result.id,
+        )
+        return async_result.id, False
+    except Exception:
+        await r.delete(key)
+        raise
+
+
 async def signed_url_for_job_posting_doc_pdf(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -175,4 +236,5 @@ __all__ = [
     "list_jobs_for_user",
     "signed_url_for_job_posting_doc_pdf",
     "trigger_evaluation",
+    "trigger_regenerate_documents",
 ]

@@ -10,8 +10,8 @@ Given a ``job_evaluations`` row + the user's profile/CV, it:
 2. Tailors the CV to the role (no fabrication).
 3. Writes a personalised cover letter that references the company.
 4. Runs an LLM-based quality check (non-blocking).
-5. Renders both docs to PDF, uploads to Storage, persists the
-   ``application_docs`` row.
+5. Renders both docs to PDF, uploads to Storage, and persists or updates the
+   ``application_docs`` row (same ``id`` when regenerating).
 
 Tests inject fakes via ``set_llm_for_tests`` and ``set_pdf_renderer_for_tests``.
 """
@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from typing import Any, Final, Protocol, cast
+from typing import Any, Final, Literal, Protocol, cast
 
 from langgraph.graph import END, StateGraph
 from langsmith import traceable
@@ -86,6 +86,8 @@ class DocumentState(BaseModel):
 
     tailored_cv_text: str = ""
     cover_letter_text: str = ""
+    # When set, skip one branch and refresh only that side (requires existing application_docs).
+    regenerate_scope: Literal["cv", "cover_letter"] | None = None
 
     quality_passed: bool = False
     quality_notes: str = ""
@@ -214,6 +216,7 @@ async def load_context_node(state: DocumentState) -> DocumentState:
 
     user_uuid = uuid.UUID(state.user_id)
     eval_uuid = uuid.UUID(state.job_evaluation_id)
+    saved_doc = None
 
     async with async_session_factory() as session:
         evaluation = await evaluation_repository.get_by_id(
@@ -240,6 +243,10 @@ async def load_context_node(state: DocumentState) -> DocumentState:
         company = await company_summary_repository.get_for_posting(
             session, evaluation.job_posting_id
         )
+        if state.regenerate_scope in ("cv", "cover_letter"):
+            saved_doc = await application_doc_repository.get_by_evaluation_id(
+                session, user_uuid, eval_uuid
+            )
 
     raw_cv = profile.master_cv_text or ""
     if not raw_cv and profile.cv_storage_path:
@@ -249,25 +256,39 @@ async def load_context_node(state: DocumentState) -> DocumentState:
             bound.warning("document.cv_load_failed", error=str(exc))
             raw_cv = ""
 
-    return state.model_copy(
-        update={
-            "job_posting_id": str(job.id),
-            "job_title": job.title,
-            "job_description": (job.description or "")[:JOB_DESCRIPTION_TRUNCATE],
-            "job_requirements": list(job.requirements or []),
-            "company_name": job.company_name,
-            "company_mission": (company.mission if company else "") or "",
-            "company_values": (company.values if company else "") or "",
-            "company_culture": (company.culture if company else "") or "",
-            "company_summary": (company.ai_summary if company else "") or "",
-            "user_full_name": profile.full_name,
-            "user_skills": list(profile.skills or []),
-            "user_experience_years": profile.experience_years,
-            "user_summary": profile.professional_summary or "",
-            "user_values": profile.values_statement or "",
-            "raw_cv_text": raw_cv[:RAW_CV_TEXT_TRUNCATE],
-        }
-    )
+    updates: dict[str, Any] = {
+        "job_posting_id": str(job.id),
+        "job_title": job.title,
+        "job_description": (job.description or "")[:JOB_DESCRIPTION_TRUNCATE],
+        "job_requirements": list(job.requirements or []),
+        "company_name": job.company_name,
+        "company_mission": (company.mission if company else "") or "",
+        "company_values": (company.values if company else "") or "",
+        "company_culture": (company.culture if company else "") or "",
+        "company_summary": (company.ai_summary if company else "") or "",
+        "user_full_name": profile.full_name,
+        "user_skills": list(profile.skills or []),
+        "user_experience_years": profile.experience_years,
+        "user_summary": profile.professional_summary or "",
+        "user_values": profile.values_statement or "",
+        "raw_cv_text": raw_cv[:RAW_CV_TEXT_TRUNCATE],
+    }
+    if state.regenerate_scope == "cover_letter":
+        if saved_doc is None:
+            bound.error("document.regenerate_missing_row", scope="cover_letter")
+            return state.model_copy(
+                update={**updates, "error": "No saved documents to regenerate"}
+            )
+        updates["tailored_cv_text"] = saved_doc.tailored_cv_text
+    elif state.regenerate_scope == "cv":
+        if saved_doc is None:
+            bound.error("document.regenerate_missing_row", scope="cv")
+            return state.model_copy(
+                update={**updates, "error": "No saved documents to regenerate"}
+            )
+        updates["cover_letter_text"] = saved_doc.cover_letter_text
+
+    return state.model_copy(update=updates)
 
 
 async def cv_tailor_node(state: DocumentState) -> DocumentState:
@@ -421,20 +442,84 @@ async def render_and_persist_node(state: DocumentState) -> DocumentState:
     eval_uuid = uuid.UUID(state.job_evaluation_id)
     settings = get_settings()
     renderer = get_pdf_renderer()
+    scope = state.regenerate_scope
+    prev_cv_pdf = None
+    prev_cl_pdf = None
 
     async with async_session_factory() as session:
-        doc = await application_doc_repository.create(
-            session,
-            user_id=user_uuid,
-            job_evaluation_id=eval_uuid,
-            tailored_cv_text=state.tailored_cv_text,
-            cover_letter_text=state.cover_letter_text,
-            generation_model=settings.LLM_MODEL_DOCUMENT,
-            quality_passed=state.quality_passed,
-            quality_notes=state.quality_notes or None,
+        existing = await application_doc_repository.get_by_evaluation_id(
+            session, user_uuid, eval_uuid
         )
-        await session.commit()
-        doc_id = doc.id
+        if existing is not None:
+            prev_cv_pdf = existing.cv_pdf_path
+            prev_cl_pdf = existing.cover_letter_pdf_path
+            if scope == "cv":
+                await application_doc_repository.update(
+                    session,
+                    user_uuid,
+                    existing.id,
+                    tailored_cv_text=state.tailored_cv_text,
+                    cover_letter_text=state.cover_letter_text,
+                    generation_model=settings.LLM_MODEL_DOCUMENT,
+                    quality_passed=state.quality_passed,
+                    quality_notes=state.quality_notes or None,
+                    cv_pdf_path=None,
+                    cover_letter_pdf_path=prev_cl_pdf,
+                )
+            elif scope == "cover_letter":
+                await application_doc_repository.update(
+                    session,
+                    user_uuid,
+                    existing.id,
+                    tailored_cv_text=state.tailored_cv_text,
+                    cover_letter_text=state.cover_letter_text,
+                    generation_model=settings.LLM_MODEL_DOCUMENT,
+                    quality_passed=state.quality_passed,
+                    quality_notes=state.quality_notes or None,
+                    cv_pdf_path=prev_cv_pdf,
+                    cover_letter_pdf_path=None,
+                )
+            else:
+                await application_doc_repository.update(
+                    session,
+                    user_uuid,
+                    existing.id,
+                    tailored_cv_text=state.tailored_cv_text,
+                    cover_letter_text=state.cover_letter_text,
+                    generation_model=settings.LLM_MODEL_DOCUMENT,
+                    quality_passed=state.quality_passed,
+                    quality_notes=state.quality_notes or None,
+                    cv_pdf_path=None,
+                    cover_letter_pdf_path=None,
+                )
+            await session.commit()
+            doc_id = existing.id
+            bound.info(
+                "document.persist_update",
+                application_doc_id=str(doc_id),
+                regenerate_scope=scope or "full",
+            )
+        else:
+            if scope is not None:
+                pipeline_jobs_total.labels(stage="document", status="failed").inc()
+                return state.model_copy(
+                    update={
+                        "error": "Cannot partial-regenerate without a saved document",
+                    }
+                )
+            doc = await application_doc_repository.create(
+                session,
+                user_id=user_uuid,
+                job_evaluation_id=eval_uuid,
+                tailored_cv_text=state.tailored_cv_text,
+                cover_letter_text=state.cover_letter_text,
+                generation_model=settings.LLM_MODEL_DOCUMENT,
+                quality_passed=state.quality_passed,
+                quality_notes=state.quality_notes or None,
+            )
+            await session.commit()
+            doc_id = doc.id
+            bound.info("document.persist_create", application_doc_id=str(doc_id))
 
     cv_path = renderer.storage_path_for_doc(
         user_id=user_uuid, doc_kind="cv", doc_id=doc_id
@@ -446,20 +531,51 @@ async def render_and_persist_node(state: DocumentState) -> DocumentState:
     cv_uploaded = ""
     cl_uploaded = ""
     try:
-        cv_uploaded = await renderer.render_pdf_and_upload(
-            state.tailored_cv_text,
-            title=f"CV — {state.user_full_name} — {state.job_title}",
-            storage_path=cv_path,
-        )
-        cl_uploaded = await renderer.render_pdf_and_upload(
-            state.cover_letter_text,
-            title=f"Cover Letter — {state.company_name}",
-            storage_path=cl_path,
-        )
+        if scope == "cv":
+            cv_uploaded = await renderer.render_pdf_and_upload(
+                state.tailored_cv_text,
+                title=f"CV — {state.user_full_name} — {state.job_title}",
+                storage_path=cv_path,
+            )
+        elif scope == "cover_letter":
+            cl_uploaded = await renderer.render_pdf_and_upload(
+                state.cover_letter_text,
+                title=f"Cover Letter — {state.company_name}",
+                storage_path=cl_path,
+            )
+        else:
+            cv_uploaded = await renderer.render_pdf_and_upload(
+                state.tailored_cv_text,
+                title=f"CV — {state.user_full_name} — {state.job_title}",
+                storage_path=cv_path,
+            )
+            cl_uploaded = await renderer.render_pdf_and_upload(
+                state.cover_letter_text,
+                title=f"Cover Letter — {state.company_name}",
+                storage_path=cl_path,
+            )
     except Exception as exc:
         bound.warning("document.pdf_render_failed", error=str(exc))
 
-    if cv_uploaded and cl_uploaded:
+    if scope == "cv" and cv_uploaded:
+        async with async_session_factory() as session:
+            await application_doc_repository.update(
+                session,
+                user_uuid,
+                doc_id,
+                cv_pdf_path=cv_uploaded,
+            )
+            await session.commit()
+    elif scope == "cover_letter" and cl_uploaded:
+        async with async_session_factory() as session:
+            await application_doc_repository.update(
+                session,
+                user_uuid,
+                doc_id,
+                cover_letter_pdf_path=cl_uploaded,
+            )
+            await session.commit()
+    elif scope is None and cv_uploaded and cl_uploaded:
         async with async_session_factory() as session:
             await application_doc_repository.attach_pdfs(
                 session,
@@ -470,18 +586,21 @@ async def render_and_persist_node(state: DocumentState) -> DocumentState:
             )
             await session.commit()
 
+    out_cv = cv_uploaded or (prev_cv_pdf or "")
+    out_cl = cl_uploaded or (prev_cl_pdf or "")
     pipeline_jobs_total.labels(stage="document", status="success").inc()
     bound.info(
         "document.persisted",
         application_doc_id=str(doc_id),
-        cv_path=cv_uploaded,
-        cover_letter_path=cl_uploaded,
+        cv_path=out_cv,
+        cover_letter_path=out_cl,
+        regenerate_scope=scope or "full",
     )
     return state.model_copy(
         update={
             "application_doc_id": str(doc_id),
-            "cv_pdf_path": cv_uploaded,
-            "cover_letter_pdf_path": cl_uploaded,
+            "cv_pdf_path": out_cv,
+            "cover_letter_pdf_path": out_cl,
         }
     )
 
@@ -492,11 +611,19 @@ async def render_and_persist_node(state: DocumentState) -> DocumentState:
 
 
 def _route_after_load(state: DocumentState) -> str:
-    return "error_end" if state.error else "cv_tailor"
+    if state.error:
+        return "error_end"
+    if state.regenerate_scope == "cover_letter":
+        return "cover_letter"
+    return "cv_tailor"
 
 
 def _route_after_cv(state: DocumentState) -> str:
-    return "error_end" if state.error else "cover_letter"
+    if state.error:
+        return "error_end"
+    if state.regenerate_scope == "cv":
+        return "quality_check"
+    return "cover_letter"
 
 
 def _route_after_cl(state: DocumentState) -> str:
@@ -520,12 +647,20 @@ def build_document_graph() -> Any:
     graph.add_conditional_edges(
         "load_context",
         _route_after_load,
-        {"cv_tailor": "cv_tailor", "error_end": END},
+        {
+            "cv_tailor": "cv_tailor",
+            "cover_letter": "cover_letter",
+            "error_end": END,
+        },
     )
     graph.add_conditional_edges(
         "cv_tailor",
         _route_after_cv,
-        {"cover_letter": "cover_letter", "error_end": END},
+        {
+            "cover_letter": "cover_letter",
+            "quality_check": "quality_check",
+            "error_end": END,
+        },
     )
     graph.add_conditional_edges(
         "cover_letter",
@@ -556,6 +691,7 @@ def _trace_document_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return {
         "job_evaluation_id": str(inputs.get("job_evaluation_id")),
         "user_id": str(inputs.get("user_id")),
+        "regenerate_scope": inputs.get("regenerate_scope"),
     }
 
 
@@ -578,11 +714,16 @@ def _trace_document_outputs(output: Any) -> dict[str, Any]:
     process_outputs=_trace_document_outputs,
 )
 async def run_document_agent(
-    job_evaluation_id: str, user_id: str
+    job_evaluation_id: str,
+    user_id: str,
+    *,
+    regenerate_scope: Literal["cv", "cover_letter"] | None = None,
 ) -> DocumentState:
     """Run the document graph for one ``job_evaluations`` row."""
     initial = DocumentState(
-        job_evaluation_id=job_evaluation_id, user_id=user_id
+        job_evaluation_id=job_evaluation_id,
+        user_id=user_id,
+        regenerate_scope=regenerate_scope,
     )
     started = time.perf_counter()
     try:

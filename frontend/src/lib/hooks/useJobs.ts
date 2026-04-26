@@ -12,8 +12,10 @@ import {
 	getJob,
 	getJobEvaluation,
 	listJobs,
+	regenerateJobDocuments,
 	triggerJobEvaluation,
-	type ListJobsParams
+	type ListJobsParams,
+	type RegenerateDocumentsPart
 } from '$lib/api/jobs';
 import type { TriggerEvaluationBody } from '$lib/types/jobs';
 import type { Classification } from '$lib/types/enums';
@@ -105,6 +107,22 @@ export function useTriggerEvaluation() {
 		mutationFn: (jobId: string) => triggerJobEvaluation(jobId),
 		onSuccess: () => {
 			void qc.invalidateQueries({ queryKey: ['jobs'] });
+		}
+	});
+}
+
+export type RegenerateJobDocumentsInput = {
+	jobId: string;
+	part?: RegenerateDocumentsPart;
+};
+
+export function useRegenerateJobDocuments() {
+	const qc = useQueryClient();
+	return createMutation<TriggerEvaluationBody, Error, RegenerateJobDocumentsInput>({
+		mutationFn: ({ jobId, part }) =>
+			regenerateJobDocuments(jobId, part != null ? { part } : {}),
+		onSuccess: (_data, { jobId }) => {
+			void qc.invalidateQueries({ queryKey: ['job', jobId, 'evaluation'] });
 		}
 	});
 }

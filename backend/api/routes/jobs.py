@@ -6,7 +6,7 @@ import uuid
 from datetime import date
 from typing import Final
 
-from fastapi import APIRouter, Query, Request, status
+from fastapi import APIRouter, Body, Query, Request, status
 from fastapi.responses import RedirectResponse
 
 from backend.api.deps import CurrentUser, SessionDep
@@ -15,6 +15,7 @@ from backend.api.schemas.jobs import (
     JobEvaluationApplicationDocTexts,
     JobEvaluationResponse,
     JobPostingResponse,
+    RegenerateDocumentsBody,
     TriggerEvaluationResponse,
 )
 from backend.db.models.enums import Classification
@@ -141,6 +142,32 @@ async def trigger_job_evaluation(
         current_user.id,
         uuid.UUID(job_id),
         request_id=rid,
+    )
+    return envelope(TriggerEvaluationResponse(task_id=task_id, duplicate=dup))
+
+
+@router.post(
+    "/{job_id}/regenerate-documents",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=Envelope[TriggerEvaluationResponse],
+)
+async def regenerate_job_documents(
+    job_id: str,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUser,
+    body: RegenerateDocumentsBody = Body(default_factory=RegenerateDocumentsBody),
+) -> Envelope[TriggerEvaluationResponse]:
+    """Queue document regeneration (optional ``part`` = only CV or only cover letter)."""
+    job_uuid = uuid.UUID(job_id)
+    await jobs_service.get_job_for_user(session, current_user.id, job_uuid)
+    rid = request.headers.get("x-request-id")
+    task_id, dup = await jobs_service.trigger_regenerate_documents(
+        session,
+        current_user.id,
+        job_uuid,
+        request_id=rid,
+        regenerate_scope=body.part,
     )
     return envelope(TriggerEvaluationResponse(task_id=task_id, duplicate=dup))
 

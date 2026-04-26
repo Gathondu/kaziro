@@ -5,12 +5,15 @@
 		open = $bindable(false),
 		title,
 		children,
-		footer
+		footer,
+		boxClass = ''
 	}: {
 		open?: boolean;
 		title: string;
 		children: Snippet;
 		footer?: Snippet;
+		/** Extra classes on the dialog panel (e.g. responsive max-width). */
+		boxClass?: string;
 	} = $props();
 
 	function close(): void {
@@ -20,7 +23,9 @@
 
 {#if open}
 	<dialog class="modal modal-open">
-		<div class="modal-box rounded-2xl border border-base-300 bg-base-100">
+		<div
+			class="modal-box rounded-2xl border border-base-300 bg-base-100 {boxClass}"
+		>
 			<h3 class="mb-3 text-lg font-semibold">{title}</h3>
 			<div class="py-2">
 				{@render children()}

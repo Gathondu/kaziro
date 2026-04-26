@@ -233,11 +233,24 @@ async def run_research_stage(job_posting_id: str, user_id: str) -> bool:
     process_inputs=_trace_pipeline_basic_inputs,
     process_outputs=_trace_pipeline_outputs,
 )
-async def run_document_stage(job_evaluation_id: str, user_id: str) -> bool:
-    bound = log.bind(job_evaluation_id=job_evaluation_id, user_id=user_id, stage="document")
+async def run_document_stage(
+    job_evaluation_id: str,
+    user_id: str,
+    *,
+    regenerate_scope: str | None = None,
+) -> bool:
+    bound = log.bind(
+        job_evaluation_id=job_evaluation_id,
+        user_id=user_id,
+        stage="document",
+        regenerate_scope=regenerate_scope or "full",
+    )
     bound.info("pipeline.document_start")
+    rs = regenerate_scope if regenerate_scope in ("cv", "cover_letter") else None
     try:
-        result = await run_document_agent(job_evaluation_id, user_id)
+        result = await run_document_agent(
+            job_evaluation_id, user_id, regenerate_scope=rs
+        )
     except Exception as exc:
         bound.error("pipeline.document_exception", error=str(exc))
         return False
@@ -317,6 +330,79 @@ async def run_research_then_document_for_evaluation(
         "pipeline.research_then_document_complete",
         documents_generated=docs_ok,
     )
+    return {
+        "job_posting_id": job_posting_id,
+        "evaluation_id": evaluation_id,
+        "research_completed": True,
+        "documents_generated": docs_ok,
+    }
+
+
+async def run_regenerate_documents_for_evaluation(
+    job_posting_id: str,
+    evaluation_id: str,
+    user_id: str,
+    *,
+    regenerate_scope: str | None = None,
+) -> dict[str, Any]:
+    """Re-run documents for an existing ``application_docs`` row.
+
+    When ``regenerate_scope`` is ``\"cv\"`` or ``\"cover_letter\"``, skips research and
+    only refreshes that side. Otherwise runs research then a full document pass.
+    """
+    bound = log.bind(
+        job_posting_id=job_posting_id,
+        job_evaluation_id=evaluation_id,
+        user_id=user_id,
+        stage="regenerate_documents",
+        regenerate_scope=regenerate_scope or "full",
+    )
+    user_uuid = uuid.UUID(user_id)
+    eval_uuid = uuid.UUID(evaluation_id)
+    async with async_session_factory() as session:
+        existing = await application_doc_repository.get_by_evaluation_id(
+            session, user_uuid, eval_uuid
+        )
+    if existing is None:
+        bound.warning("pipeline.regenerate_skipped", reason="no_documents")
+        return {
+            "job_posting_id": job_posting_id,
+            "evaluation_id": evaluation_id,
+            "skipped": True,
+            "reason": "no_documents",
+            "research_completed": False,
+            "documents_generated": False,
+        }
+
+    if regenerate_scope in ("cv", "cover_letter"):
+        bound.info("pipeline.regenerate_partial_start")
+        docs_ok = await run_document_stage(
+            evaluation_id, user_id, regenerate_scope=regenerate_scope
+        )
+        bound.info(
+            "pipeline.regenerate_complete",
+            documents_generated=docs_ok,
+            research_completed=True,
+        )
+        return {
+            "job_posting_id": job_posting_id,
+            "evaluation_id": evaluation_id,
+            "research_completed": True,
+            "documents_generated": docs_ok,
+        }
+
+    bound.info("pipeline.regenerate_start")
+    research_ok = await run_research_stage(job_posting_id, user_id)
+    if not research_ok:
+        bound.warning("pipeline.regenerate_research_failed")
+        return {
+            "job_posting_id": job_posting_id,
+            "evaluation_id": evaluation_id,
+            "research_completed": False,
+            "documents_generated": False,
+        }
+    docs_ok = await run_document_stage(evaluation_id, user_id)
+    bound.info("pipeline.regenerate_complete", documents_generated=docs_ok)
     return {
         "job_posting_id": job_posting_id,
         "evaluation_id": evaluation_id,
@@ -498,6 +584,7 @@ __all__ = [
     "run_fetch_and_parse",
     "run_full_pipeline_for_config",
     "run_pipeline_for_single_job",
+    "run_regenerate_documents_for_evaluation",
     "run_research_stage",
     "run_research_then_document_for_evaluation",
 ]

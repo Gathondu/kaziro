@@ -53,6 +53,22 @@ export function triggerJobEvaluation(jobId: string): Promise<TriggerEvaluationBo
 	});
 }
 
+export type RegenerateDocumentsPart = 'cv' | 'cover_letter';
+
+export function regenerateJobDocuments(
+	jobId: string,
+	options?: { part?: RegenerateDocumentsPart }
+): Promise<TriggerEvaluationBody> {
+	const body = JSON.stringify(
+		options?.part != null ? { part: options.part } : {}
+	);
+	return apiFetch<TriggerEvaluationBody>(`/api/v1/jobs/${jobId}/regenerate-documents`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body
+	});
+}
+
 export function signedJobCvPdfUrl(jobPostingId: string): Promise<string> {
 	return resolveAuthenticatedRedirect(`/api/v1/jobs/${jobPostingId}/cv.pdf`);
 }
