@@ -33,9 +33,10 @@ from backend.agents.pipeline_orchestrator import (
     run_research_then_document_for_evaluation,
 )
 from backend.agents.research_agent import run_research_agent
-from backend.db.repositories import job_config_repository
+from backend.db.repositories import evaluation_repository, job_config_repository
 from backend.db.session import async_session_factory
 from backend.logging_config import get_logger
+from backend.services import applications_service
 from backend.services.schedule_presets import (
     ALLOWED_FETCH_SCHEDULE_CRONS,
     should_run_fetch,
@@ -166,16 +167,32 @@ def run_document_for_evaluation(
         user_id=user_id,
         attempt=self.request.retries + 1,
     )
-    result = run_sqlalchemy_async(
-        lambda: run_document_agent(job_evaluation_id, user_id)
-    )
-    return {
-        "job_evaluation_id": job_evaluation_id,
-        "user_id": user_id,
-        "application_doc_id": result.application_doc_id,
-        "quality_passed": result.quality_passed,
-        "error": result.error,
-    }
+
+    async def _runner() -> dict[str, Any]:
+        result = await run_document_agent(job_evaluation_id, user_id)
+        if not result.error:
+            user_uuid = uuid.UUID(user_id)
+            eval_uuid = uuid.UUID(job_evaluation_id)
+            async with async_session_factory() as session:
+                ev_row = await evaluation_repository.get_by_id(
+                    session, user_uuid, eval_uuid
+                )
+                if ev_row is not None:
+                    await applications_service.ensure_draft_application_after_documents(
+                        session,
+                        user_uuid,
+                        job_posting_id=ev_row.job_posting_id,
+                    )
+                    await session.commit()
+        return {
+            "job_evaluation_id": job_evaluation_id,
+            "user_id": user_id,
+            "application_doc_id": result.application_doc_id,
+            "quality_passed": result.quality_passed,
+            "error": result.error,
+        }
+
+    return run_sqlalchemy_async(_runner)
 
 
 # ---------------------------------------------------------------------------

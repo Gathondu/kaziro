@@ -27,6 +27,76 @@ from backend.services.application_state_machine import can_transition
 log = get_logger(__name__)
 
 
+async def _persist_new_draft_application(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    job_posting_id: uuid.UUID,
+    application_doc_id: uuid.UUID,
+) -> Application:
+    """Insert DRAFT application + CREATED audit event (caller commits)."""
+    application = await application_repository.create(
+        session,
+        user_id=user_id,
+        job_posting_id=job_posting_id,
+        application_doc_id=application_doc_id,
+        status=ApplicationStatus.DRAFT,
+    )
+    await application_events_service.record_event(
+        session,
+        application_id=application.id,
+        user_id=user_id,
+        event_type=ApplicationEventType.CREATED,
+        actor_user_id=user_id,
+        from_status=None,
+        to_status=ApplicationStatus.DRAFT,
+    )
+    return application
+
+
+async def ensure_draft_application_after_documents(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    job_posting_id: uuid.UUID,
+) -> Application | None:
+    """Create a DRAFT application when tailored docs exist and none is linked yet.
+
+    Idempotent: returns existing application if present. Returns ``None`` when
+    there is no evaluation, no ``application_docs`` row, or creation was skipped.
+    """
+    log_bound = log.bind(
+        user_id=str(user_id),
+        job_posting_id=str(job_posting_id),
+    )
+    evaluation = await evaluation_repository.get_for_user_posting(session, user_id, job_posting_id)
+    if evaluation is None:
+        log_bound.debug("applications.ensure_skipped", reason="no_evaluation")
+        return None
+
+    doc = await application_doc_repository.get_by_evaluation_id(session, user_id, evaluation.id)
+    if doc is None:
+        log_bound.debug("applications.ensure_skipped", reason="no_doc")
+        return None
+
+    existing = await application_repository.get_by_user_posting(session, user_id, job_posting_id)
+    if existing is not None:
+        return existing
+
+    app = await _persist_new_draft_application(
+        session,
+        user_id=user_id,
+        job_posting_id=job_posting_id,
+        application_doc_id=doc.id,
+    )
+    log_bound.info(
+        "applications.draft_ensured_after_documents",
+        application_id=str(app.id),
+        job_evaluation_id=str(evaluation.id),
+    )
+    return app
+
+
 async def list_applications(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -100,32 +170,19 @@ async def create_application(
         )
         raise ConflictError(
             "Tailored documents are being generated. You will get a notification when "
-            "they are ready — then use Generate documents again to open the editor.",
+            "they are ready.",
             code="application_documents_generating",
         )
 
     existing = await application_repository.get_by_user_posting(session, user_id, job_posting_id)
     if existing is not None:
-        raise ConflictError(
-            "an application already exists for this job",
-            code="application_exists",
-        )
+        return existing
 
-    application = await application_repository.create(
+    application = await _persist_new_draft_application(
         session,
         user_id=user_id,
         job_posting_id=job_posting_id,
         application_doc_id=doc.id,
-        status=ApplicationStatus.DRAFT,
-    )
-    await application_events_service.record_event(
-        session,
-        application_id=application.id,
-        user_id=user_id,
-        event_type=ApplicationEventType.CREATED,
-        actor_user_id=user_id,
-        from_status=None,
-        to_status=ApplicationStatus.DRAFT,
     )
     log.info(
         "applications.created",
@@ -291,6 +348,7 @@ async def signed_url_for_doc_pdf(
 __all__ = [
     "create_application",
     "delete_application",
+    "ensure_draft_application_after_documents",
     "get_application_detail",
     "list_application_events",
     "list_applications",

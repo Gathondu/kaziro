@@ -208,6 +208,17 @@ Notification types: `evaluation_complete`, `documents_ready`. The frontend
 shows a toast for each (see
 [`design/frontend/state-and-realtime.md`](../design/frontend/state-and-realtime.md)).
 
+**Applications (DRAFT)**: When `run_document_stage` completes successfully, the
+orchestrator calls `applications_service.ensure_draft_application_after_documents`,
+which inserts an `applications` row with status `DRAFT` if none exists yet for
+`(user_id, job_posting_id)`. **GOOD_FIT** (scheduled batch): this runs right after
+auto-generated tailored documents. **MAYBE**: the same hook runs only after the
+user triggers document generation (research + document path). The Celery task
+`run_document_for_evaluation` performs the same ensure step for parity when that
+task is used. `POST /api/v1/applications` returns an existing application when
+documents are already present (idempotent), so the job UI can navigate to apply
+without treating “already exists” as an error.
+
 ## 5. Pipeline summary contract
 
 `run_full_pipeline_for_config` returns:

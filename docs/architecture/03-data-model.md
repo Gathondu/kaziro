@@ -215,6 +215,12 @@ or a delete-then-insert in `JobEvaluationRepository.upsert(...)`.
 | `applied_at`          | TIMESTAMPTZ                | NULL     | Set when transitioning to `SENT`       |
 | `notes`               | TEXT                       | NULL     | User notes                             |
 
+**Lifecycle**: A `DRAFT` row is created automatically after successful tailored
+document generation (`ensure_draft_application_after_documents` in the pipeline
+or document Celery task): for **GOOD_FIT** this follows the scheduled document
+stage; for **MAYBE** only after user-initiated generation. `POST /api/v1/applications`
+returns the existing row when an application is already linked (idempotent).
+
 ### 3.10 `application_events`
 
 | Column           | Type                  | Nullable | Description                              |

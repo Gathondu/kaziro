@@ -81,8 +81,14 @@
 						animate:flip={{ duration: flipDurationMs }}
 						class="rounded-xl border border-base-300 bg-base-100 p-3 shadow-sm"
 					>
-						<p class="text-sm font-semibold">{app.job_posting?.title ?? 'Application'}</p>
-						<p class="text-xs text-base-content/60">{app.job_posting?.company_name ?? ''}</p>
+						<a
+							href="/jobs/{app.job_posting_id}"
+							draggable={false}
+							class="block cursor-pointer text-inherit no-underline outline-offset-2 hover:opacity-90"
+						>
+							<p class="text-sm font-semibold">{app.job_posting?.title ?? 'Application'}</p>
+							<p class="text-xs text-base-content/60">{app.job_posting?.company_name ?? ''}</p>
+						</a>
 					</div>
 				{/each}
 			</div>

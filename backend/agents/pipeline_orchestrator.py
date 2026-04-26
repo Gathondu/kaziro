@@ -39,6 +39,7 @@ from backend.db.repositories import (
 from backend.db.session import async_session_factory
 from backend.logging_config import get_logger
 from backend.metrics import active_pipeline_tasks
+from backend.services import applications_service
 from backend.services.job_fetcher import JobFetchError, fetch_jobs_for_config
 from backend.services.notifications import notify_user
 
@@ -259,12 +260,18 @@ async def run_document_stage(
         return False
 
     job_posting_for_notify = ""
+    user_uuid = uuid.UUID(user_id)
+    eval_uuid = uuid.UUID(job_evaluation_id)
     async with async_session_factory() as session:
-        ev_row = await evaluation_repository.get_by_id(
-            session, uuid.UUID(user_id), uuid.UUID(job_evaluation_id)
-        )
+        ev_row = await evaluation_repository.get_by_id(session, user_uuid, eval_uuid)
         if ev_row is not None:
             job_posting_for_notify = str(ev_row.job_posting_id)
+            await applications_service.ensure_draft_application_after_documents(
+                session,
+                user_uuid,
+                job_posting_id=ev_row.job_posting_id,
+            )
+            await session.commit()
 
     await notify_user(
         user_id,

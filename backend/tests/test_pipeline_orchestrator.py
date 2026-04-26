@@ -6,7 +6,7 @@ import types
 import uuid
 from collections.abc import Iterator
 from contextlib import asynccontextmanager, contextmanager
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -157,3 +157,49 @@ async def test_full_pipeline_skips_when_user_inactive() -> None:
 
 def test_evaluation_concurrency_default() -> None:
     assert orch.EVALUATION_CONCURRENCY == 3
+
+
+@pytest.mark.asyncio
+async def test_run_document_stage_ensures_draft_application() -> None:
+    uid = str(uuid.uuid4())
+    eval_id = str(uuid.uuid4())
+    posting_id = uuid.uuid4()
+    mock_session = MagicMock()
+    mock_session.commit = AsyncMock()
+    ev_row = types.SimpleNamespace(job_posting_id=posting_id)
+
+    @asynccontextmanager
+    async def _session_cm():
+        yield mock_session
+
+    doc_result = types.SimpleNamespace(
+        error=None,
+        application_doc_id=str(uuid.uuid4()),
+        quality_passed=True,
+    )
+    ensure_m = AsyncMock()
+
+    with (
+        patch.object(orch, "run_document_agent", new=AsyncMock(return_value=doc_result)),
+        patch.object(orch, "async_session_factory", _session_cm),
+        patch.object(
+            orch.evaluation_repository,
+            "get_by_id",
+            new=AsyncMock(return_value=ev_row),
+        ),
+        patch.object(
+            orch.applications_service,
+            "ensure_draft_application_after_documents",
+            ensure_m,
+        ),
+        patch.object(orch, "notify_user", new=AsyncMock()),
+    ):
+        ok = await orch.run_document_stage(eval_id, uid)
+
+    assert ok is True
+    ensure_m.assert_awaited_once_with(
+        mock_session,
+        uuid.UUID(uid),
+        job_posting_id=posting_id,
+    )
+    mock_session.commit.assert_awaited_once()
