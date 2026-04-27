@@ -5,6 +5,12 @@ export function getPublicApiUrl(): string {
 	return (env.PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 }
 
+/** Optional websocket origin; falls back to PUBLIC_API_URL when unset. */
+export function getPublicWsUrl(): string | undefined {
+	const value = env.PUBLIC_WS_URL?.trim();
+	return value ? value.replace(/\/$/, '') : undefined;
+}
+
 export function getPublicSupabaseUrl(): string {
 	return env.PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co';
 }

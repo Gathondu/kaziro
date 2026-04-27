@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { getPublicApiUrl } from '$lib/env/public';
+import { getPublicApiUrl, getPublicWsUrl } from '$lib/env/public';
 import { getQueryClient } from '$lib/queryClientSingleton';
 import type { NotificationMessage } from '$lib/types/notifications';
 import { logger } from '$lib/utils/logger';
@@ -37,9 +37,13 @@ export function subscribeNotifications(handler: Handler): () => void {
 }
 
 function wsUrl(token: string): string {
-	const base = getPublicApiUrl();
+	const base = getPublicWsUrl() ?? getPublicApiUrl();
 	const u = new URL(base);
-	u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+	if (u.protocol === 'https:') {
+		u.protocol = 'wss:';
+	} else if (u.protocol === 'http:') {
+		u.protocol = 'ws:';
+	}
 	u.pathname = '/api/v1/ws/notifications';
 	u.search = '';
 	u.searchParams.set('token', token);
