@@ -13,11 +13,13 @@ SvelteKit file-based routing tree under `frontend/src/routes/`.
 src/routes/
 ├── +layout.svelte                 # Auth gate, top nav, toast container
 ├── +layout.ts                     # Root layout load (appearance cookie)
-├── +page.server.ts                # Marketing landing: SSR redirect to /dashboard if Supabase user; SEO data
 ├── +error.svelte                  # Global error fallback
-├── +page.svelte                   # Marketing landing (public copy + CTAs)
-├── privacy/+page.svelte           # Public legal (`index,follow`)
-├── terms/+page.svelte             # Public legal (`index,follow`)
+├── (marketing)/                   # `/`, `/privacy`, `/terms` — always light `terracotta` (scoped `data-theme`, ignores user theme)
+│   ├── +layout.svelte
+│   ├── +page.server.ts            # `/` SSR redirect if authed; SEO data
+│   ├── +page.svelte               # Landing
+│   ├── privacy/+page.svelte
+│   └── terms/+page.svelte
 ├── (auth)/                        # `noindex` in `+layout.svelte`
 │   ├── +layout.svelte
 │   ├── login/+page.svelte
@@ -51,6 +53,11 @@ src/routes/
 Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hooks.server.ts)
 (`createServerClient` from `@supabase/ssr`, per-request `event.locals.supabase`).
 
+### `(marketing)` layout
+
+- Wraps **`/`**, **`/privacy`**, **`/terms`** in `data-theme="terracotta"` so public pages always use the
+  light brand palette, independent of the user’s appearance cookie / system theme on `<html>`.
+
 ## Route specs
 
 ### `/` (landing)
@@ -58,7 +65,7 @@ Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hook
 - Public marketing page (hero, features, how-it-works, footer with legal links).
 - **`index,follow`** in `<svelte:head>` — primary marketing URL; `/privacy` and `/terms` are also indexable public pages.
 - If a **verified** Supabase user is present (cookie session), redirect to
-  `/dashboard` from [`+page.server.ts`](../../../frontend/src/routes/+page.server.ts)
+  `/dashboard` from [`(marketing)/+page.server.ts`](../../../frontend/src/routes/(marketing)/+page.server.ts)
   (`getUser()`), not from client-only effects.
 - SEO: `<title>`, meta description, canonical, Open Graph, Twitter card, JSON-LD
   `WebSite` — canonical base from `PUBLIC_SITE_URL` when set, else request origin.
@@ -170,7 +177,7 @@ Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hook
 ## SEO & meta
 
 - `<svelte:head>` per page sets `title`, `description`, and (where relevant) `og:image`.
-- **Indexable:** **`/`** (full SEO on [`+page.svelte`](../../../frontend/src/routes/+page.svelte)), **`/privacy`**, **`/terms`**
+- **Indexable:** **`/`** (full SEO on [`(marketing)/+page.svelte`](../../../frontend/src/routes/(marketing)/+page.svelte)), **`/privacy`**, **`/terms`**
   (`index,follow` + title/description on each page).
 - **Not indexable:** `(app)/*`, `(auth)/*`, `(onboarding)/*` — group layouts use `meta name="robots" content="noindex,nofollow"`.
 
