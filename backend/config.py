@@ -111,6 +111,8 @@ class Settings(BaseSettings):
     REDIS_BROKER_DB: int = 1
     REDIS_RESULT_DB: int = 2
     REDIS_PUBSUB_DB: int = 3
+    WS_CONNECTIONS_TABLE: str | None = None
+    WS_MANAGEMENT_API_ENDPOINT: AnyHttpUrl | None = None
 
     # -- Celery ------------------------------------------------------------
     CELERY_BROKER_URL: RedisDsn | None = None

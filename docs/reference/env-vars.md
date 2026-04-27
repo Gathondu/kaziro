@@ -61,6 +61,8 @@ Conventions:
 | `REDIS_BROKER_DB` | No       | `1`     | worker          | DB index for Celery broker.                 |
 | `REDIS_RESULT_DB` | No       | `2`     | worker          | DB index for Celery results.                |
 | `REDIS_PUBSUB_DB` | No       | `3`     | backend         | DB index for WebSocket fan-out via Pub/Sub. |
+| `WS_CONNECTIONS_TABLE` | No  | —       | backend, worker | DynamoDB table holding active WebSocket connections by user. |
+| `WS_MANAGEMENT_API_ENDPOINT` | No | —   | backend, worker | API Gateway WebSocket Management endpoint (HTTPS URL with stage) used to `post_to_connection`. |
 
 ## Celery
 
