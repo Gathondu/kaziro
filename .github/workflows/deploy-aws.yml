@@ -79,12 +79,22 @@ jobs:
       - backend-image
     environment: ${{ needs.select-environment.outputs.deploy_env }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init (read redis_url from remote state)
+        working-directory: ${{ needs.select-environment.outputs.tf_dir }}
+        run: terraform init -input=false
 
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
@@ -94,15 +104,20 @@ jobs:
         env:
           IMAGE_URI: ${{ needs.backend-image.outputs.image_uri }}
           DEPLOY_ENV: ${{ needs.select-environment.outputs.deploy_env }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
+        working-directory: ${{ needs.select-environment.outputs.tf_dir }}
         run: |
           set -euo pipefail
-          if [[ -z "${REDIS_URL}" ]]; then
-            echo "Set GitHub Environment secret REDIS_URL to the Valkey URL for this env"
-            echo "(same as Terraform local.redis_url / App Runner REDIS_URL), e.g."
-            echo "  terraform output -raw redis_url"
+          # Same Valkey URL as App Runner / ECS: from Terraform remote state.
+          if ! REDIS_URL="$(terraform output -raw redis_url 2>/dev/null)"; then
+            echo "::error::Could not read terraform output redis_url for '${DEPLOY_ENV}'."
+            echo "Apply Terraform at least once so output redis_url exists in remote state."
             exit 1
           fi
+          if [[ -z "${REDIS_URL}" ]]; then
+            echo "::error::terraform output redis_url is empty."
+            exit 1
+          fi
+          export REDIS_URL
           SECRET_ID="kaziro/${DEPLOY_ENV}/backend/runtime-env-json"
           aws secretsmanager get-secret-value \
             --secret-id "${SECRET_ID}" \
