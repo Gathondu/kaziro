@@ -56,7 +56,7 @@
 		"lucide-svelte": "^1.0.1",
 		"pdfjs-dist": "^4.7.76",
 		"svelte-dnd-action": "^0.9.69",
-		"zod": "^3.23.8"
+		"zod": "^4.3.6"
 	},
 	"engines": {
 		"node": ">=20",
