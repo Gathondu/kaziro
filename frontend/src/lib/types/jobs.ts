@@ -29,6 +29,8 @@ export interface JobEvaluationApplicationDoc {
 export interface JobEvaluation {
 	id: string;
 	job_posting_id: string;
+	/** Present when the user has an application row for this posting (used to PATCH docs). */
+	application_id?: string | null;
 	final_classification: Classification;
 	overall_score: number;
 	final_feedback: string;

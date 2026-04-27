@@ -31,11 +31,14 @@ from backend.services.job_evaluation_metadata import rejection_source_from_dimen
 router: Final[APIRouter] = APIRouter(prefix="/applications", tags=["applications"])
 
 
-def _job_evaluation_without_documents(ev: JobEvaluation) -> JobEvaluationResponse:
+def _job_evaluation_without_documents(
+    ev: JobEvaluation, *, application_id: uuid.UUID | None = None
+) -> JobEvaluationResponse:
     """Evaluation payload for application lists (no full CV / cover letter text)."""
     return JobEvaluationResponse(
         id=ev.id,
         job_posting_id=ev.job_posting_id,
+        application_id=application_id,
         final_classification=ev.final_classification,
         overall_score=float(ev.overall_score),
         final_feedback=ev.final_feedback,
@@ -65,7 +68,11 @@ def _to_response(
         application_doc=ApplicationDocSnippet.model_validate(app.application_doc)
         if app.application_doc
         else None,
-        evaluation=_job_evaluation_without_documents(evaluation) if evaluation else None,
+        evaluation=_job_evaluation_without_documents(
+            evaluation, application_id=app.id
+        )
+        if evaluation
+        else None,
     )
 
 

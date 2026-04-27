@@ -46,6 +46,10 @@ class JobEvaluationResponse(ORMModel):
 
     id: uuid.UUID
     job_posting_id: uuid.UUID
+    application_id: uuid.UUID | None = Field(
+        default=None,
+        description="User's application for this posting when one exists (for updating docs).",
+    )
     final_classification: Classification
     overall_score: float
     final_feedback: str

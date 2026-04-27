@@ -51,6 +51,7 @@
 		"@tiptap/core": "^2.8.0",
 		"@tiptap/starter-kit": "^2.8.0",
 		"date-fns": "^4.1.0",
+		"jspdf": "^4.2.1",
 		"lucide-svelte": "^0.453.0",
 		"pdfjs-dist": "^4.7.76",
 		"svelte-dnd-action": "^0.9.69",

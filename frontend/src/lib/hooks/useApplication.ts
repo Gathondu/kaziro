@@ -71,6 +71,8 @@ export function useMarkJobNotInterested() {
 
 type UpdateDocsVars = {
 	id: string;
+	/** When set, refetches job evaluation after doc save (e.g. job detail modal). */
+	jobPostingId?: string;
 	body: { tailored_cv_text?: string | null; cover_letter_text?: string | null };
 };
 
@@ -81,6 +83,9 @@ export function useUpdateApplicationDocs() {
 		onSuccess: (_data, args) => {
 			void qc.invalidateQueries({ queryKey: ['application', args.id] });
 			void qc.invalidateQueries({ queryKey: ['applications'] });
+			if (args.jobPostingId) {
+				void qc.invalidateQueries({ queryKey: ['job', args.jobPostingId, 'evaluation'] });
+			}
 		}
 	});
 }

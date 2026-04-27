@@ -150,6 +150,7 @@
 			<JobDocumentsModal
 				bind:open={documentsModalOpen}
 				jobPostingId={jobId}
+				applicationId={$evQ.data.application_id ?? ''}
 				doc={$evQ.data.application_doc}
 			/>
 		{/if}

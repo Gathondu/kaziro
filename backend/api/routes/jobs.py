@@ -19,7 +19,7 @@ from backend.api.schemas.jobs import (
     TriggerEvaluationResponse,
 )
 from backend.db.models.enums import Classification
-from backend.db.repositories import application_doc_repository
+from backend.db.repositories import application_doc_repository, application_repository
 from backend.services import jobs_service
 from backend.services.job_evaluation_metadata import rejection_source_from_dimension_scores
 
@@ -190,9 +190,11 @@ async def mark_job_not_interested(
     await session.commit()
     await session.refresh(ev)
     doc = await application_doc_repository.get_by_evaluation_id(session, current_user.id, ev.id)
+    app = await application_repository.get_by_user_posting(session, current_user.id, job_uuid)
     payload = {
         "id": ev.id,
         "job_posting_id": ev.job_posting_id,
+        "application_id": app.id if app is not None else None,
         "final_classification": ev.final_classification,
         "overall_score": float(ev.overall_score),
         "final_feedback": ev.final_feedback,

@@ -34,9 +34,12 @@
 
 	async function save(): Promise<void> {
 		if (!applicationId) return;
+		const jobPid = $appQ.data?.job_posting_id;
+		if (!jobPid) return;
 		try {
 			await get(saveDocs).mutateAsync({
 				id: applicationId,
+				jobPostingId: jobPid,
 				body: { cover_letter_text: cover }
 			});
 			toast.success('Saved.');
