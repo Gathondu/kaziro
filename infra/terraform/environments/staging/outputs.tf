@@ -35,6 +35,13 @@ output "backend_runtime_secret_arn" {
   sensitive = true
 }
 
+# Same value App Runner receives as REDIS_URL (for GitHub Actions db-migrate, etc.).
+output "redis_url" {
+  value       = local.redis_url
+  sensitive   = true
+  description = "Valkey primary URL (same as App Runner REDIS_URL); deploy-aws db-migrate reads this from state."
+}
+
 output "links" {
   value = {
     api_health                  = "${module.apigw.api_endpoint}/health"

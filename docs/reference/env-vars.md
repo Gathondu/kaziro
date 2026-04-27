@@ -56,7 +56,7 @@ Conventions:
 
 | Variable          | Required | Default | Scope           | Description                                 |
 | ----------------- | -------- | ------- | --------------- | ------------------------------------------- |
-| `REDIS_URL`       | Yes      | —       | backend, worker | `redis://[:password@]host:port/db`.         |
+| `REDIS_URL`       | Yes      | —       | backend, worker | `redis://` / `rediss://` Valkey or Redis URL. On AWS, App Runner and **`deploy-aws.yml`** `db-migrate` get this from Terraform (App Runner/ECS env + `terraform output redis_url` in CI); not only from `KAZIRO_BACKEND_ENV_JSON`. |
 | `REDIS_CACHE_DB`  | No       | `0`     | backend         | DB index for app cache.                     |
 | `REDIS_BROKER_DB` | No       | `1`     | worker          | DB index for Celery broker.                 |
 | `REDIS_RESULT_DB` | No       | `2`     | worker          | DB index for Celery results.                |
