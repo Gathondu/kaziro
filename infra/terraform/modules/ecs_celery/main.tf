@@ -218,3 +218,27 @@ resource "aws_ecs_service" "beat" {
 }
 
 data "aws_region" "current" {}
+
+output "cluster_name" {
+  value = aws_ecs_cluster.this.name
+}
+
+output "cluster_arn" {
+  value = aws_ecs_cluster.this.arn
+}
+
+output "worker_service_name" {
+  value = aws_ecs_service.worker.name
+}
+
+output "beat_service_name" {
+  value = aws_ecs_service.beat.name
+}
+
+output "worker_log_group_name" {
+  value = aws_cloudwatch_log_group.worker.name
+}
+
+output "beat_log_group_name" {
+  value = aws_cloudwatch_log_group.beat.name
+}
