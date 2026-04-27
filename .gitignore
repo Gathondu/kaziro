@@ -66,6 +66,10 @@ desktop.ini
 .pnpm-debug.log*
 .npm/
 .cache/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
 
 # ----- Logs ------------------------------------------------------------------
 *.log
