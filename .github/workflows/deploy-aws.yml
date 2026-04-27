@@ -118,6 +118,18 @@ jobs:
           echo "frontend_distribution_id=$(terraform output -raw frontend_cloudfront_distribution_id)" >> "${GITHUB_OUTPUT}"
           echo "frontend_domain_name=$(terraform output -raw frontend_cloudfront_domain_name)" >> "${GITHUB_OUTPUT}"
 
+      - name: Print terraform outputs (safe)
+        working-directory: ${{ needs.select-environment.outputs.tf_dir }}
+        shell: bash
+        run: |
+          echo "api_base_url=$(terraform output -raw api_base_url)"
+          echo "frontend_base_url=$(terraform output -raw frontend_base_url)"
+          echo "apprunner_service_url=$(terraform output -raw apprunner_service_url)"
+          echo "frontend_bucket_name=$(terraform output -raw frontend_bucket_name)"
+          echo "frontend_distribution_id=$(terraform output -raw frontend_cloudfront_distribution_id)"
+          echo "frontend_domain_name=$(terraform output -raw frontend_cloudfront_domain_name)"
+          echo "links=$(terraform output -json links)"
+
   frontend:
     runs-on: ubuntu-latest
     needs:
