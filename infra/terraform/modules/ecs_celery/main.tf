@@ -104,8 +104,6 @@ resource "aws_ecs_task_definition" "worker" {
         }
       ]
       command = [
-        "uv",
-        "run",
         "celery",
         "-A",
         "backend.tasks.celery_app:celery_app",
@@ -152,8 +150,6 @@ resource "aws_ecs_task_definition" "beat" {
         }
       ]
       command = [
-        "uv",
-        "run",
         "celery",
         "-A",
         "backend.tasks.celery_app:celery_app",

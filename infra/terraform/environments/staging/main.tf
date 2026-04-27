@@ -9,11 +9,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "kaziro-terraform-state"
-    key            = "kaziro/staging/terraform.tfstate"
-    region         = "eu-central-1"
-    dynamodb_table = "kaziro-terraform-locks"
-    encrypt        = true
+    bucket       = "kaziro-terraform-state"
+    key          = "kaziro/staging/terraform.tfstate"
+    region       = "eu-central-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 

@@ -73,4 +73,4 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=10s \
     CMD curl --fail --silent http://localhost:8000/health || exit 1
 
 ENTRYPOINT ["python", "backend/docker/entrypoint.py"]
-CMD ["uv", "run", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -96,7 +96,7 @@ flowchart TD
   fetch[Fetch_Jobs]
   parse[Parse_and_Persist_Postings]
   eval[Evaluate_Fit]
-  class{"Classification"}
+  classificationGate{"Classification"}
   research[Research_Company_Context]
   docs[Generate_Tailored_Documents]
   maybePath[MAYBE_Research_on_manual_single_job]
@@ -104,10 +104,10 @@ flowchart TD
   notify[Publish_Notifications]
   userValue[User_Sees_Updates_and_Acts]
 
-  start --> fetch --> parse --> eval --> class
-  class -->|"GOOD_FIT"| research --> docs --> notify --> userValue
-  class -->|"MAYBE"| maybePath --> notify --> userValue
-  class -->|"REJECT"| rejectPath --> notify --> userValue
+  start --> fetch --> parse --> eval --> classificationGate
+  classificationGate -->|"GOOD_FIT"| research --> docs --> notify --> userValue
+  classificationGate -->|"MAYBE"| maybePath --> notify --> userValue
+  classificationGate -->|"REJECT"| rejectPath --> notify --> userValue
 ```
 
 ---
