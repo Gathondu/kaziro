@@ -3,16 +3,42 @@
 	import { UserRound } from 'lucide-svelte';
 	import { useProfile } from '$lib/hooks/useProfile';
 	import { signOutEverywhere } from '$lib/stores/auth';
-	import { isNotificationsConnected, subscribeConnection } from '$lib/stores/notifications';
+	import {
+		getNotificationsConnectionVisualState,
+		subscribeConnection,
+		type NotificationsConnectionVisualState
+	} from '$lib/stores/notifications';
 
 	const profile = useProfile();
 
-	let wsOk = $state(false);
+	let wsState = $state<NotificationsConnectionVisualState>('offline');
 	$effect(() =>
 		subscribeConnection(() => {
-			wsOk = isNotificationsConnected();
+			wsState = getNotificationsConnectionVisualState();
 		})
 	);
+
+	function wsTitle(state: NotificationsConnectionVisualState): string {
+		switch (state) {
+			case 'live':
+				return 'Realtime: connected';
+			case 'pending':
+				return 'Realtime: connecting…';
+			case 'offline':
+				return 'Realtime: disconnected';
+		}
+	}
+
+	function wsAriaLabel(state: NotificationsConnectionVisualState): string {
+		switch (state) {
+			case 'live':
+				return 'Account menu. Realtime connected.';
+			case 'pending':
+				return 'Account menu. Realtime connecting.';
+			case 'offline':
+				return 'Account menu. Realtime disconnected.';
+		}
+	}
 
 	async function logout(): Promise<void> {
 		await signOutEverywhere();
@@ -25,20 +51,23 @@
 >
 	<a href="/dashboard" class="text-lg font-semibold text-primary">Kaziro</a>
 	<div class="flex items-center gap-2">
-		<span
-			class="badge rounded-lg font-medium {wsOk ? 'badge-success' : 'badge-ghost'}"
-			title="Realtime connection"
-		>
-			{wsOk ? 'Live' : 'Offline'}
-		</span>
 		<div class="dropdown dropdown-end">
 			<button
 				type="button"
 				tabindex="0"
-				class="btn btn-circle btn-ghost btn-sm"
-				aria-label="Account menu"
+				class="btn btn-circle btn-ghost btn-sm relative"
+				aria-label={wsAriaLabel(wsState)}
 			>
 				<UserRound class="size-6" aria-hidden="true" />
+				<span
+					class="absolute bottom-1 right-1 size-2 rounded-full ring-2 ring-base-100 {wsState === 'live'
+						? 'bg-success'
+						: wsState === 'pending'
+							? 'bg-warning'
+							: 'bg-error'}"
+					aria-hidden="true"
+					title={wsTitle(wsState)}
+				></span>
 			</button>
 			<ul
 				class="menu dropdown-content z-50 mt-2 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-sm"

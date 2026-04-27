@@ -16,13 +16,27 @@ let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let backoffMs = 1000;
 let lastServerMessageAt = 0;
 let currentToken: string | null = null;
+let reconnectPending = false;
 
 function emitConnection(): void {
 	for (const l of listeners) l();
 }
 
+export type NotificationsConnectionVisualState = 'live' | 'pending' | 'offline';
+
 export function isNotificationsConnected(): boolean {
 	return socket !== null && socket.readyState === WebSocket.OPEN;
+}
+
+export function getNotificationsConnectionVisualState(): NotificationsConnectionVisualState {
+	if (!browser) return 'offline';
+	if (isNotificationsConnected()) return 'live';
+	if (reconnectTimer !== null) return 'pending';
+	if (reconnectPending) return 'pending';
+	if (socket?.readyState === WebSocket.CONNECTING || socket?.readyState === WebSocket.CLOSING) {
+		return 'pending';
+	}
+	return 'offline';
 }
 
 export function subscribeConnection(cb: () => void): () => void {
@@ -116,8 +130,12 @@ function clearTimers(): void {
 function scheduleReconnect(): void {
 	clearTimers();
 	if (!browser || !currentToken) return;
+	reconnectPending = true;
+	emitConnection();
 	reconnectTimer = setTimeout(() => {
 		reconnectTimer = null;
+		reconnectPending = false;
+		emitConnection();
 		connectNotifications(currentToken!);
 	}, backoffMs);
 	backoffMs = Math.min(backoffMs * 2, 30_000);
@@ -129,19 +147,24 @@ export function connectNotifications(token: string): void {
 	const explicitWsBase = getPublicWsUrl();
 	const url = wsUrl(token);
 	if (!url) {
+		reconnectPending = false;
+		emitConnection();
 		return;
 	}
 	if (
 		socket &&
 		(socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)
 	) {
+		emitConnection();
 		return;
 	}
 	socket?.close();
 	clearTimers();
+	reconnectPending = false;
 
 	try {
 		socket = new WebSocket(url);
+		emitConnection();
 	} catch (e) {
 		logger.error('notifications.ws_construct_failed', e);
 		scheduleReconnect();
@@ -150,6 +173,7 @@ export function connectNotifications(token: string): void {
 
 	socket.addEventListener('open', () => {
 		backoffMs = 1000;
+		reconnectPending = false;
 		lastServerMessageAt = Date.now();
 		emitConnection();
 	});
@@ -176,6 +200,7 @@ export function connectNotifications(token: string): void {
 	});
 
 	socket.addEventListener('error', () => {
+		emitConnection();
 		socket?.close();
 	});
 
@@ -191,6 +216,7 @@ export function connectNotifications(token: string): void {
 
 export function disconnectNotifications(): void {
 	currentToken = null;
+	reconnectPending = false;
 	clearTimers();
 	socket?.close();
 	socket = null;
