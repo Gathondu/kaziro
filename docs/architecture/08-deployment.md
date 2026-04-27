@@ -173,11 +173,12 @@ PR (preview URL). PR previews are commented on by the Vercel bot.
 - **AWS (`deploy-aws.yml`)**: After the backend image is pushed to ECR, a
   **`db-migrate`** job loads `kaziro/<environment>/backend/runtime-env-json`
   from Secrets Manager (same JSON as `KAZIRO_BACKEND_ENV_JSON` on App Runner),
-  sets **`REDIS_URL`** from **`terraform output -raw redis_url`** after
-  `terraform init` — same Valkey URL Terraform gives App Runner (not from
-  `KAZIRO_BACKEND_ENV_JSON`). Alembic still needs `Settings()` to load.
-  On a **brand-new** stack, run **`terraform apply`** once so output
-  `redis_url` exists in remote state before this job can succeed. Then
+  runs **`terraform init`**, **`terraform apply -refresh-only`** (with
+  `TF_VAR_image_tag`, same as the main Terraform job) so remote state includes
+  root outputs such as **`redis_url`**, then sets **`REDIS_URL`** from
+  **`terraform output -raw redis_url`** — same Valkey URL Terraform gives App
+  Runner (not from `KAZIRO_BACKEND_ENV_JSON`). Alembic still needs
+  `Settings()` to load. Then
   `alembic upgrade head` runs inside the pushed image; Terraform applies
   after success.
 - **Kubernetes** (if used): migrations run as a `Job` **before** new backend

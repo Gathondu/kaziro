@@ -92,9 +92,21 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform init (read redis_url from remote state)
+      - name: Terraform init
         working-directory: ${{ needs.select-environment.outputs.tf_dir }}
+        env:
+          TF_VAR_image_tag: ${{ needs.select-environment.outputs.image_tag }}
         run: terraform init -input=false
+
+      # New root outputs (e.g. redis_url) are written to remote state on apply. A
+      # refresh-only run loads current config + AWS state and updates stored
+      # outputs without changing resources — so db-migrate can read redis_url
+      # before the full terraform job in this workflow runs.
+      - name: Terraform refresh-only (sync outputs in state)
+        working-directory: ${{ needs.select-environment.outputs.tf_dir }}
+        env:
+          TF_VAR_image_tag: ${{ needs.select-environment.outputs.image_tag }}
+        run: terraform apply -refresh-only -auto-approve -input=false
 
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
@@ -107,14 +119,14 @@ jobs:
         working-directory: ${{ needs.select-environment.outputs.tf_dir }}
         run: |
           set -euo pipefail
-          # Same Valkey URL as App Runner / ECS: from Terraform remote state.
-          if ! REDIS_URL="$(terraform output -raw redis_url 2>/dev/null)"; then
-            echo "::error::Could not read terraform output redis_url for '${DEPLOY_ENV}'."
-            echo "Apply Terraform at least once so output redis_url exists in remote state."
-            exit 1
-          fi
-          if [[ -z "${REDIS_URL}" ]]; then
-            echo "::error::terraform output redis_url is empty."
+          # Same Valkey URL Terraform uses for App Runner (local.redis_url).
+          set +e
+          REDIS_URL="$(terraform output -raw redis_url 2>/dev/null)"
+          out_rc=$?
+          set -e
+          if [[ "${out_rc}" -ne 0 ]] || [[ -z "${REDIS_URL}" ]]; then
+            echo "::error::Could not read terraform output redis_url for '${DEPLOY_ENV}' (exit ${out_rc})."
+            echo "The refresh-only step above should have registered outputs; check Terraform logs and IAM/state access."
             exit 1
           fi
           export REDIS_URL

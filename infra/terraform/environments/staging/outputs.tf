@@ -39,7 +39,7 @@ output "backend_runtime_secret_arn" {
 output "redis_url" {
   value       = local.redis_url
   sensitive   = true
-  description = "Valkey primary URL; copy into GitHub Environment secret REDIS_URL for deploy-aws db-migrate."
+  description = "Valkey primary URL (same as App Runner REDIS_URL); deploy-aws db-migrate reads this from state."
 }
 
 output "links" {
