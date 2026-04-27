@@ -15,6 +15,22 @@ data "aws_iam_policy_document" "task_permissions" {
       var.backend_runtime_secret_arn
     ]
   }
+
+  statement {
+    actions = [
+      "dynamodb:Query",
+      "dynamodb:DeleteItem"
+    ]
+    resources = [
+      var.ws_connections_table_arn,
+      "${var.ws_connections_table_arn}/index/user_id-index"
+    ]
+  }
+
+  statement {
+    actions   = ["execute-api:ManageConnections"]
+    resources = ["${var.ws_management_api_arn}/*"]
+  }
 }
 
 variable "environment" {
@@ -46,6 +62,22 @@ variable "worker_desired_count" {
 }
 
 variable "redis_url" {
+  type = string
+}
+
+variable "ws_connections_table_name" {
+  type = string
+}
+
+variable "ws_connections_table_arn" {
+  type = string
+}
+
+variable "ws_management_api_endpoint" {
+  type = string
+}
+
+variable "ws_management_api_arn" {
   type = string
 }
 
@@ -116,6 +148,14 @@ resource "aws_ecs_task_definition" "worker" {
         {
           name  = "REDIS_URL"
           value = var.redis_url
+        },
+        {
+          name  = "WS_CONNECTIONS_TABLE"
+          value = var.ws_connections_table_name
+        },
+        {
+          name  = "WS_MANAGEMENT_API_ENDPOINT"
+          value = var.ws_management_api_endpoint
         }
       ]
       command = [
@@ -162,6 +202,14 @@ resource "aws_ecs_task_definition" "beat" {
         {
           name  = "REDIS_URL"
           value = var.redis_url
+        },
+        {
+          name  = "WS_CONNECTIONS_TABLE"
+          value = var.ws_connections_table_name
+        },
+        {
+          name  = "WS_MANAGEMENT_API_ENDPOINT"
+          value = var.ws_management_api_endpoint
         }
       ]
       command = [

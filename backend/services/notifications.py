@@ -11,12 +11,17 @@ directly.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import uuid
 from typing import Any, Final, cast
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import redis.asyncio as aioredis
+from boto3 import client as boto3_client
+from boto3 import resource as boto3_resource
+from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 
 from backend.config import get_settings
 from backend.logging_config import get_logger
@@ -27,6 +32,8 @@ _USER_CHANNEL_PREFIX: Final[str] = "user"
 _NOTIFICATIONS_SUFFIX: Final[str] = ":notifications"
 
 _redis_client: aioredis.Redis | None = None
+_ws_ddb_resource: Any | None = None
+_ws_apigw_clients: dict[str, Any] = {}
 
 
 def _get_pubsub_url() -> str:
@@ -71,11 +78,14 @@ def get_redis() -> aioredis.Redis:
     global _redis_client
     if _redis_client is None:
         from_url = cast(Any, aioredis.from_url)
-        _redis_client = cast(aioredis.Redis, from_url(
-            _get_pubsub_url(),
-            encoding="utf-8",
-            decode_responses=True,
-        ))
+        _redis_client = cast(
+            aioredis.Redis,
+            from_url(
+                _get_pubsub_url(),
+                encoding="utf-8",
+                decode_responses=True,
+            ),
+        )
     return _redis_client
 
 
@@ -106,23 +116,102 @@ async def notify_user(user_id: str | uuid.UUID, payload: dict[str, Any]) -> int:
     """
     channel = channel_for_user(user_id)
     body = json.dumps(payload, default=str)
+    redis_delivered = 0
     try:
         client = get_redis()
-        delivered = await client.publish(channel, body)
+        redis_delivered = int(await client.publish(channel, body))
         log.info(
             "notifications.published",
             channel=channel,
             event_type=payload.get("type"),
-            delivered=delivered,
+            delivered=redis_delivered,
         )
-        return int(delivered)
     except Exception:
         log.warning(
             "notifications.publish_failed",
             channel=channel,
             exc_info=True,
         )
+
+    ws_delivered = await _notify_user_via_ws_gateway(str(user_id), body, payload)
+    return redis_delivered + ws_delivered
+
+
+def _get_ws_ddb_resource() -> Any:
+    global _ws_ddb_resource
+    if _ws_ddb_resource is None:
+        _ws_ddb_resource = boto3_resource("dynamodb")
+    return _ws_ddb_resource
+
+
+def _get_ws_apigw_client(endpoint: str) -> Any:
+    cached = _ws_apigw_clients.get(endpoint)
+    if cached is not None:
+        return cached
+    client = boto3_client("apigatewaymanagementapi", endpoint_url=endpoint)
+    _ws_apigw_clients[endpoint] = client
+    return client
+
+
+async def _notify_user_via_ws_gateway(user_id: str, body: str, payload: dict[str, Any]) -> int:
+    settings = get_settings()
+    table_name = settings.WS_CONNECTIONS_TABLE
+    endpoint = str(settings.WS_MANAGEMENT_API_ENDPOINT or "").strip()
+    if not table_name or not endpoint:
         return 0
+    try:
+        delivered = await asyncio.to_thread(
+            _push_to_ws_connections, table_name, endpoint, user_id, body
+        )
+        log.info(
+            "notifications.ws_published",
+            user_id=user_id,
+            event_type=payload.get("type"),
+            delivered=delivered,
+        )
+        return delivered
+    except Exception:
+        log.warning(
+            "notifications.ws_publish_failed",
+            user_id=user_id,
+            event_type=payload.get("type"),
+            exc_info=True,
+        )
+        return 0
+
+
+def _push_to_ws_connections(table_name: str, endpoint: str, user_id: str, body: str) -> int:
+    table = _get_ws_ddb_resource().Table(table_name)
+    response = table.query(
+        IndexName="user_id-index",
+        KeyConditionExpression=Key("user_id").eq(user_id),
+        ProjectionExpression="connection_id",
+    )
+    items = response.get("Items", [])
+    if not items:
+        return 0
+
+    ws_client = _get_ws_apigw_client(endpoint)
+    stale_connection_ids: list[str] = []
+    delivered = 0
+    data = body.encode("utf-8")
+    for item in items:
+        connection_id = item.get("connection_id")
+        if not isinstance(connection_id, str) or not connection_id:
+            continue
+        try:
+            ws_client.post_to_connection(ConnectionId=connection_id, Data=data)
+            delivered += 1
+        except ClientError as exc:
+            status = exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if status == 410:
+                stale_connection_ids.append(connection_id)
+                continue
+            raise
+
+    for stale_id in stale_connection_ids:
+        table.delete_item(Key={"connection_id": stale_id})
+    return delivered
 
 
 __all__ = [

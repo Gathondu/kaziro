@@ -78,6 +78,7 @@ jobs:
     outputs:
       api_base_url: ${{ steps.outputs.outputs.api_base_url }}
       apprunner_service_url: ${{ steps.outputs.outputs.apprunner_service_url }}
+      websocket_url: ${{ steps.outputs.outputs.websocket_url }}
       frontend_bucket_name: ${{ steps.outputs.outputs.frontend_bucket_name }}
       frontend_distribution_id: ${{ steps.outputs.outputs.frontend_distribution_id }}
       frontend_domain_name: ${{ steps.outputs.outputs.frontend_domain_name }}
@@ -116,6 +117,7 @@ jobs:
         run: |
           echo "api_base_url=$(terraform output -raw api_base_url)" >> "${GITHUB_OUTPUT}"
           echo "apprunner_service_url=$(terraform output -raw apprunner_service_url)" >> "${GITHUB_OUTPUT}"
+          echo "websocket_url=$(terraform output -raw websocket_url)" >> "${GITHUB_OUTPUT}"
           echo "frontend_bucket_name=$(terraform output -raw frontend_bucket_name)" >> "${GITHUB_OUTPUT}"
           echo "frontend_distribution_id=$(terraform output -raw frontend_cloudfront_distribution_id)" >> "${GITHUB_OUTPUT}"
           echo "frontend_domain_name=$(terraform output -raw frontend_cloudfront_domain_name)" >> "${GITHUB_OUTPUT}"
@@ -127,6 +129,7 @@ jobs:
           echo "api_base_url=$(terraform output -raw api_base_url)"
           echo "frontend_base_url=$(terraform output -raw frontend_base_url)"
           echo "apprunner_service_url=$(terraform output -raw apprunner_service_url)"
+          echo "websocket_url=$(terraform output -raw websocket_url)"
           echo "frontend_bucket_name=$(terraform output -raw frontend_bucket_name)"
           echo "frontend_distribution_id=$(terraform output -raw frontend_cloudfront_distribution_id)"
           echo "frontend_domain_name=$(terraform output -raw frontend_cloudfront_domain_name)"
@@ -171,7 +174,7 @@ jobs:
       - name: Build frontend
         env:
           PUBLIC_API_URL: ${{ needs.terraform.outputs.api_base_url }}
-          PUBLIC_WS_URL: ${{ needs.terraform.outputs.apprunner_service_url }}
+          PUBLIC_WS_URL: ${{ needs.terraform.outputs.websocket_url }}
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
           PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
         run: pnpm build

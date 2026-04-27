@@ -75,6 +75,13 @@ module "apigw" {
   apprunner_url = "https://${module.apprunner.service_url}"
 }
 
+module "ws_realtime" {
+  source            = "../../modules/ws_realtime"
+  environment       = local.environment
+  project           = var.project
+  http_api_base_url = module.apigw.api_endpoint
+}
+
 module "ecs_celery" {
   source                     = "../../modules/ecs_celery"
   environment                = local.environment
@@ -85,6 +92,10 @@ module "ecs_celery" {
   backend_runtime_secret_arn = module.secrets.backend_runtime_secret_arn
   worker_desired_count       = var.worker_desired_count
   redis_url                  = local.redis_url
+  ws_connections_table_name  = module.ws_realtime.connections_table_name
+  ws_connections_table_arn   = module.ws_realtime.connections_table_arn
+  ws_management_api_endpoint = module.ws_realtime.management_api_endpoint
+  ws_management_api_arn      = module.ws_realtime.websocket_execution_arn
 }
 
 module "frontend_static" {

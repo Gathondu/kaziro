@@ -37,14 +37,21 @@ export function subscribeNotifications(handler: Handler): () => void {
 }
 
 function wsUrl(token: string): string {
-	const base = getPublicWsUrl() ?? getPublicApiUrl();
+	const explicitWsBase = getPublicWsUrl();
+	const fallbackApiBase = getPublicApiUrl();
+	const base = explicitWsBase ?? (fallbackApiBase.includes('localhost') ? fallbackApiBase : undefined);
+	if (!base) {
+		return '';
+	}
 	const u = new URL(base);
 	if (u.protocol === 'https:') {
 		u.protocol = 'wss:';
 	} else if (u.protocol === 'http:') {
 		u.protocol = 'ws:';
 	}
-	u.pathname = '/api/v1/ws/notifications';
+	if (!explicitWsBase) {
+		u.pathname = '/api/v1/ws/notifications';
+	}
 	u.search = '';
 	u.searchParams.set('token', token);
 	return u.toString();
@@ -119,6 +126,11 @@ function scheduleReconnect(): void {
 export function connectNotifications(token: string): void {
 	if (!browser) return;
 	currentToken = token;
+	const explicitWsBase = getPublicWsUrl();
+	const url = wsUrl(token);
+	if (!url) {
+		return;
+	}
 	if (
 		socket &&
 		(socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)
@@ -129,7 +141,7 @@ export function connectNotifications(token: string): void {
 	clearTimers();
 
 	try {
-		socket = new WebSocket(wsUrl(token));
+		socket = new WebSocket(url);
 	} catch (e) {
 		logger.error('notifications.ws_construct_failed', e);
 		scheduleReconnect();
@@ -169,6 +181,7 @@ export function connectNotifications(token: string): void {
 
 	heartbeatTimer = setInterval(() => {
 		if (!socket || socket.readyState !== WebSocket.OPEN) return;
+		if (explicitWsBase) return;
 		if (Date.now() - lastServerMessageAt > 90_000) {
 			logger.warn('notifications.stale_connection');
 			socket.close();
