@@ -12,9 +12,9 @@ SvelteKit file-based routing tree under `frontend/src/routes/`.
 ```
 src/routes/
 ├── +layout.svelte                 # Auth gate, top nav, toast container
-├── +layout.ts                     # Root layout load (appearance cookie)
+├── +layout.server.ts              # Root layout load: `appearance` cookie (default `system` → OS preference)
 ├── +error.svelte                  # Global error fallback
-├── (marketing)/                   # `/`, `/privacy`, `/terms` — always light `terracotta` (scoped `data-theme`, ignores user theme)
+├── (marketing)/                   # `/`, `/privacy`, `/terms` — inherits `<html data-theme>` (same as app); `data-marketing-surface` tweaks light-terracotta text only
 │   ├── +layout.svelte
 │   ├── +page.server.ts            # `/` SSR redirect if authed; SEO data
 │   ├── +page.svelte               # Landing

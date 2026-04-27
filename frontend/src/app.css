@@ -141,9 +141,9 @@
 }
 
 /*
- * Marketing routes only (`(marketing)/+layout.svelte`): slightly stronger body text on cream.
- * Light terracotta on `<html>` stays at tailwind theme `base-content`; app pages unchanged.
+ * Marketing routes only (`(marketing)/+layout.svelte`): slightly stronger body text on cream
+ * when the document theme is light terracotta. Theme comes from `<html data-theme>` (cookie / system).
  */
-[data-marketing-surface][data-theme='terracotta'] {
+html[data-theme='terracotta'] [data-marketing-surface] {
 	--bc: 24.3379% 0.013746 41.611483;
 }

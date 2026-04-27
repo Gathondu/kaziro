@@ -1,12 +1,19 @@
 <script lang="ts">
-	/** Light veil only — kept subtle so terracotta badges stay vivid on white cards */
+	/**
+	 * Theme-aware top fade only (uses `base-content` alpha). Avoids a fixed cream radial on dark
+	 * mode, which sat on top of the step discs and read like a white haze.
+	 */
 	const sectionVeilClass =
-		'pointer-events-none absolute inset-0 bg-[radial-gradient(95%_72%_at_50%_-8%,rgba(245,237,230,0.2)_0%,rgba(245,237,230,0.06)_38%,transparent_62%)]';
+		'pointer-events-none absolute inset-0 bg-gradient-to-b from-base-content/[0.06] via-transparent to-transparent';
 
-	/** BR diagonal (to-br) + restrained highlight so orange reads as the hero, not the gloss */
+	/**
+	 * Colour lives only in the `background-image` gradient (clipped by `rounded-full`) — no inset
+	 * white “gloss” shadows, which looked like a layer above the orange on light and dark themes.
+	 */
 	const stepBadgeClass =
-		'mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary via-[#c45f3f] to-primary-focus text-lg font-bold text-primary-content ' +
-		'shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-12px_20px_-14px_rgba(48,26,18,0.28),0_10px_28px_-8px_rgba(201,106,74,0.55)]';
+		'mx-auto mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-full ' +
+		'bg-gradient-to-br from-[#d88366] via-primary to-primary-focus ' +
+		'text-lg font-bold text-primary-content shadow-md shadow-primary/40';
 </script>
 
 <section

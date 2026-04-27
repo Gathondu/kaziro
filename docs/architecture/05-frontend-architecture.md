@@ -30,7 +30,7 @@
 frontend/src/
 ├── routes/                       # SvelteKit pages
 │   ├── +layout.svelte            # Root layout (auth guard, nav)
-│   ├── +layout.ts                # Root load (auth check)
+│   ├── +layout.server.ts         # Root load (appearance cookie → theme)
 │   ├── onboarding/
 │   ├── dashboard/
 │   ├── jobs/
