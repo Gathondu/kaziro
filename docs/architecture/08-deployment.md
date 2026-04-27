@@ -173,8 +173,12 @@ PR (preview URL). PR previews are commented on by the Vercel bot.
 - **AWS (`deploy-aws.yml`)**: After the backend image is pushed to ECR, a
   **`db-migrate`** job loads `kaziro/<environment>/backend/runtime-env-json`
   from Secrets Manager (same JSON as `KAZIRO_BACKEND_ENV_JSON` on App Runner),
-  runs `alembic upgrade head` inside that image, then Terraform applies.
-  Failed migrations stop the workflow before infra rollout.
+  injects **`REDIS_URL`** from the GitHub Environment secret of the same name
+  (App Runner gets Redis from Terraform, not from that JSON — Alembic still
+  needs `Settings()` to load). Run `terraform output -raw redis_url` in the
+  matching environment once, then store it as **`REDIS_URL`** on the
+  **staging** / **production** GitHub Environment. Then `alembic upgrade head`
+  runs inside the pushed image; Terraform applies after success.
 - **Kubernetes** (if used): migrations run as a `Job` **before** new backend
   pods roll out (same compatibility rules as below).
 - Always **backwards-compatible** between “migrate” and “new API revision live”:

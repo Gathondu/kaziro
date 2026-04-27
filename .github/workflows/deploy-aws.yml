@@ -94,8 +94,15 @@ jobs:
         env:
           IMAGE_URI: ${{ needs.backend-image.outputs.image_uri }}
           DEPLOY_ENV: ${{ needs.select-environment.outputs.deploy_env }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: |
           set -euo pipefail
+          if [[ -z "${REDIS_URL}" ]]; then
+            echo "Set GitHub Environment secret REDIS_URL to the Valkey URL for this env"
+            echo "(same as Terraform local.redis_url / App Runner REDIS_URL), e.g."
+            echo "  terraform output -raw redis_url"
+            exit 1
+          fi
           SECRET_ID="kaziro/${DEPLOY_ENV}/backend/runtime-env-json"
           aws secretsmanager get-secret-value \
             --secret-id "${SECRET_ID}" \
@@ -105,6 +112,7 @@ jobs:
           rm -f /tmp/kaziro-runtime-env.json
           docker run --rm \
             -e KAZIRO_BACKEND_ENV_JSON \
+            -e REDIS_URL \
             "${IMAGE_URI}" \
             python backend/docker/entrypoint.py \
             sh -c "cd backend && alembic upgrade head"
