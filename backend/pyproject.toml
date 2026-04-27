@@ -9,7 +9,7 @@ authors = [{ name = "Kaziro" }]
 
 dependencies = [
     # Web framework
-    "fastapi>=0.115,<0.116",
+    "fastapi>=0.115,<0.137",
     "uvicorn[standard]>=0.32",
     # Validation & settings
     "pydantic[email]>=2.9,<3.0",
