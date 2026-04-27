@@ -1,7 +1,7 @@
 # Deployment
 
 **Status**: Active
-**Last updated**: 2026-04-22
+**Last updated**: 2026-04-27
 **Source**: Sections 2.3 and 9.2 of [`Kaziro_Design_Document.pdf`](../../Kaziro_Design_Document.pdf)
 **Related ADRs**: [ADR-0003](../decisions/ADR-0003-auth-supabase.md), [ADR-0004](../decisions/ADR-0004-task-queue-celery-redis.md), [ADR-0007](../decisions/ADR-0007-frontend-sveltekit.md)
 **Code (target)**: `infra/`, `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml`, `.github/workflows/`
@@ -169,13 +169,20 @@ PR (preview URL). PR previews are commented on by the Vercel bot.
 
 ## 7. Database migrations
 
-- Migrations run as a Kubernetes `Job` triggered by the deploy pipeline
-  **before** the new backend pods roll out.
-- Always backwards-compatible: never drop a column or rename in the same
-  release as the code that uses it. Two-phase migrations (add → backfill →
-  switch reads → drop old).
-- The migration job uses the **service-role** Supabase key — RLS bypassed.
-- Failed migrations halt the deploy and trigger a rollback.
+- **Local**: `make migrate` (Alembic `upgrade head`) against your Postgres.
+- **AWS (`deploy-aws.yml`)**: After the backend image is pushed to ECR, a
+  **`db-migrate`** job loads `kaziro/<environment>/backend/runtime-env-json`
+  from Secrets Manager (same JSON as `KAZIRO_BACKEND_ENV_JSON` on App Runner),
+  runs `alembic upgrade head` inside that image, then Terraform applies.
+  Failed migrations stop the workflow before infra rollout.
+- **Kubernetes** (if used): migrations run as a `Job` **before** new backend
+  pods roll out (same compatibility rules as below).
+- Always **backwards-compatible** between “migrate” and “new API revision live”:
+  never drop a column or rename in the same release as the code that depends on
+  it. Prefer two-phase migrations (add → backfill → switch reads → drop old).
+- The migration job uses credentials from the runtime secret (typically
+  **service-role** DB access where applicable) — RLS may be bypassed for DDL.
+- Failed migrations halt the deploy; fix forward or roll back the migration.
 
 ## 8. Configuration
 

@@ -69,11 +69,51 @@ jobs:
           docker push "${IMAGE_URI}"
           echo "image_uri=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
 
-  terraform:
+  # Apply DB schema before Terraform rolls App Runner / workers to the new image.
+  # Requires the deploy IAM principal to have secretsmanager:GetSecretValue on
+  # kaziro/<env>/backend/runtime-env-json (same JSON as KAZIRO_BACKEND_ENV_JSON on App Runner).
+  db-migrate:
     runs-on: ubuntu-latest
     needs:
       - select-environment
       - backend-image
+    environment: ${{ needs.select-environment.outputs.deploy_env }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Alembic upgrade (runtime image)
+        shell: bash
+        env:
+          IMAGE_URI: ${{ needs.backend-image.outputs.image_uri }}
+          DEPLOY_ENV: ${{ needs.select-environment.outputs.deploy_env }}
+        run: |
+          set -euo pipefail
+          SECRET_ID="kaziro/${DEPLOY_ENV}/backend/runtime-env-json"
+          aws secretsmanager get-secret-value \
+            --secret-id "${SECRET_ID}" \
+            --query SecretString \
+            --output text > /tmp/kaziro-runtime-env.json
+          export KAZIRO_BACKEND_ENV_JSON="$(cat /tmp/kaziro-runtime-env.json)"
+          rm -f /tmp/kaziro-runtime-env.json
+          docker run --rm \
+            -e KAZIRO_BACKEND_ENV_JSON \
+            "${IMAGE_URI}" \
+            python backend/docker/entrypoint.py \
+            sh -c "cd backend && alembic upgrade head"
+
+  terraform:
+    runs-on: ubuntu-latest
+    needs:
+      - select-environment
+      - db-migrate
     environment: ${{ needs.select-environment.outputs.deploy_env }}
     outputs:
       api_base_url: ${{ steps.outputs.outputs.api_base_url }}
