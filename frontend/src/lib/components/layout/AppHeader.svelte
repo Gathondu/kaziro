@@ -42,7 +42,7 @@
 
 	async function logout(): Promise<void> {
 		await signOutEverywhere();
-		await goto('/login');
+		await goto('/');
 	}
 </script>
 

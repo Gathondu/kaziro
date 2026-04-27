@@ -114,7 +114,7 @@
 			await postDisableOwnAccount();
 			deleteModalOpen = false;
 			await signOutEverywhere();
-			await goto('/login');
+			await goto('/');
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : 'Something went wrong';
 			deleteModalError = msg;
