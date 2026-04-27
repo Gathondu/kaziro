@@ -1,7 +1,7 @@
 # Environment Variables Reference
 
 **Status**: Living
-**Last updated**: 2026-04-22
+**Last updated**: 2026-04-27
 **Source**: Kaziro Design Document §13 + `.cursor/rules/002-backend.mdc`
 **Related**: [`docs/architecture/08-deployment.md`](../architecture/08-deployment.md), [`docs/architecture/07-security.md`](../architecture/07-security.md)
 
@@ -138,6 +138,7 @@ Frontend env vars are exposed to the browser only when prefixed with
 | `PUBLIC_SUPABASE_ANON_KEY` | Yes      | —             | Mirrors `SUPABASE_ANON_KEY`.                             |
 | `PUBLIC_SENTRY_DSN`        | No       | —             | Browser Sentry DSN.                                      |
 | `PUBLIC_APP_ENV`           | No       | `development` | Surfaces in error reports + dev-tooling.                 |
+| `PUBLIC_SITE_URL`          | No       | —               | Canonical public site origin (no trailing slash) for SEO on `/` (`canonical`, `og:url`). When unset, the app uses the incoming request origin. |
 
 ## Local dev only
 

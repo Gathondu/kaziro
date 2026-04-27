@@ -44,6 +44,7 @@
 		"vitest": "^2.1.4"
 	},
 	"dependencies": {
+		"@supabase/ssr": "^0.10.2",
 		"@supabase/supabase-js": "^2.45.6",
 		"@tanstack/query-persist-client-core": "^5.90.2",
 		"@tanstack/query-sync-storage-persister": "^5.90.2",

@@ -65,6 +65,12 @@ export default [
 		}
 	},
 	{
+		files: ['src/lib/components/seo/JsonLdInline.svelte'],
+		rules: {
+			'svelte/no-at-html-tags': 'off'
+		}
+	},
+	{
 		ignores: [
 			'build/**',
 			'.svelte-kit/**',

@@ -1,7 +1,7 @@
 # Frontend Routes
 
 **Status**: Active
-**Last updated**: 2026-04-22
+**Last updated**: 2026-04-27
 **Source**: Section 7.1 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
 **Related**: [`../../architecture/05-frontend-architecture.md`](../../architecture/05-frontend-architecture.md)
 
@@ -12,9 +12,12 @@ SvelteKit file-based routing tree under `frontend/src/routes/`.
 ```
 src/routes/
 ├── +layout.svelte                 # Auth gate, top nav, toast container
-├── +layout.ts                     # Server-side auth check + Supabase client
+├── +layout.ts                     # Root layout load (appearance cookie)
+├── +page.server.ts                # Marketing landing: SSR redirect to /dashboard if Supabase user; SEO data
 ├── +error.svelte                  # Global error fallback
-├── +page.svelte                   # Marketing landing (unauth) → redirects to /dashboard if authed
+├── +page.svelte                   # Marketing landing (public copy + CTAs)
+├── privacy/+page.svelte           # Privacy placeholder (noindex until real policy)
+├── terms/+page.svelte             # Terms placeholder (noindex until real terms)
 ├── login/
 │   └── +page.svelte
 ├── signup/
@@ -23,7 +26,7 @@ src/routes/
 │   ├── +page.svelte               # Step 1 — basic profile
 │   ├── upload-cv/+page.svelte     # Step 2 — CV upload
 │   └── preferences/+page.svelte   # Step 3 — first job-search config
-├── (app)/                         # Auth-gated route group
+├── (app)/                         # Auth-gated route group (`noindex` in layout `<svelte:head>`)
 │   ├── +layout.svelte             # Sidebar nav, WS subscription mount
 │   ├── dashboard/
 │   │   └── +page.svelte           # KPIs + activity feed
@@ -45,13 +48,24 @@ src/routes/
 └── api/                           # SvelteKit server endpoints (proxy / BFF if needed)
 ```
 
+Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hooks.server.ts)
+(`createServerClient` from `@supabase/ssr`, per-request `event.locals.supabase`).
+
 ## Route specs
 
 ### `/` (landing)
 
-- Public marketing page.
-- If session detected, redirect to `/dashboard` server-side in `+page.ts`
-  `load`.
+- Public marketing page (hero, features, how-it-works, footer with legal links).
+- If a **verified** Supabase user is present (cookie session), redirect to
+  `/dashboard` from [`+page.server.ts`](../../../frontend/src/routes/+page.server.ts)
+  (`getUser()`), not from client-only effects.
+- SEO: `<title>`, meta description, canonical, Open Graph, Twitter card, JSON-LD
+  `WebSite` — canonical base from `PUBLIC_SITE_URL` when set, else request origin.
+
+### `/privacy` & `/terms`
+
+- Public placeholder pages (“policy / terms coming soon”) linked from the landing footer.
+- `noindex,nofollow` until real legal copy replaces the placeholders.
 
 ### `/login` & `/signup`
 

@@ -1,28 +1,37 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { goto } from '$app/navigation';
-	import { getUser, isAuthReady } from '$lib/stores/auth';
-	import Button from '$lib/components/ui/Button.svelte';
+	import LandingFeatures from '$lib/components/landing/LandingFeatures.svelte';
+	import LandingFooter from '$lib/components/landing/LandingFooter.svelte';
+	import LandingHeader from '$lib/components/landing/LandingHeader.svelte';
+	import LandingHero from '$lib/components/landing/LandingHero.svelte';
+	import LandingHowItWorks from '$lib/components/landing/LandingHowItWorks.svelte';
+	import JsonLdInline from '$lib/components/seo/JsonLdInline.svelte';
+	import type { PageProps } from './$types';
 
-	$effect(() => {
-		if (!browser || !isAuthReady()) return;
-		if (getUser()) {
-			void goto('/dashboard');
-		}
-	});
+	let { data }: PageProps = $props();
 </script>
 
 <svelte:head>
-	<title>Kaziro</title>
+	<title>{data.seo.title}</title>
+	<meta name="description" content={data.seo.description} />
+	<link rel="canonical" href={data.canonicalUrl} />
+	<meta property="og:title" content={data.seo.title} />
+	<meta property="og:description" content={data.seo.description} />
+	<meta property="og:url" content={data.canonicalUrl} />
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content={data.seo.siteName} />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content={data.seo.title} />
+	<meta name="twitter:description" content={data.seo.description} />
 </svelte:head>
 
-<main class="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
-	<h1 class="text-3xl font-semibold text-primary">Kaziro</h1>
-	<p class="text-base leading-relaxed text-base-content/80">
-		AI-assisted job search, evaluation, and tailored applications — warm, focused, and fast.
-	</p>
-	<div class="flex flex-wrap gap-3">
-		<a href="/login"><Button>Log in</Button></a>
-		<a href="/signup"><Button variant="outline">Create account</Button></a>
-	</div>
-</main>
+<JsonLdInline jsonLd={data.jsonLd} />
+
+<div class="flex min-h-screen flex-col">
+	<LandingHeader />
+	<main class="flex-1">
+		<LandingHero />
+		<LandingFeatures />
+		<LandingHowItWorks />
+	</main>
+	<LandingFooter />
+</div>
