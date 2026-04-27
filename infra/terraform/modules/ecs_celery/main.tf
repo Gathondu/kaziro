@@ -169,7 +169,8 @@ resource "aws_ecs_task_definition" "beat" {
         "-A",
         "backend.tasks.celery_app:celery_app",
         "beat",
-        "--loglevel=INFO"
+        "--loglevel=INFO",
+        "--schedule=/tmp/celerybeat-schedule"
       ]
       secrets = [
         {
