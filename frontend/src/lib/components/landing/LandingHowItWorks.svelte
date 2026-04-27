@@ -5,15 +5,6 @@
 	 */
 	const sectionVeilClass =
 		'pointer-events-none absolute inset-0 bg-gradient-to-b from-base-content/[0.06] via-transparent to-transparent';
-
-	/**
-	 * Colour lives only in the `background-image` gradient (clipped by `rounded-full`) — no inset
-	 * white “gloss” shadows, which looked like a layer above the orange on light and dark themes.
-	 */
-	const stepBadgeClass =
-		'mx-auto mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-full ' +
-		'bg-gradient-to-br from-[#d88366] via-primary to-primary-focus ' +
-		'text-lg font-bold text-primary-content shadow-md shadow-primary/40';
 </script>
 
 <section
@@ -33,27 +24,27 @@
 		</h2>
 		<div class="grid gap-6 md:grid-cols-3">
 			<div
-				class="rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center shadow-lg ring-1 ring-base-content/10"
+				class="shadow-marketing-card rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center ring-1 ring-base-content/10"
 			>
-				<span class={stepBadgeClass}>1</span>
+				<span class="landing-step-disc mx-auto mb-4">1</span>
 				<h3 class="mb-2 text-lg font-bold text-base-content">Create your profile</h3>
 				<p class="text-sm leading-relaxed text-base-content/90">
 					Add your experience, skills, and job preferences so evaluations are grounded in you.
 				</p>
 			</div>
 			<div
-				class="rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center shadow-lg ring-1 ring-base-content/10"
+				class="shadow-marketing-card rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center ring-1 ring-base-content/10"
 			>
-				<span class={stepBadgeClass}>2</span>
+				<span class="landing-step-disc mx-auto mb-4">2</span>
 				<h3 class="mb-2 text-lg font-bold text-base-content">Discover &amp; review</h3>
 				<p class="text-sm leading-relaxed text-base-content/90">
 					See surfaced roles with fit summaries and company context before you invest time.
 				</p>
 			</div>
 			<div
-				class="rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center shadow-lg ring-1 ring-base-content/10"
+				class="shadow-marketing-card rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center ring-1 ring-base-content/10"
 			>
-				<span class={stepBadgeClass}>3</span>
+				<span class="landing-step-disc mx-auto mb-4">3</span>
 				<h3 class="mb-2 text-lg font-bold text-base-content">Apply with polish</h3>
 				<p class="text-sm leading-relaxed text-base-content/90">
 					Generate tailored documents when you are ready, then send with confidence.

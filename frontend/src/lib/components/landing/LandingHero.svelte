@@ -23,7 +23,7 @@
 			AI-assisted job search
 		</p>
 		<div
-			class="rounded-3xl border border-base-content/20 bg-base-100/95 p-8 shadow-2xl shadow-primary/20 ring-1 ring-base-content/10 backdrop-blur-md sm:p-12"
+			class="shadow-marketing-hero rounded-3xl border border-base-content/20 bg-base-100/95 p-8 ring-1 ring-base-content/10 backdrop-blur-md sm:p-12"
 		>
 			<div class="mx-auto flex max-w-3xl flex-col gap-6 text-center">
 				<h1
@@ -40,12 +40,7 @@
 				<div
 					class="flex flex-wrap justify-center gap-3 border-t border-base-content/5 pt-2 sm:pt-4"
 				>
-					<a
-						href="/signup"
-						class="btn btn-primary rounded-2xl px-8 font-semibold shadow-lg shadow-primary/30 transition motion-safe:hover:brightness-110"
-					>
-						Create account
-					</a>
+					<a href="/signup" class="landing-cta-primary">Create account</a>
 					<a
 						href="/login"
 						class="btn btn-outline rounded-2xl border-base-content/30 bg-base-100 font-semibold text-base-content shadow-sm transition hover:border-primary hover:bg-base-200 hover:text-base-content"

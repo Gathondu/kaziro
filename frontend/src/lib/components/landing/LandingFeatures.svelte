@@ -44,15 +44,13 @@
 			{#each features as item (item.title)}
 				{@const Icon = item.icon}
 				<div
-					class="group relative overflow-hidden rounded-2xl border border-base-content/10 bg-gradient-to-br from-base-100 via-base-100 to-base-200/80 p-6 shadow-lg ring-1 ring-base-content/5 transition motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-primary/10"
+					class="shadow-marketing-card group relative overflow-hidden rounded-2xl border border-base-content/10 bg-gradient-to-br from-base-100 via-base-100 to-base-200/80 p-6 ring-1 ring-base-content/5 transition motion-safe:hover:-translate-y-1"
 				>
 					<div
 						class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 transition group-hover:opacity-100 motion-reduce:group-hover:opacity-0"
 						aria-hidden="true"
 					></div>
-					<div
-						class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/25 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20"
-					>
+					<div class="landing-icon-well mb-4">
 						<Icon class="h-7 w-7" aria-hidden="true" />
 					</div>
 					<h3 class="mb-2 text-lg font-bold text-base-content">{item.title}</h3>

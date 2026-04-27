@@ -35,7 +35,7 @@
 			{#each reasons as item, i (item.title)}
 				{@const Icon = item.icon}
 				<div
-					class="relative overflow-hidden rounded-2xl border border-base-content/20 bg-gradient-to-br from-base-100 to-base-200 p-8 shadow-md ring-1 ring-base-content/10"
+					class="shadow-marketing-card relative overflow-hidden rounded-2xl border border-base-content/20 bg-gradient-to-br from-base-100 to-base-200 p-8 ring-1 ring-base-content/10"
 				>
 					<span
 						class="text-primary/18 absolute right-6 top-6 text-5xl font-black leading-none"
@@ -43,9 +43,7 @@
 					>
 						{String(i + 1).padStart(2, '0')}
 					</span>
-					<div
-						class="relative mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/25 text-primary ring-1 ring-primary/40"
-					>
+					<div class="landing-icon-well landing-icon-well--sm relative mb-5">
 						<Icon class="h-6 w-6" aria-hidden="true" />
 					</div>
 					<h3 class="relative mb-2 text-xl font-bold text-base-content">{item.title}</h3>
