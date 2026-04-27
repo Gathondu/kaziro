@@ -4,7 +4,7 @@
 		name="description"
 		content="Kaziro is preparing its terms and conditions. This page will be updated when they are published."
 	/>
-	<meta name="robots" content="noindex,nofollow" />
+	<meta name="robots" content="index,follow" />
 </svelte:head>
 
 <div class="mx-auto flex max-w-lg flex-col gap-6 px-4 py-16">

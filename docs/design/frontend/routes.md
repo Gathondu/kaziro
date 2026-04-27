@@ -16,16 +16,16 @@ src/routes/
 ├── +page.server.ts                # Marketing landing: SSR redirect to /dashboard if Supabase user; SEO data
 ├── +error.svelte                  # Global error fallback
 ├── +page.svelte                   # Marketing landing (public copy + CTAs)
-├── privacy/+page.svelte           # Privacy placeholder (noindex until real policy)
-├── terms/+page.svelte             # Terms placeholder (noindex until real terms)
-├── login/
-│   └── +page.svelte
-├── signup/
-│   └── +page.svelte
-├── onboarding/
-│   ├── +page.svelte               # Step 1 — basic profile
-│   ├── upload-cv/+page.svelte     # Step 2 — CV upload
-│   └── preferences/+page.svelte   # Step 3 — first job-search config
+├── privacy/+page.svelte           # Public legal (`index,follow`)
+├── terms/+page.svelte             # Public legal (`index,follow`)
+├── (auth)/                        # `noindex` in `+layout.svelte`
+│   ├── +layout.svelte
+│   ├── login/+page.svelte
+│   ├── signup/+page.svelte
+│   └── forgot-password/+page.svelte
+├── (onboarding)/                  # `noindex` in `+layout.svelte`
+│   ├── +layout.svelte
+│   └── onboarding/                # step routes (about-you, cv, config, …)
 ├── (app)/                         # Auth-gated route group (`noindex` in layout `<svelte:head>`)
 │   ├── +layout.svelte             # Sidebar nav, WS subscription mount
 │   ├── dashboard/
@@ -56,6 +56,7 @@ Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hook
 ### `/` (landing)
 
 - Public marketing page (hero, features, how-it-works, footer with legal links).
+- **`index,follow`** in `<svelte:head>` — primary marketing URL; `/privacy` and `/terms` are also indexable public pages.
 - If a **verified** Supabase user is present (cookie session), redirect to
   `/dashboard` from [`+page.server.ts`](../../../frontend/src/routes/+page.server.ts)
   (`getUser()`), not from client-only effects.
@@ -64,17 +65,19 @@ Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hook
 
 ### `/privacy` & `/terms`
 
-- Public placeholder pages (“policy / terms coming soon”) linked from the landing footer.
-- `noindex,nofollow` until real legal copy replaces the placeholders.
+- Public pages (placeholders until full policy/terms ship) linked from the landing footer.
+- **`index,follow`** — indexed alongside `/` as public-facing site pages.
 
 ### `/login` & `/signup`
 
+- Under `(auth)/+layout.svelte`: **`noindex,nofollow`** (auth is never indexed).
 - Forms posting to Supabase Auth via `@supabase/supabase-js`.
 - After success, redirect target is `?redirect=...` query param or
   `/dashboard`.
 
 ### `/onboarding/*`
 
+- **`noindex,nofollow`** via `(onboarding)/+layout.svelte` (post-auth flow, not public marketing).
 - Full-screen **step flow** (no tab strip): linear profile steps
   `/onboarding/about-you` → `summary` → `domain` → `experience` →
   `skills`, then **CV** (`/onboarding/cv`), then **first job search
@@ -166,8 +169,10 @@ Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hook
 
 ## SEO & meta
 
-- `<svelte:head>` per page sets `title`, `description`, and `og:image`.
-- `robots: noindex` on every authenticated route.
+- `<svelte:head>` per page sets `title`, `description`, and (where relevant) `og:image`.
+- **Indexable:** **`/`** (full SEO on [`+page.svelte`](../../../frontend/src/routes/+page.svelte)), **`/privacy`**, **`/terms`**
+  (`index,follow` + title/description on each page).
+- **Not indexable:** `(app)/*`, `(auth)/*`, `(onboarding)/*` — group layouts use `meta name="robots" content="noindex,nofollow"`.
 
 ## Adding a new route — checklist
 

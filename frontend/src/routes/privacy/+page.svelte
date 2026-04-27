@@ -4,7 +4,7 @@
 		name="description"
 		content="Kaziro is preparing its privacy policy. This page will be updated when the policy is published."
 	/>
-	<meta name="robots" content="noindex,nofollow" />
+	<meta name="robots" content="index,follow" />
 </svelte:head>
 
 <div class="mx-auto flex max-w-lg flex-col gap-6 px-4 py-16">
@@ -14,8 +14,8 @@
 		your personal information when you use Kaziro.
 	</p>
 	<p class="leading-relaxed text-base-content/80">
-		If you have questions in the meantime, reach out through any contact option we publish on the site
-		or in the product once you have an account.
+		If you have questions in the meantime, reach out through any contact option we publish on the
+		site or in the product once you have an account.
 	</p>
 	<p>
 		<a href="/" class="link link-primary font-medium">Back to home</a>

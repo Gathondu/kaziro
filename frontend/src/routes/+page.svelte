@@ -11,6 +11,7 @@
 </script>
 
 <svelte:head>
+	<meta name="robots" content="index,follow" />
 	<title>{data.seo.title}</title>
 	<meta name="description" content={data.seo.description} />
 	<link rel="canonical" href={data.canonicalUrl} />
