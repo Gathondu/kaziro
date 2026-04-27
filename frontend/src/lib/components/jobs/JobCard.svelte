@@ -41,7 +41,7 @@
 		></span>
 	</span>
 	<span
-		class="relative z-10 block m-0.5 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
+		class="relative z-10 m-0.5 block rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
 	>
 		<div class="flex flex-wrap items-start justify-between gap-2">
 			<div>

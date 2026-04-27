@@ -60,7 +60,8 @@
 			>
 				<UserRound class="size-6" aria-hidden="true" />
 				<span
-					class="absolute bottom-1 right-1 size-2 rounded-full ring-2 ring-base-100 {wsState === 'live'
+					class="absolute bottom-1 right-1 size-2 rounded-full ring-2 ring-base-100 {wsState ===
+					'live'
 						? 'bg-success'
 						: wsState === 'pending'
 							? 'bg-warning'

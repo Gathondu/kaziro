@@ -21,10 +21,7 @@
 
 	$effect(() => {
 		if (!browser || !isAuthReady() || verifyingAppAccount) return;
-		if (
-			!showedDeactivatedFromQuery &&
-			$page.url.searchParams.get('deactivated') === '1'
-		) {
+		if (!showedDeactivatedFromQuery && $page.url.searchParams.get('deactivated') === '1') {
 			showedDeactivatedFromQuery = true;
 			formError =
 				'This account has been deactivated. Contact support if you believe this is a mistake.';

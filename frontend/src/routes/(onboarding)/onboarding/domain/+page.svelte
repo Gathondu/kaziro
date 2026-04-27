@@ -5,7 +5,11 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { onboardingDomainSchema } from '$lib/schemas/profile';
 	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
-	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
+	import {
+		loadOnboardingDraft,
+		resumeOnboardingPath,
+		saveOnboardingDraft
+	} from '$lib/utils/onboarding';
 	import { get } from 'svelte/store';
 
 	const DOMAIN_MAX = 100;

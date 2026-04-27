@@ -7,7 +7,11 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { putProfile, uploadCvPdf } from '$lib/api/profile';
 	import { FETCH_CRON_DAILY } from '$lib/constants/fetchSchedule';
-	import { useCreateJobConfig, useRunJobConfigPipeline, useSchedulePresets } from '$lib/hooks/useJobConfig';
+	import {
+		useCreateJobConfig,
+		useRunJobConfigPipeline,
+		useSchedulePresets
+	} from '$lib/hooks/useJobConfig';
 	import { jobConfigFormSchema } from '$lib/schemas/jobConfig';
 	import {
 		clearOnboardingDraft,
@@ -173,7 +177,11 @@
 	{/if}
 	<label class="form-control">
 		<span class="label-text font-medium">Config name (optional)</span>
-		<input class="input input-bordered rounded-xl border-base-300 bg-base-200" bind:value={name} />
+		<input
+			class="input input-bordered rounded-xl border-base-300 bg-base-200"
+			bind:value={name}
+			oninput={onNameInput}
+		/>
 	</label>
 	<label class="form-control">
 		<span class="label-text font-medium">Keywords (comma-separated)</span>

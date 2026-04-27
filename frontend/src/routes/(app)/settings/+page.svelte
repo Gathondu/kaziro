@@ -47,7 +47,7 @@
 	<div
 		class="sticky top-0 z-10 -mx-1 mb-6 flex flex-wrap items-center justify-between gap-3 bg-base-100/95 px-1 py-1 backdrop-blur"
 	>
-		<div class="tabs tabs-boxed w-fit rounded-xl border border-base-300 bg-base-200 p-1">
+		<div class="tabs-boxed tabs w-fit rounded-xl border border-base-300 bg-base-200 p-1">
 			<a
 				class="tab rounded-lg {activeTab === 'job-configs' ? 'tab-active' : ''}"
 				href="/settings?tab=job-configs">Job configs</a
@@ -58,7 +58,8 @@
 			>
 		</div>
 		{#if activeTab === 'job-configs'}
-			<Button variant="primary" class="shrink-0" onclick={openCreateEditor}>{addConfigLabel}</Button>
+			<Button variant="primary" class="shrink-0" onclick={openCreateEditor}>{addConfigLabel}</Button
+			>
 		{/if}
 	</div>
 

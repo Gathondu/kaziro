@@ -36,6 +36,5 @@
 	class="{variantClass} rounded-xl {className}"
 	{disabled}
 	{onclick}
-	aria-label={ariaLabel}
-	>{@render children()}</button
+	aria-label={ariaLabel}>{@render children()}</button
 >

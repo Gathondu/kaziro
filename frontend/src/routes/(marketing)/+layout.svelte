@@ -8,6 +8,10 @@
 	const { children }: { children: Snippet } = $props();
 </script>
 
-<div data-theme="terracotta" class="min-h-screen bg-base-100 text-base-content">
+<div
+	data-theme="terracotta"
+	data-marketing-surface
+	class="min-h-screen bg-gradient-to-b from-base-100 via-base-100 to-base-200 text-base-content antialiased"
+>
 	{@render children()}
 </div>

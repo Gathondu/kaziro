@@ -25,27 +25,40 @@
 	] as const;
 </script>
 
-<section class="mx-auto max-w-6xl px-4 py-16 sm:py-20" aria-labelledby="features-heading">
-	<h2
-		id="features-heading"
-		class="mb-10 text-center text-2xl font-semibold text-base-content sm:text-3xl"
-	>
-		What Kaziro does for you
-	</h2>
-	<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-		{#each features as item (item.title)}
-			{@const Icon = item.icon}
-			<div class="card border border-base-300/80 bg-base-100 shadow-sm">
-				<div class="card-body gap-3 p-6">
+<section class="relative px-4 py-16 sm:py-24" aria-labelledby="features-heading">
+	<div
+		class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"
+		aria-hidden="true"
+	></div>
+	<div class="relative mx-auto max-w-6xl">
+		<p class="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-primary">
+			What you get
+		</p>
+		<h2
+			id="features-heading"
+			class="mb-12 text-center text-3xl font-bold tracking-tight text-base-content sm:text-4xl"
+		>
+			Built around your search
+		</h2>
+		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+			{#each features as item (item.title)}
+				{@const Icon = item.icon}
+				<div
+					class="group relative overflow-hidden rounded-2xl border border-base-content/10 bg-gradient-to-br from-base-100 via-base-100 to-base-200/80 p-6 shadow-lg ring-1 ring-base-content/5 transition motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-xl motion-safe:hover:shadow-primary/10"
+				>
 					<div
-						class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
+						class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 transition group-hover:opacity-100 motion-reduce:group-hover:opacity-0"
+						aria-hidden="true"
+					></div>
+					<div
+						class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/25 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20"
 					>
-						<Icon class="h-6 w-6" aria-hidden="true" />
+						<Icon class="h-7 w-7" aria-hidden="true" />
 					</div>
-					<h3 class="card-title text-lg">{item.title}</h3>
-					<p class="text-sm leading-relaxed text-base-content/75">{item.body}</p>
+					<h3 class="mb-2 text-lg font-bold text-base-content">{item.title}</h3>
+					<p class="text-sm leading-relaxed text-base-content/90">{item.body}</p>
 				</div>
-			</div>
-		{/each}
+			{/each}
+		</div>
 	</div>
 </section>

@@ -119,3 +119,11 @@
 		z-index: 99999 !important;
 	}
 }
+
+/*
+ * Marketing routes only (`(marketing)/+layout.svelte`): slightly stronger body text on cream.
+ * Light terracotta on `<html>` stays at tailwind theme `base-content`; app pages unchanged.
+ */
+[data-marketing-surface][data-theme='terracotta'] {
+	--bc: 24.3379% 0.013746 41.611483;
+}

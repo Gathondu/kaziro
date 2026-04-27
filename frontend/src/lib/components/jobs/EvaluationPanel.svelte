@@ -126,7 +126,9 @@
 	<div>
 		<h3 class="mb-2 text-sm font-semibold">Dimension scores</h3>
 		{#if scoreGroups.length === 0}
-			<p class="rounded-xl bg-base-200 p-3 text-sm text-base-content/70">No dimension scores yet.</p>
+			<p class="rounded-xl bg-base-200 p-3 text-sm text-base-content/70">
+				No dimension scores yet.
+			</p>
 		{:else}
 			<div class="grid gap-2 sm:grid-cols-2">
 				{#each scoreGroups as group (group.id)}

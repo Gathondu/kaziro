@@ -16,7 +16,7 @@
 
 {#if href}
 	<a
-		href={href}
+		{href}
 		class="group relative block overflow-hidden rounded-2xl bg-base-300 transition-transform duration-200 hover:-translate-y-0.5 hover:scale-105"
 	>
 		{#if animated}
@@ -34,7 +34,7 @@
 			</span>
 		{/if}
 		<span
-			class="relative z-10 block m-0.5 rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
+			class="relative z-10 m-0.5 block rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
 		>
 			<p class="text-sm font-medium text-base-content/70">{label}</p>
 			<p class="mt-2 text-3xl font-semibold tabular-nums">{value}</p>

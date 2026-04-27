@@ -30,7 +30,7 @@
 {#if open}
 	<dialog class="modal modal-open">
 		<div
-			class="modal-box flex min-h-0 !max-h-[min(90vh,calc(100vh-2rem))] flex-col rounded-2xl border border-base-300 bg-base-100 {clipOverflow
+			class="modal-box flex !max-h-[min(90vh,calc(100vh-2rem))] min-h-0 flex-col rounded-2xl border border-base-300 bg-base-100 {clipOverflow
 				? '!overflow-hidden'
 				: 'overflow-visible'} {boxClass}"
 		>

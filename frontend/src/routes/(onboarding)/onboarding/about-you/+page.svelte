@@ -5,7 +5,11 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { onboardingNameSchema } from '$lib/schemas/profile';
 	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
-	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
+	import {
+		loadOnboardingDraft,
+		resumeOnboardingPath,
+		saveOnboardingDraft
+	} from '$lib/utils/onboarding';
 	import { get } from 'svelte/store';
 
 	let full_name = $state('');
@@ -74,7 +78,8 @@
 			bind:value={full_name}
 			oninput={onFullNameInput}
 		/>
-		{#if fieldErrors.full_name}<span class="label-text-alt text-error">{fieldErrors.full_name}</span>{/if}
+		{#if fieldErrors.full_name}<span class="label-text-alt text-error">{fieldErrors.full_name}</span
+			>{/if}
 	</label>
 	<Button type="submit" disabled={full_name.trim().length === 0}>Next</Button>
 </form>

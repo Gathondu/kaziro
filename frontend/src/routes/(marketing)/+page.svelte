@@ -4,6 +4,7 @@
 	import LandingHeader from '$lib/components/landing/LandingHeader.svelte';
 	import LandingHero from '$lib/components/landing/LandingHero.svelte';
 	import LandingHowItWorks from '$lib/components/landing/LandingHowItWorks.svelte';
+	import LandingWhy from '$lib/components/landing/LandingWhy.svelte';
 	import JsonLdInline from '$lib/components/seo/JsonLdInline.svelte';
 	import type { PageProps } from './$types';
 
@@ -32,6 +33,7 @@
 	<main class="flex-1">
 		<LandingHero />
 		<LandingFeatures />
+		<LandingWhy />
 		<LandingHowItWorks />
 	</main>
 	<LandingFooter />

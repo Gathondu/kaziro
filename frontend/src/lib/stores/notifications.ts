@@ -53,7 +53,8 @@ export function subscribeNotifications(handler: Handler): () => void {
 function wsUrl(token: string): string {
 	const explicitWsBase = getPublicWsUrl();
 	const fallbackApiBase = getPublicApiUrl();
-	const base = explicitWsBase ?? (fallbackApiBase.includes('localhost') ? fallbackApiBase : undefined);
+	const base =
+		explicitWsBase ?? (fallbackApiBase.includes('localhost') ? fallbackApiBase : undefined);
 	if (!base) {
 		return '';
 	}
@@ -74,9 +75,7 @@ function wsUrl(token: string): string {
 function dispatch(msg: NotificationMessage): void {
 	const qc = getQueryClient();
 	if (msg.type === 'evaluation_complete') {
-		toast.success(
-			'Evaluation finished for a job.'
-		);
+		toast.success('Evaluation finished for a job.');
 		qc?.invalidateQueries({ queryKey: ['jobs'] });
 		qc?.invalidateQueries({ queryKey: ['job', msg.job_posting_id] });
 		qc?.invalidateQueries({ queryKey: ['job', msg.job_posting_id, 'evaluation'] });
