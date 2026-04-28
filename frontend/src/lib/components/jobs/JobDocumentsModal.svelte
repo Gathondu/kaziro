@@ -132,12 +132,17 @@
 	{#snippet children()}
 		<div class="flex h-full min-h-0 w-full flex-1 flex-col">
 			<div class="mb-3 flex shrink-0 justify-center">
-				<div role="tablist" aria-label="Document type" class="tabs-boxed tabs shrink-0">
+				<div
+					role="tablist"
+					aria-label="Document type"
+					class="border-base-300 bg-base-200 inline-flex shrink-0 gap-1 rounded-xl border p-1"
+				>
 					<button
 						type="button"
 						role="tab"
-						class="tab rounded-lg px-4"
-						class:tab-active={activeTab === 'cover'}
+						class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {activeTab === 'cover'
+							? 'bg-base-100 text-base-content shadow-sm'
+							: 'text-base-content/70 hover:bg-base-100/60 hover:text-base-content'}"
 						aria-selected={activeTab === 'cover'}
 						onclick={() => {
 							activeTab = 'cover';
@@ -148,8 +153,9 @@
 					<button
 						type="button"
 						role="tab"
-						class="tab rounded-lg px-4"
-						class:tab-active={activeTab === 'cv'}
+						class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {activeTab === 'cv'
+							? 'bg-base-100 text-base-content shadow-sm'
+							: 'text-base-content/70 hover:bg-base-100/60 hover:text-base-content'}"
 						aria-selected={activeTab === 'cv'}
 						onclick={() => {
 							activeTab = 'cv';
@@ -169,7 +175,7 @@
 							id="job-doc-cover-draft"
 							bind:value={coverDraft}
 							rows={1}
-							class="textarea text-base-content focus:ring-primary/40 box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto border-0 bg-transparent pt-11 pr-10 pb-2.5 pl-3 font-sans text-sm leading-relaxed whitespace-pre-wrap shadow-none ring-0 transition-[box-shadow] outline-none focus:border-0 focus:ring-2 focus:outline-none sm:pr-44"
+							class="text-base-content focus:ring-primary/40 box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto border-0 bg-transparent pt-11 pr-10 pb-2.5 pl-3 font-sans text-sm leading-relaxed whitespace-pre-wrap shadow-none ring-0 transition-[box-shadow] outline-none focus:border-0 focus:ring-2 focus:outline-none sm:pr-44"
 							spellcheck="true"
 						></textarea>
 					{:else}
@@ -178,7 +184,7 @@
 							id="job-doc-cv-draft"
 							bind:value={cvDraft}
 							rows={1}
-							class="textarea text-base-content focus:ring-primary/40 box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto border-0 bg-transparent pt-11 pr-10 pb-2.5 pl-3 font-sans text-sm leading-relaxed whitespace-pre-wrap shadow-none ring-0 transition-[box-shadow] outline-none focus:border-0 focus:ring-2 focus:outline-none sm:pr-44"
+							class="text-base-content focus:ring-primary/40 box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto border-0 bg-transparent pt-11 pr-10 pb-2.5 pl-3 font-sans text-sm leading-relaxed whitespace-pre-wrap shadow-none ring-0 transition-[box-shadow] outline-none focus:border-0 focus:ring-2 focus:outline-none sm:pr-44"
 							spellcheck="true"
 						></textarea>
 					{/if}

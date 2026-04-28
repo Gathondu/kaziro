@@ -47,13 +47,26 @@
 	<div
 		class="bg-base-100/95 sticky top-0 z-10 -mx-1 mb-6 flex flex-wrap items-center justify-between gap-3 px-1 py-1 backdrop-blur"
 	>
-		<div class="tabs-boxed tabs border-base-300 bg-base-200 w-fit rounded-xl border p-1">
+		<div
+			class="border-base-300 bg-base-200 inline-flex shrink-0 gap-1 rounded-xl border p-1"
+			role="tablist"
+			aria-label="Settings sections"
+		>
 			<a
-				class="tab rounded-lg {activeTab === 'job-configs' ? 'tab-active' : ''}"
+				class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {activeTab ===
+				'job-configs'
+					? 'bg-base-100 text-base-content shadow-sm'
+					: 'text-base-content/70 hover:bg-base-100/60 hover:text-base-content'}"
+				role="tab"
+				aria-selected={activeTab === 'job-configs'}
 				href="/settings?tab=job-configs">Job configs</a
 			>
 			<a
-				class="tab rounded-lg {activeTab === 'profile' ? 'tab-active' : ''}"
+				class="rounded-lg px-4 py-2 text-sm font-medium transition-colors {activeTab === 'profile'
+					? 'bg-base-100 text-base-content shadow-sm'
+					: 'text-base-content/70 hover:bg-base-100/60 hover:text-base-content'}"
+				role="tab"
+				aria-selected={activeTab === 'profile'}
 				href="/settings?tab=profile">Profile</a
 			>
 		</div>

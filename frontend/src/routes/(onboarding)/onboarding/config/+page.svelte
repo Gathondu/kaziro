@@ -178,10 +178,13 @@
 	<label class="block space-y-1.5">
 		<span class="text-sm font-medium">Config name (optional)</span>
 		<input
-			class="bg-base-200 text-base-content placeholder:text-base-content/45 border-base-300 focus:border-primary focus:ring-primary/25 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.name
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			bind:value={name}
 			oninput={onNameInput}
 		/>
+		{#if fieldErrors.name}<span class="text-error text-xs">{fieldErrors.name}</span>{/if}
 	</label>
 	<label class="block space-y-1.5">
 		<span class="text-sm font-medium">Keywords (comma-separated)</span>
@@ -198,15 +201,29 @@
 	<label class="block space-y-1.5">
 		<span class="text-sm font-medium">Location</span>
 		<input
-			class="bg-base-200 text-base-content placeholder:text-base-content/45 border-base-300 focus:border-primary focus:ring-primary/25 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.location
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			bind:value={location}
 			oninput={onLocationInput}
 		/>
+		{#if fieldErrors.location}<span class="text-error text-xs">{fieldErrors.location}</span>{/if}
 	</label>
-	<label class="label cursor-pointer justify-start gap-3">
-		<input type="checkbox" class="checkbox-primary checkbox" bind:checked={remote_only} />
-		<span class="font-medium">Remote only</span>
-	</label>
+	<div class="block space-y-1.5">
+		<label
+			class="bg-base-200 border-base-300 flex w-full items-start gap-3 rounded-xl border px-3 py-2.5"
+		>
+			<input
+				type="checkbox"
+				class="border-base-400 bg-base-100 text-primary focus:ring-primary/30 mt-0.5 h-4 w-4 rounded focus:ring-2"
+				bind:checked={remote_only}
+			/>
+			<div class="space-y-0.5">
+				<span class="text-sm font-medium">Remote only</span>
+				<p class="text-base-content/70 text-xs">Only include jobs that are fully remote.</p>
+			</div>
+		</label>
+	</div>
 	<div class="grid gap-4 sm:grid-cols-2">
 		<label class="block space-y-1.5">
 			<span class="text-sm font-medium">Salary min</span>

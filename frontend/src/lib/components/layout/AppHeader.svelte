@@ -50,12 +50,10 @@
 	class="border-base-300 bg-base-100 sticky top-0 z-40 flex items-center justify-between gap-3 border-b px-4 py-3"
 >
 	<a href="/dashboard" class="text-primary text-lg font-semibold">Kaziro</a>
-	<div class="flex items-center gap-2">
-		<div class="dropdown dropdown-end">
-			<button
-				type="button"
-				tabindex="0"
-				class="btn btn-circle btn-ghost btn-sm relative"
+	<div class="flex min-w-0 items-center gap-2">
+		<details class="relative">
+			<summary
+				class="btn btn-circle btn-ghost btn-sm relative list-none [&::-webkit-details-marker]:hidden"
 				aria-label={wsAriaLabel(wsState)}
 			>
 				<UserRound class="size-6" aria-hidden="true" />
@@ -69,27 +67,35 @@
 					aria-hidden="true"
 					title={wsTitle(wsState)}
 				></span>
-			</button>
-			<ul
-				class="menu dropdown-content rounded-box border-base-300 bg-base-100 z-50 mt-2 w-52 border p-2 shadow-sm"
+			</summary>
+			<div
+				class="border-base-300 bg-base-100 absolute top-full right-0 z-[60] mt-2 w-52 rounded-xl border p-2 shadow-lg"
+				role="menu"
 			>
 				{#if $profile.isSuccess && $profile.data.full_name?.trim()}
-					<li class="border-base-200 pointer-events-none border-b pb-2">
+					<div class="border-base-200 pointer-events-none border-b pb-2">
 						<span
 							class="text-base-content/70 block px-1 py-0.5 text-center text-xs leading-snug font-semibold break-words whitespace-normal uppercase"
 							aria-label="Signed in as {$profile.data.full_name}"
 						>
 							{$profile.data.full_name.trim()}
 						</span>
-					</li>
+					</div>
 				{/if}
-				<li>
-					<a href="/settings?tab=profile" class="rounded-lg">Profile</a>
-				</li>
-				<li>
-					<button type="button" class="rounded-lg" onclick={() => logout()}>Log out</button>
-				</li>
-			</ul>
-		</div>
+				<nav class="flex flex-col gap-0.5">
+					<a
+						href="/settings?tab=profile"
+						class="text-base-content hover:bg-base-200 block rounded-lg px-3 py-2 text-sm"
+						role="menuitem">Profile</a
+					>
+					<button
+						type="button"
+						class="text-base-content hover:bg-base-200 block w-full rounded-lg px-3 py-2 text-left text-sm"
+						role="menuitem"
+						onclick={() => logout()}>Log out</button
+					>
+				</nav>
+			</div>
+		</details>
 	</div>
 </header>

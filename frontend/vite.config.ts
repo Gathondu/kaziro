@@ -19,6 +19,8 @@ export default defineConfig({
 	test: {
 		environment: 'jsdom',
 		globals: true,
+		// Forked workers can timeout on some Windows setups; threads are more stable here.
+		pool: process.platform === 'win32' ? 'threads' : 'forks',
 		include: ['tests/unit/**/*.{test,spec}.{js,ts}', 'src/**/*.{test,spec}.{js,ts}'],
 		setupFiles: ['./tests/unit/setup.ts']
 	}

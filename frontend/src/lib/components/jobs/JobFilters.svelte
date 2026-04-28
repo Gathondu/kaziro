@@ -23,11 +23,11 @@
 </script>
 
 <div class="border-base-300 bg-base-200 flex flex-col gap-3 rounded-2xl border p-4">
-	<div class="flex flex-wrap items-end gap-3">
-		<label class="form-control w-full min-w-64 flex-1">
-			<span class="label-text text-sm font-medium">Keyword</span>
+	<div class="flex min-w-0 flex-wrap items-end gap-3">
+		<label class="block w-full min-w-0 flex-1 space-y-1.5 sm:min-w-[16rem]">
+			<span class="text-sm font-medium">Keyword</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-100 rounded-xl"
+				class="bg-base-100 text-base-content placeholder:text-base-content/45 border-base-300 focus:border-primary focus:ring-primary/25 block w-full min-w-0 rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
 				type="search"
 				placeholder="Title, company, description…"
 				value={keyword}
@@ -39,10 +39,10 @@
 					})}
 			/>
 		</label>
-		<label class="form-control w-full max-w-xs">
-			<span class="label-text text-sm font-medium">Posted after</span>
+		<label class="block w-full max-w-xs min-w-0 space-y-1.5 sm:w-auto">
+			<span class="text-sm font-medium">Posted after</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-100 rounded-xl"
+				class="bg-base-100 text-base-content border-base-300 focus:border-primary focus:ring-primary/25 block w-full min-w-0 rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
 				type="date"
 				value={postedAfter}
 				oninput={(e) =>

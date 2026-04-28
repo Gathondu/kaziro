@@ -30,7 +30,7 @@
 					id="hero-heading"
 					class="text-base-content text-4xl font-extralight tracking-tight sm:text-5xl md:text-6xl"
 				>
-					Find your next role with{' '}
+					Find your next role with
 					<span class="relative inline-block pb-3 align-middle sm:pb-3.5">
 						<span
 							class="marketing-hero-clarity-word text-primary relative z-0 text-[4.5rem] leading-none font-normal tracking-normal sm:text-[3.5rem] md:text-[4.5rem]"
@@ -66,7 +66,7 @@
 					<a href="/signup" class="landing-cta-primary">Create account</a>
 					<a
 						href="/login"
-						class="btn btn-outline border-base-content/30 bg-base-100 text-base-content hover:border-primary hover:bg-base-200 hover:text-base-content rounded-2xl font-semibold shadow-sm transition"
+						class="border-base-content/30 bg-base-100 text-base-content hover:border-primary hover:bg-base-200 hover:text-base-content inline-flex min-h-12 flex-shrink-0 items-center justify-center rounded-2xl border px-8 text-base leading-6 font-semibold shadow-sm transition"
 					>
 						Log in
 					</a>

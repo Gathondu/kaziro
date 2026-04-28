@@ -105,11 +105,6 @@
 		scrollbar-color: color-mix(in srgb, currentColor 10%, transparent) transparent;
 	}
 
-	.form-control .label-text {
-		margin-bottom: 0.25rem;
-		display: inline-block;
-	}
-
 	/* Chromium / WebKit: no arrow buttons. */
 	*::-webkit-scrollbar {
 		width: 8px;
@@ -199,6 +194,35 @@
 		font-family: 'Handlee', cursive;
 		font-weight: 400;
 		font-style: normal;
+	}
+
+	/* Job card / KPI hover sheen — keep gradients in CSS instead of inline `style`. */
+	.kaziro-card-sheen-blur {
+		animation-duration: 3.4s;
+		background: conic-gradient(
+			from 0deg,
+			transparent 0deg,
+			transparent 185deg,
+			oklch(from var(--color-primary) l c h / 0.72) 235deg,
+			oklch(from var(--color-primary) l c h / 1) 275deg,
+			oklch(from var(--color-secondary) l c h / 1) 315deg,
+			oklch(from var(--color-accent) l c h / 1) 345deg,
+			oklch(from var(--color-accent) l c h / 0.72) 360deg
+		);
+	}
+
+	.kaziro-card-sheen-sharp {
+		animation-duration: 3.4s;
+		background: conic-gradient(
+			from 0deg,
+			transparent 0deg,
+			transparent 195deg,
+			oklch(from var(--color-primary) l c h / 0.8) 245deg,
+			oklch(from var(--color-primary) l c h / 1) 285deg,
+			oklch(from var(--color-secondary) l c h / 1) 320deg,
+			oklch(from var(--color-accent) l c h / 1) 348deg,
+			oklch(from var(--color-accent) l c h / 0.8) 360deg
+		);
 	}
 
 	/*

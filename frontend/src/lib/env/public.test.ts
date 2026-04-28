@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { normalizePublicApiUrl } from './public';
+
+vi.mock('$env/dynamic/public', () => ({
+	env: {}
+}));
 
 describe('normalizePublicApiUrl', () => {
 	it('keeps a bare API origin unchanged', () => {
