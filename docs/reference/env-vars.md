@@ -1,7 +1,7 @@
 # Environment Variables Reference
 
 **Status**: Living
-**Last updated**: 2026-04-27
+**Last updated**: 2026-04-28
 **Source**: Kaziro Design Document §13 + `.cursor/rules/002-backend.mdc`
 **Related**: [`docs/architecture/08-deployment.md`](../architecture/08-deployment.md), [`docs/architecture/07-security.md`](../architecture/07-security.md)
 
@@ -132,13 +132,13 @@ Frontend env vars are exposed to the browser only when prefixed with
 
 | Variable                   | Required | Default       | Description                                              |
 | -------------------------- | -------- | ------------- | -------------------------------------------------------- |
-| `PUBLIC_API_BASE_URL`      | Yes      | —             | Backend REST base URL (e.g., `https://api.kaziro.com`).  |
+| `PUBLIC_API_URL`           | Yes      | —             | Backend REST origin only (e.g., `https://api.kaziro.com`; no `/api/v1` suffix). |
 | `PUBLIC_WS_URL`            | Yes      | —             | Backend WebSocket URL (e.g., `wss://api.kaziro.com/ws`). |
 | `PUBLIC_SUPABASE_URL`      | Yes      | —             | Mirrors `SUPABASE_URL`.                                  |
 | `PUBLIC_SUPABASE_ANON_KEY` | Yes      | —             | Mirrors `SUPABASE_ANON_KEY`.                             |
 | `PUBLIC_SENTRY_DSN`        | No       | —             | Browser Sentry DSN.                                      |
 | `PUBLIC_APP_ENV`           | No       | `development` | Surfaces in error reports + dev-tooling.                 |
-| `PUBLIC_SITE_URL`          | No       | —               | Canonical public site origin (no trailing slash) for SEO on `/` (`canonical`, `og:url`). When unset, the app uses the incoming request origin. |
+| `PUBLIC_SITE_URL`          | No       | —             | Canonical public site origin (no trailing slash) for SEO on `/` (`canonical`, `og:url`). When unset on the static marketing page, canonical and `og:url` tags are omitted. |
 
 ## Local dev only
 

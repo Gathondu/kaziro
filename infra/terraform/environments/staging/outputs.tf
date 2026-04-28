@@ -2,6 +2,10 @@ output "api_base_url" {
   value = module.apigw.api_endpoint
 }
 
+output "api_v1_base_url" {
+  value = "${module.apigw.api_endpoint}/api/v1"
+}
+
 output "frontend_base_url" {
   value = "https://${module.frontend_static.cloudfront_domain_name}"
 }
