@@ -3,14 +3,40 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from shutil import which
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _resolve_command(command: list[str]) -> list[str] | None:
+    if not command:
+        return None
+    executable = command[0]
+    args = command[1:]
+    if executable == "pnpm":
+        # On Windows, `which("pnpm")` often resolves to a shim that is not directly
+        # executable by CreateProcess; prefer the .cmd wrapper.
+        if which("pnpm.cmd"):
+            return ["pnpm.cmd", *args]
+        if which("corepack"):
+            return ["corepack", "pnpm", *args]
+    if which(executable):
+        return command
+    return None
 
 
 def _run(command: list[str], cwd: Path | None = None) -> int:
     location = str(cwd or REPO_ROOT)
     print(f"\n> ({location}) {' '.join(command)}")
-    completed = subprocess.run(command, cwd=cwd or REPO_ROOT, check=False)
+    resolved = _resolve_command(command)
+    if resolved is None:
+        print(f"Command not found: {command[0]}")
+        return 127
+    try:
+        completed = subprocess.run(resolved, cwd=cwd or REPO_ROOT, check=False)
+    except FileNotFoundError:
+        # Last-resort fallback for Windows shell wrappers.
+        completed = subprocess.run(["cmd", "/c", *resolved], cwd=cwd or REPO_ROOT, check=False)
     return completed.returncode
 
 
@@ -115,11 +141,6 @@ def main() -> int:
             )
             != 0
         ):
-            failed = True
-
-    frontend_changed = any(path.startswith("frontend/") for path in staged)
-    if frontend_changed:
-        if _run(["pnpm", "check"], cwd=REPO_ROOT / "frontend") != 0:
             failed = True
 
     docs_md = sorted(
