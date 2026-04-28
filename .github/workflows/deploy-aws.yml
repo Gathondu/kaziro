@@ -152,6 +152,7 @@ jobs:
     environment: ${{ needs.select-environment.outputs.deploy_env }}
     outputs:
       api_base_url: ${{ steps.outputs.outputs.api_base_url }}
+      api_v1_base_url: ${{ steps.outputs.outputs.api_v1_base_url }}
       apprunner_service_url: ${{ steps.outputs.outputs.apprunner_service_url }}
       websocket_url: ${{ steps.outputs.outputs.websocket_url }}
       frontend_bucket_name: ${{ steps.outputs.outputs.frontend_bucket_name }}
@@ -191,6 +192,7 @@ jobs:
         shell: bash
         run: |
           echo "api_base_url=$(terraform output -raw api_base_url)" >> "${GITHUB_OUTPUT}"
+          echo "api_v1_base_url=$(terraform output -raw api_v1_base_url)" >> "${GITHUB_OUTPUT}"
           echo "apprunner_service_url=$(terraform output -raw apprunner_service_url)" >> "${GITHUB_OUTPUT}"
           echo "websocket_url=$(terraform output -raw websocket_url)" >> "${GITHUB_OUTPUT}"
           echo "frontend_bucket_name=$(terraform output -raw frontend_bucket_name)" >> "${GITHUB_OUTPUT}"
@@ -202,6 +204,7 @@ jobs:
         shell: bash
         run: |
           echo "api_base_url=$(terraform output -raw api_base_url)"
+          echo "api_v1_base_url=$(terraform output -raw api_v1_base_url)"
           echo "frontend_base_url=$(terraform output -raw frontend_base_url)"
           echo "apprunner_service_url=$(terraform output -raw apprunner_service_url)"
           echo "websocket_url=$(terraform output -raw websocket_url)"

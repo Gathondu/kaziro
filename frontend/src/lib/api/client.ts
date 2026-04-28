@@ -17,6 +17,35 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === 'object' && v !== null;
 }
 
+async function readJsonBody(res: Response, path: string): Promise<unknown> {
+	const ct = res.headers.get('content-type') ?? '';
+	const raw = await res.text();
+	if (!ct.includes('application/json')) {
+		throw new ApiError('Invalid non-JSON response from API', {
+			code: 'invalid_response',
+			status: res.status,
+			details: {
+				path,
+				contentType: ct,
+				bodyPreview: raw.slice(0, 120)
+			}
+		});
+	}
+	try {
+		return JSON.parse(raw) as unknown;
+	} catch {
+		throw new ApiError('Invalid JSON response from API', {
+			code: 'invalid_response',
+			status: res.status,
+			details: {
+				path,
+				contentType: ct,
+				bodyPreview: raw.slice(0, 120)
+			}
+		});
+	}
+}
+
 export function parseErrorBody(json: unknown, status: number): ApiError {
 	if (!isRecord(json)) {
 		return new ApiError('Request failed', { code: 'http_error', status });
@@ -69,7 +98,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
 	const ct = res.headers.get('content-type') ?? '';
 	const isJson = ct.includes('application/json');
-	const json = isJson ? ((await res.json()) as unknown) : null;
+	const json = isJson ? await readJsonBody(res, path) : null;
 
 	if (!res.ok) {
 		if (isJson && isRecord(json)) {
@@ -125,7 +154,7 @@ export async function apiFetchMeta<T>(
 		await goto(`/login?next=${next}`);
 	}
 
-	const json = (await res.json()) as unknown;
+	const json = await readJsonBody(res, path);
 	if (!res.ok) {
 		if (isRecord(json)) {
 			await flushSessionIfDeactivatedAccount(res.status, json);
@@ -176,7 +205,7 @@ export async function apiFetchEmpty(path: string, init: RequestInit = {}): Promi
 
 	const ct = res.headers.get('content-type') ?? '';
 	if (ct.includes('application/json')) {
-		const json = (await res.json()) as unknown;
+		const json = await readJsonBody(res, path);
 		if (isRecord(json) && json.error && isRecord(json.error)) {
 			await flushSessionIfDeactivatedAccount(res.status, json);
 			throw parseErrorBody(json, res.status);

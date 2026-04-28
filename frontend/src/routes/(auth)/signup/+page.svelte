@@ -65,52 +65,54 @@
 
 <h1 class="mb-4 text-xl font-semibold">Create your account</h1>
 <form class="space-y-4" onsubmit={submit}>
-	<label class="form-control">
-		<span class="label-text font-medium">Email</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Email</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.email
-				? 'input-error'
-				: ''}"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.email
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			type="email"
 			autocomplete="email"
 			bind:value={email}
 			oninput={onEmailInput}
 		/>
-		{#if fieldErrors.email}<span class="label-text-alt text-error">{fieldErrors.email}</span>{/if}
+		{#if fieldErrors.email}<span class="text-error text-xs">{fieldErrors.email}</span>{/if}
 	</label>
-	<label class="form-control">
-		<span class="label-text font-medium">Password</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Password</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.password
-				? 'input-error'
-				: ''}"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.password
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			type="password"
 			autocomplete="new-password"
 			bind:value={password}
 			oninput={onPasswordInput}
 		/>
-		{#if fieldErrors.password}<span class="label-text-alt text-error">{fieldErrors.password}</span
-			>{/if}
+		{#if fieldErrors.password}<span class="text-error text-xs">{fieldErrors.password}</span>{/if}
 	</label>
-	<label class="form-control">
-		<span class="label-text font-medium">Confirm password</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Confirm password</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.confirm
-				? 'input-error'
-				: ''}"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.confirm
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			type="password"
 			autocomplete="new-password"
 			bind:value={confirm}
 			oninput={onConfirmInput}
 		/>
-		{#if fieldErrors.confirm}<span class="label-text-alt text-error">{fieldErrors.confirm}</span
-			>{/if}
+		{#if fieldErrors.confirm}<span class="text-error text-xs">{fieldErrors.confirm}</span>{/if}
 	</label>
 	{#if formError}
 		<p class="text-error text-sm" role="alert">{formError}</p>
 	{/if}
-	<Button type="submit" disabled={pending}>{pending ? 'Creating…' : 'Sign up'}</Button>
+	<Button type="submit" class="h-11 w-full justify-center" disabled={pending}
+		>{pending ? 'Creating…' : 'Sign up'}</Button
+	>
 </form>
 <p class="mt-4 text-sm">
-	<a class="link font-medium" href="/login">Already have an account?</a>
+	<a class="font-medium underline-offset-4 hover:underline" href="/login"
+		>Already have an account?</a
+	>
 </p>

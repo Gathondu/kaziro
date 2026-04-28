@@ -1,7 +1,7 @@
 # Frontend Routes
 
 **Status**: Active
-**Last updated**: 2026-04-27
+**Last updated**: 2026-04-28
 **Source**: Section 7.1 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
 **Related**: [`../../architecture/05-frontend-architecture.md`](../../architecture/05-frontend-architecture.md)
 
@@ -11,12 +11,10 @@ SvelteKit file-based routing tree under `frontend/src/routes/`.
 
 ```
 src/routes/
-├── +layout.svelte                 # Auth gate, top nav, toast container
-├── +layout.server.ts              # Root layout load: `appearance` cookie (default `system` → OS preference)
+├── +layout.svelte                 # Query client, auth bootstrap, theme init, toast container
 ├── +error.svelte                  # Global error fallback
 ├── (marketing)/                   # `/`, `/privacy`, `/terms` — inherits `<html data-theme>` (same as app); `data-marketing-surface` tweaks light-terracotta text only
 │   ├── +layout.svelte
-│   ├── +page.server.ts            # `/` SSR redirect if authed; SEO data
 │   ├── +page.svelte               # Landing
 │   ├── privacy/+page.svelte
 │   └── terms/+page.svelte
@@ -64,11 +62,11 @@ Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hook
 
 - Public marketing page (hero, features, how-it-works, footer with legal links).
 - **`index,follow`** in `<svelte:head>` — primary marketing URL; `/privacy` and `/terms` are also indexable public pages.
-- If a **verified** Supabase user is present (cookie session), redirect to
-  `/dashboard` from [`(marketing)/+page.server.ts`](../../../frontend/src/routes/(marketing)/+page.server.ts)
-  (`getUser()`), not from client-only effects.
+- If a **verified** Supabase user is present, redirect to `/dashboard`
+  after the client auth store initializes on the landing page.
 - SEO: `<title>`, meta description, canonical, Open Graph, Twitter card, JSON-LD
-  `WebSite` — canonical base from `PUBLIC_SITE_URL` when set, else request origin.
+  `WebSite` — canonical base from `PUBLIC_SITE_URL` when set; when unset on the
+  static marketing page, canonical and `og:url` are omitted.
 
 ### `/privacy` & `/terms`
 

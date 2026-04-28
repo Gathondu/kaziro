@@ -23,6 +23,19 @@ export async function assertAppAccountWithAccessToken(accessToken: string): Prom
 			Accept: 'application/json'
 		}
 	});
+	const ct = res.headers.get('content-type') ?? '';
+	if (!ct.includes('application/json')) {
+		const bodyPreview = (await res.text()).slice(0, 120);
+		throw new ApiError('Invalid non-JSON response from API', {
+			code: 'invalid_response',
+			status: res.status,
+			details: {
+				base,
+				contentType: ct,
+				bodyPreview
+			}
+		});
+	}
 	const json = (await res.json()) as unknown;
 	if (res.status === 403 && browser) {
 		const err =
