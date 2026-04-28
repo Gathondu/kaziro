@@ -1,4 +1,5 @@
 import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
+import { ApiError } from '$lib/api/errors';
 import { getProfile, putProfile, uploadCvPdf } from '$lib/api/profile';
 import type { CvUploadResult, Profile } from '$lib/types/profile';
 
@@ -7,7 +8,15 @@ export function useProfile() {
 		queryKey: ['profile'],
 		queryFn: () => getProfile(),
 		staleTime: 5 * 60_000,
-		retry: 1
+		retry: (failureCount, error) => {
+			if (error instanceof ApiError && error.status === 404) return false;
+			return failureCount < 1;
+		},
+		refetchOnWindowFocus: (query) => {
+			const err = query.state.error;
+			if (err instanceof ApiError && err.status === 404) return false;
+			return true;
+		}
 	});
 }
 

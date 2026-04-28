@@ -135,8 +135,8 @@
 <p class="text-base-content/70 mb-6 text-sm">
 	We extract text for embeddings and keep the PDF in secure storage.
 </p>
-<label class="form-control mb-4">
-	<span class="label-text font-medium">PDF file</span>
+<label class="mb-4 block space-y-1.5">
+	<span class="text-sm font-medium">PDF file</span>
 	<input
 		bind:this={fileInputEl}
 		class="hidden"
@@ -144,10 +144,12 @@
 		accept="application/pdf"
 		onchange={onPick}
 	/>
-	<div class="flex items-center gap-3">
+	<div class="flex flex-wrap items-center gap-3">
 		<Button type="button" variant="outline" onclick={() => fileInputEl?.click()}>Choose file</Button
 		>
-		<span class="text-base-content/70 text-sm" title={selectedFileLabel}>{selectedFileLabel}</span>
+		<span class="text-base-content/70 min-w-0 flex-1 truncate text-sm" title={selectedFileLabel}
+			>{selectedFileLabel}</span
+		>
 	</div>
 </label>
 {#if err}
@@ -167,4 +169,6 @@
 		></iframe>
 	</div>
 {/if}
-<Button type="button" disabled={!file} onclick={() => next()}>Next</Button>
+<Button type="button" class="h-11 w-full justify-center" disabled={!file} onclick={() => next()}
+	>Next</Button
+>

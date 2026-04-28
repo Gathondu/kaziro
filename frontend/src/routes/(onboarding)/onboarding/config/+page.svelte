@@ -175,31 +175,30 @@
 	{#if fieldErrors.form}
 		<p class="text-error text-sm" role="alert">{fieldErrors.form}</p>
 	{/if}
-	<label class="form-control">
-		<span class="label-text font-medium">Config name (optional)</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Config name (optional)</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 border-base-300 focus:border-primary focus:ring-primary/25 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
 			bind:value={name}
 			oninput={onNameInput}
 		/>
 	</label>
-	<label class="form-control">
-		<span class="label-text font-medium">Keywords (comma-separated)</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Keywords (comma-separated)</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.keywordsText
-				? 'input-error'
-				: ''}"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.keywordsText
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			bind:value={keywordsText}
 			oninput={onKeywordsInput}
 		/>
-		{#if fieldErrors.keywordsText}<span class="label-text-alt text-error"
-				>{fieldErrors.keywordsText}</span
+		{#if fieldErrors.keywordsText}<span class="text-error text-xs">{fieldErrors.keywordsText}</span
 			>{/if}
 	</label>
-	<label class="form-control">
-		<span class="label-text font-medium">Location</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Location</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 border-base-300 focus:border-primary focus:ring-primary/25 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
 			bind:value={location}
 			oninput={onLocationInput}
 		/>
@@ -209,12 +208,12 @@
 		<span class="font-medium">Remote only</span>
 	</label>
 	<div class="grid gap-4 sm:grid-cols-2">
-		<label class="form-control">
-			<span class="label-text font-medium">Salary min</span>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Salary min</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.salary_min
-					? 'input-error'
-					: ''}"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.salary_min
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				type="text"
 				inputmode="numeric"
 				pattern="[0-9]*"
@@ -223,16 +222,15 @@
 				value={salaryMinInput}
 				oninput={onSalaryMinInput}
 			/>
-			{#if fieldErrors.salary_min}<span class="label-text-alt text-error"
-					>{fieldErrors.salary_min}</span
+			{#if fieldErrors.salary_min}<span class="text-error text-xs">{fieldErrors.salary_min}</span
 				>{/if}
 		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Salary max</span>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Salary max</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.salary_max
-					? 'input-error'
-					: ''}"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.salary_max
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				type="text"
 				inputmode="numeric"
 				pattern="[0-9]*"
@@ -241,24 +239,26 @@
 				value={salaryMaxInput}
 				oninput={onSalaryMaxInput}
 			/>
-			{#if fieldErrors.salary_max}<span class="label-text-alt text-error"
-					>{fieldErrors.salary_max}</span
+			{#if fieldErrors.salary_max}<span class="text-error text-xs">{fieldErrors.salary_max}</span
 				>{/if}
 		</label>
 	</div>
-	<label class="form-control">
-		<span class="label-text font-medium">Fetch schedule</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Fetch schedule</span>
 		{#if $presets.isPending}
-			<select class="select select-bordered border-base-300 bg-base-200 rounded-xl" disabled>
+			<select
+				class="bg-base-200 text-base-content border-base-300 block w-full cursor-not-allowed rounded-xl border px-3 py-2.5 opacity-60"
+				disabled
+			>
 				<option>Loading…</option>
 			</select>
 		{:else if $presets.isError}
 			<p class="text-error text-sm">Could not load schedules. Refresh and try again.</p>
 		{:else if $presets.data}
 			<select
-				class="select select-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.fetch_schedule_cron
-					? 'select-error'
-					: ''}"
+				class="bg-base-200 text-base-content block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.fetch_schedule_cron
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				bind:value={fetch_schedule_cron}
 				onchange={onFetchScheduleChange}
 			>
@@ -268,11 +268,12 @@
 			</select>
 		{/if}
 		{#if fieldErrors.fetch_schedule_cron}
-			<span class="label-text-alt text-error">{fieldErrors.fetch_schedule_cron}</span>
+			<span class="text-error text-xs">{fieldErrors.fetch_schedule_cron}</span>
 		{/if}
 	</label>
 	<Button
 		type="submit"
+		class="h-11 w-full justify-center"
 		disabled={finishing ||
 			$createCfg.isPending ||
 			$runPipe.isPending ||

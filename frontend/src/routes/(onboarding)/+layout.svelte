@@ -17,7 +17,16 @@
 	const { children } = $props();
 
 	const pathname = $derived($page.url.pathname);
+	/** After one 404, stop probing — avoids a GET /profile per onboarding step. */
+	let profileAbsentForUserId = $state<string | null>(null);
 	const stepMeta = $derived(onboardingStepMeta(pathname));
+
+	$effect(() => {
+		if (!browser) return;
+		if (!pathname.startsWith('/onboarding')) {
+			profileAbsentForUserId = null;
+		}
+	});
 	const progressPct = $derived(
 		stepMeta ? Math.round((stepMeta.current / stepMeta.total) * 100) : 0
 	);
@@ -40,6 +49,8 @@
 	$effect(() => {
 		if (!browser || !isAuthReady() || !getUser()) return;
 		if (!pathname.startsWith('/onboarding')) return;
+		const uid = getUser()!.id;
+		if (profileAbsentForUserId === uid) return;
 		let cancelled = false;
 		void (async () => {
 			try {
@@ -49,6 +60,7 @@
 				await goto('/dashboard');
 			} catch (e) {
 				if (e instanceof ApiError && (e.code === 'profile_not_found' || e.status === 404)) {
+					profileAbsentForUserId = uid;
 					return;
 				}
 			}

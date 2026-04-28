@@ -88,13 +88,13 @@
 	payments, or climate hardware). It helps us match roles and language to your context.
 </p>
 <form class="space-y-4" onsubmit={submit}>
-	<label class="form-control">
-		<span class="label-text font-medium">Domain</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Domain</span>
 		<div class="relative">
 			<textarea
-				class="textarea textarea-bordered border-base-300 bg-base-200 min-h-24 w-full rounded-xl pr-14 pb-10 {fieldErrors.domain
-					? 'textarea-error'
-					: ''}"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 min-h-24 w-full resize-y rounded-xl border px-3 py-2.5 pr-14 pb-10 transition-colors focus:ring-2 focus:outline-none {fieldErrors.domain
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				maxlength={DOMAIN_MAX}
 				rows={4}
 				bind:value={domain}
@@ -107,7 +107,7 @@
 				{domainLen}/{DOMAIN_MAX}
 			</span>
 		</div>
-		{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span>{/if}
+		{#if fieldErrors.domain}<span class="text-error text-xs">{fieldErrors.domain}</span>{/if}
 	</label>
-	<Button type="submit">{primaryLabel}</Button>
+	<Button type="submit" class="h-11 w-full justify-center">{primaryLabel}</Button>
 </form>

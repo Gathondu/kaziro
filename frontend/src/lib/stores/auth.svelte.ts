@@ -19,6 +19,25 @@ function isInvalidRefreshTokenError(error: { message?: string } | null): boolean
 	);
 }
 
+function shouldClearStaleSessionFromGetSessionError(error: unknown): boolean {
+	if (!error || typeof error !== 'object') return false;
+	const e = error as { message?: string; status?: number };
+	if (isInvalidRefreshTokenError(e)) return true;
+	if (e.status === 401) return true;
+	if (e.status === 400 && typeof e.message === 'string') {
+		const m = e.message.toLowerCase();
+		if (
+			m.includes('refresh') ||
+			m.includes('invalid_grant') ||
+			m.includes('jwt') ||
+			m.includes('session')
+		) {
+			return true;
+		}
+	}
+	return false;
+}
+
 function markReady(nextSession: Session | null): void {
 	session = nextSession;
 	ready = true;
@@ -32,7 +51,7 @@ export function initAuthClient(): void {
 	if (!browser || started) return;
 	started = true;
 	void supabase.auth.getSession().then(async ({ data, error }) => {
-		if (isInvalidRefreshTokenError(error)) {
+		if (error && shouldClearStaleSessionFromGetSessionError(error)) {
 			try {
 				await supabase.auth.signOut({ scope: 'local' });
 			} catch {
