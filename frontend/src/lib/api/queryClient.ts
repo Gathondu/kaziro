@@ -46,6 +46,9 @@ export function createAppQueryClient(): QueryClient {
 			dehydrateOptions: {
 				shouldDehydrateQuery: (query) => shouldPersistQuery(query.queryKey)
 			}
+		}).catch(() => {
+			// If persisted payload is corrupted/non-JSON (e.g. HTML), recover by clearing it.
+			window.localStorage.removeItem(QUERY_CACHE_KEY);
 		});
 	}
 
