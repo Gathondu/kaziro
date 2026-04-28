@@ -85,18 +85,18 @@
 	A short overview helps us tailor recommendations. Optional — you can skip.
 </p>
 <form class="space-y-4" onsubmit={skipOrNext}>
-	<label class="form-control">
-		<span class="label-text font-medium">Summary</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Summary</span>
 		<textarea
-			class="textarea textarea-bordered border-base-300 bg-base-200 min-h-28 rounded-xl {fieldErrors.professional_summary
-				? 'textarea-error'
-				: ''}"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 min-h-28 w-full resize-y rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.professional_summary
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			bind:value={professional_summary}
 			oninput={onSummaryInput}
 		></textarea>
-		{#if fieldErrors.professional_summary}<span class="label-text-alt text-error"
+		{#if fieldErrors.professional_summary}<span class="text-error text-xs"
 				>{fieldErrors.professional_summary}</span
 			>{/if}
 	</label>
-	<Button type="submit">{primaryLabel}</Button>
+	<Button type="submit" class="h-11 w-full justify-center">{primaryLabel}</Button>
 </form>

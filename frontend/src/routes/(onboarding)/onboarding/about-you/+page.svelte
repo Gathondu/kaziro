@@ -68,18 +68,19 @@
 	We use this to evaluate job fit and tailor documents.
 </p>
 <form class="space-y-4" onsubmit={submit}>
-	<label class="form-control">
-		<span class="label-text font-medium">Name</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Name</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.full_name
-				? 'input-error'
-				: ''}"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.full_name
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			autocomplete="name"
 			bind:value={full_name}
 			oninput={onFullNameInput}
 		/>
-		{#if fieldErrors.full_name}<span class="label-text-alt text-error">{fieldErrors.full_name}</span
-			>{/if}
+		{#if fieldErrors.full_name}<span class="text-error text-xs">{fieldErrors.full_name}</span>{/if}
 	</label>
-	<Button type="submit" disabled={full_name.trim().length === 0}>Next</Button>
+	<Button type="submit" class="h-11 w-full justify-center" disabled={full_name.trim().length === 0}
+		>Next</Button
+	>
 </form>

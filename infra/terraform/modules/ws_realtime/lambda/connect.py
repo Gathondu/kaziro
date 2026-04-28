@@ -32,8 +32,9 @@ def _get_token(event: dict[str, Any]) -> str | None:
 
 
 def _resolve_user_id(token: str) -> str | None:
+    """Use ``/me`` so connections work before a ``user_profiles`` row exists."""
     req = request.Request(
-        f"{_HTTP_API_BASE_URL}/api/v1/profile",
+        f"{_HTTP_API_BASE_URL}/api/v1/me",
         headers={
             "Authorization": f"Bearer {token}",
             "Accept": "application/json",

@@ -90,17 +90,17 @@
 	{#if fieldErrors.form}
 		<p class="text-error text-sm" role="alert">{fieldErrors.form}</p>
 	{/if}
-	<label class="form-control">
-		<span class="label-text font-medium">Skills (comma-separated)</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Skills (comma-separated)</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.skills
-				? 'input-error'
-				: ''}"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.skills
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			autocomplete="off"
 			bind:value={skillsText}
 			oninput={onSkillsInput}
 		/>
-		{#if fieldErrors.skills}<span class="label-text-alt text-error">{fieldErrors.skills}</span>{/if}
+		{#if fieldErrors.skills}<span class="text-error text-xs">{fieldErrors.skills}</span>{/if}
 	</label>
-	<Button type="submit">{primaryLabel}</Button>
+	<Button type="submit" class="h-11 w-full justify-center">{primaryLabel}</Button>
 </form>

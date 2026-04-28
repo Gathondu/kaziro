@@ -89,12 +89,12 @@
 	Optional — rough total years in roles relevant to your search. Skip if you prefer not to say.
 </p>
 <form class="space-y-4" onsubmit={skipOrNext}>
-	<label class="form-control">
-		<span class="label-text font-medium">Years of experience</span>
+	<label class="block space-y-1.5">
+		<span class="text-sm font-medium">Years of experience</span>
 		<input
-			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.experience_years
-				? 'input-error'
-				: ''}"
+			class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.experience_years
+				? 'border-error focus:ring-error/35'
+				: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 			type="text"
 			inputmode="numeric"
 			pattern="[0-9]*"
@@ -110,9 +110,9 @@
 				fieldErrors = omitFieldErrors(fieldErrors, 'experience_years');
 			}}
 		/>
-		{#if fieldErrors.experience_years}<span class="label-text-alt text-error"
+		{#if fieldErrors.experience_years}<span class="text-error text-xs"
 				>{fieldErrors.experience_years}</span
 			>{/if}
 	</label>
-	<Button type="submit">{primaryLabel}</Button>
+	<Button type="submit" class="h-11 w-full justify-center">{primaryLabel}</Button>
 </form>
