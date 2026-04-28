@@ -35,11 +35,7 @@
 							{(cfg.keywords ?? []).join(', ')} · {cfg.is_active ? 'Active' : 'Disabled'}
 						</p>
 					</div>
-					<JobConfigActions
-						configId={cfg.id}
-						isActive={cfg.is_active}
-						onEdit={() => onEdit(cfg)}
-					/>
+					<JobConfigActions configId={cfg.id} isActive={cfg.is_active} onEdit={() => onEdit(cfg)} />
 				</li>
 			{/each}
 		</ul>

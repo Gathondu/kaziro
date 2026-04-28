@@ -38,19 +38,19 @@
 	let linkedin_url = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
-function countSentences(text: string): number {
-	return text
-		.split(/[.!?]+/)
-		.map((part) => part.trim())
-		.filter(Boolean).length;
-}
+	function countSentences(text: string): number {
+		return text
+			.split(/[.!?]+/)
+			.map((part) => part.trim())
+			.filter(Boolean).length;
+	}
 
-function rowsForText(text: string): number {
-	const sentenceCount = countSentences(text);
-	if (sentenceCount === 0 || sentenceCount <= 3) return 3;
-	if (sentenceCount > 10) return 20;
-	return 10;
-}
+	function rowsForText(text: string): number {
+		const sentenceCount = countSentences(text);
+		if (sentenceCount === 0 || sentenceCount <= 3) return 3;
+		if (sentenceCount > 10) return 20;
+		return 10;
+	}
 
 	$effect(() => {
 		const p = $profile.data;
@@ -114,7 +114,7 @@ function rowsForText(text: string): number {
 			await postDisableOwnAccount();
 			deleteModalOpen = false;
 			await signOutEverywhere();
-			await goto('/login');
+			await goto('/');
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : 'Something went wrong';
 			deleteModalError = msg;
@@ -177,7 +177,8 @@ function rowsForText(text: string): number {
 				bind:value={domain}
 				oninput={() => clearField('domain')}
 			/>
-			{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span>{/if}
+			{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span
+				>{/if}
 		</label>
 		<label class="form-control">
 			<span class="label-text font-medium">Values</span>
@@ -227,15 +228,16 @@ function rowsForText(text: string): number {
 		{#snippet children()}
 			<div class="space-y-3 text-sm text-base-content/90">
 				<p>
-					This only <strong>disables</strong> your Kaziro account. You will be signed out and will
-					not be able to use the app until support turns your access back on. Your profile and
-					related data stay in our systems unless you ask for a full deletion separately.
+					This only <strong>disables</strong> your Kaziro account. You will be signed out and will not
+					be able to use the app until support turns your access back on. Your profile and related data
+					stay in our systems unless you ask for a full deletion separately.
 				</p>
 				<p>
 					If you want <strong>all of your data permanently deleted</strong>, email the administrator
 					{#if supportEmail}
 						at
-						<a class="link link-primary font-medium" href="mailto:{supportEmail}">{supportEmail}</a>.
+						<a class="link link-primary font-medium" href="mailto:{supportEmail}">{supportEmail}</a
+						>.
 					{:else}
 						(ask your organization for the right contact address).
 					{/if}
@@ -259,7 +261,11 @@ function rowsForText(text: string): number {
 			</div>
 		{/snippet}
 		{#snippet footer()}
-			<button type="button" class="btn btn-ghost rounded-xl" onclick={() => (deleteModalOpen = false)}>
+			<button
+				type="button"
+				class="btn btn-ghost rounded-xl"
+				onclick={() => (deleteModalOpen = false)}
+			>
 				Cancel
 			</button>
 			<button

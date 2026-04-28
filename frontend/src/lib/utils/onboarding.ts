@@ -2,12 +2,7 @@ import { clearOnboardingPendingCv } from '$lib/utils/onboarding-pending-cv';
 
 const KEY = 'kaziro.onboarding.v1';
 
-export type ProfileOnboardingSubStep =
-	| 'about'
-	| 'summary'
-	| 'domain'
-	| 'experience'
-	| 'skills';
+export type ProfileOnboardingSubStep = 'about' | 'summary' | 'domain' | 'experience' | 'skills';
 
 export type OnboardingProfileDraft = {
 	full_name?: string;

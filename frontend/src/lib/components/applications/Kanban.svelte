@@ -19,13 +19,7 @@
 		) => Promise<void>;
 	} = $props();
 
-	const STATUSES: ApplicationStatus[] = [
-		'DRAFT',
-		'SENT',
-		'INTERVIEWING',
-		'OFFERED',
-		'REJECTED'
-	];
+	const STATUSES: ApplicationStatus[] = ['DRAFT', 'SENT', 'INTERVIEWING', 'OFFERED', 'REJECTED'];
 
 	let columns = $state<Col[]>([]);
 
@@ -63,14 +57,14 @@
 	}
 </script>
 
-<div
-	class="scroll-region flex min-h-0 flex-1 gap-3 overflow-x-auto overflow-y-hidden pb-1"
->
+<div class="scroll-region flex min-h-0 flex-1 gap-3 overflow-x-auto overflow-y-hidden pb-1">
 	{#each columns as col (col.status)}
 		<div
 			class="flex h-full min-h-0 w-64 shrink-0 flex-col rounded-2xl border border-base-300 bg-base-200 p-2"
 		>
-			<h3 class="mb-2 shrink-0 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/70">
+			<h3
+				class="mb-2 shrink-0 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/70"
+			>
 				{col.status}
 			</h3>
 			<div

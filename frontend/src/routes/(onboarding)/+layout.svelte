@@ -48,10 +48,7 @@
 				clearOnboardingDraft();
 				await goto('/dashboard');
 			} catch (e) {
-				if (
-					e instanceof ApiError &&
-					(e.code === 'profile_not_found' || e.status === 404)
-				) {
+				if (e instanceof ApiError && (e.code === 'profile_not_found' || e.status === 404)) {
 					return;
 				}
 			}
@@ -61,6 +58,10 @@
 		};
 	});
 </script>
+
+<svelte:head>
+	<meta name="robots" content="noindex,nofollow" />
+</svelte:head>
 
 <div class="flex min-h-screen flex-col bg-base-200">
 	<header

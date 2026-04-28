@@ -97,8 +97,7 @@
 		downloadPending = true;
 		try {
 			const base = activeTab === 'cover' ? 'cover-letter' : 'tailored-cv';
-			const heading =
-				activeTab === 'cover' ? 'Cover letter' : 'Tailored CV — Kaziro';
+			const heading = activeTab === 'cover' ? 'Cover letter' : 'Tailored CV — Kaziro';
 			downloadPlainTextAsPdf({
 				filename: `kaziro-${base}-${jobPostingId}.pdf`,
 				heading,
@@ -132,83 +131,85 @@
 >
 	{#snippet children()}
 		<div class="flex h-full min-h-0 w-full flex-1 flex-col">
-		<div class="mb-3 flex shrink-0 justify-center">
-			<div role="tablist" aria-label="Document type" class="tabs tabs-boxed shrink-0">
-				<button
-					type="button"
-					role="tab"
-					class="tab rounded-lg px-4"
-					class:tab-active={activeTab === 'cover'}
-					aria-selected={activeTab === 'cover'}
-					onclick={() => {
-						activeTab = 'cover';
-					}}
-				>
-					Cover letter
-				</button>
-				<button
-					type="button"
-					role="tab"
-					class="tab rounded-lg px-4"
-					class:tab-active={activeTab === 'cv'}
-					aria-selected={activeTab === 'cv'}
-					onclick={() => {
-						activeTab = 'cv';
-					}}
-				>
-					Tailored CV
-				</button>
-			</div>
-		</div>
-		<div
-			class="relative flex min-h-0 flex-1 flex-col overflow-visible text-sm leading-relaxed text-base-content/90"
-		>
-			<div class="flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
-				{#if activeTab === 'cover'}
-					<label class="sr-only" for="job-doc-cover-draft">Cover letter</label>
-					<textarea
-						id="job-doc-cover-draft"
-						bind:value={coverDraft}
-						rows={1}
-						class="textarea box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto border-0 bg-transparent pl-3 pr-10 pb-2.5 pt-11 font-sans text-sm leading-relaxed text-base-content shadow-none outline-none ring-0 transition-[box-shadow] focus:border-0 focus:outline-none focus:ring-2 focus:ring-primary/40 sm:pr-44 whitespace-pre-wrap"
-						spellcheck="true"
-					></textarea>
-				{:else}
-					<label class="sr-only" for="job-doc-cv-draft">Tailored CV</label>
-					<textarea
-						id="job-doc-cv-draft"
-						bind:value={cvDraft}
-						rows={1}
-						class="textarea box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto border-0 bg-transparent pl-3 pr-10 pb-2.5 pt-11 font-sans text-sm leading-relaxed text-base-content shadow-none outline-none ring-0 transition-[box-shadow] focus:border-0 focus:outline-none focus:ring-2 focus:ring-primary/40 sm:pr-44 whitespace-pre-wrap"
-						spellcheck="true"
-					></textarea>
-				{/if}
+			<div class="mb-3 flex shrink-0 justify-center">
+				<div role="tablist" aria-label="Document type" class="tabs-boxed tabs shrink-0">
+					<button
+						type="button"
+						role="tab"
+						class="tab rounded-lg px-4"
+						class:tab-active={activeTab === 'cover'}
+						aria-selected={activeTab === 'cover'}
+						onclick={() => {
+							activeTab = 'cover';
+						}}
+					>
+						Cover letter
+					</button>
+					<button
+						type="button"
+						role="tab"
+						class="tab rounded-lg px-4"
+						class:tab-active={activeTab === 'cv'}
+						aria-selected={activeTab === 'cv'}
+						onclick={() => {
+							activeTab = 'cv';
+						}}
+					>
+						Tailored CV
+					</button>
+				</div>
 			</div>
 			<div
-				class="pointer-events-none absolute right-4 top-2 z-[80] flex max-w-[calc(100%-1rem)] items-start justify-end gap-2 sm:right-8 sm:top-3"
+				class="relative flex min-h-0 flex-1 flex-col overflow-visible text-sm leading-relaxed text-base-content/90"
 			>
-				{#if !canPersist || $updateDocsMutation.isPending || isDirty}
-					<div
-						class="pointer-events-auto flex min-h-9 max-w-[min(100%,14rem)] items-center border-0 bg-transparent px-2 py-1.5 text-left text-xs leading-tight sm:max-w-[min(100%,20rem)]"
-					>
-						{#if canPersist && !isDirty && $updateDocsMutation.isPending}
-							<p class="text-base-content/70" role="status">Saving…</p>
-						{:else if canPersist && isDirty}
-							<p class="text-base-content/60">Changes save automatically</p>
-						{/if}
+				<div class="flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
+					{#if activeTab === 'cover'}
+						<label class="sr-only" for="job-doc-cover-draft">Cover letter</label>
+						<textarea
+							id="job-doc-cover-draft"
+							bind:value={coverDraft}
+							rows={1}
+							class="textarea box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto whitespace-pre-wrap border-0 bg-transparent pb-2.5 pl-3 pr-10 pt-11 font-sans text-sm leading-relaxed text-base-content shadow-none outline-none ring-0 transition-[box-shadow] focus:border-0 focus:outline-none focus:ring-2 focus:ring-primary/40 sm:pr-44"
+							spellcheck="true"
+						></textarea>
+					{:else}
+						<label class="sr-only" for="job-doc-cv-draft">Tailored CV</label>
+						<textarea
+							id="job-doc-cv-draft"
+							bind:value={cvDraft}
+							rows={1}
+							class="textarea box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto whitespace-pre-wrap border-0 bg-transparent pb-2.5 pl-3 pr-10 pt-11 font-sans text-sm leading-relaxed text-base-content shadow-none outline-none ring-0 transition-[box-shadow] focus:border-0 focus:outline-none focus:ring-2 focus:ring-primary/40 sm:pr-44"
+							spellcheck="true"
+						></textarea>
+					{/if}
+				</div>
+				<div
+					class="pointer-events-none absolute right-4 top-2 z-[80] flex max-w-[calc(100%-1rem)] items-start justify-end gap-2 sm:right-8 sm:top-3"
+				>
+					{#if !canPersist || $updateDocsMutation.isPending || isDirty}
+						<div
+							class="pointer-events-auto flex min-h-9 max-w-[min(100%,14rem)] items-center border-0 bg-transparent px-2 py-1.5 text-left text-xs leading-tight sm:max-w-[min(100%,20rem)]"
+						>
+							{#if canPersist && !isDirty && $updateDocsMutation.isPending}
+								<p class="text-base-content/70" role="status">Saving…</p>
+							{:else if canPersist && isDirty}
+								<p class="text-base-content/60">Changes save automatically</p>
+							{/if}
 						</div>
 					{/if}
-				<div class="pointer-events-auto flex shrink-0 gap-0.5 border-0 bg-transparent p-0">
+					<div class="pointer-events-auto flex shrink-0 gap-0.5 border-0 bg-transparent p-0">
 						<div class={ICON_TOOLTIP_CLASS} data-tip="Copy">
 							<button
 								type="button"
-								class="btn btn-ghost btn-sm btn-square h-9 w-9 min-h-0 rounded-md text-base-content/80 hover:text-base-content"
+								class="btn btn-square btn-ghost btn-sm h-9 min-h-0 w-9 rounded-md text-base-content/80 hover:text-base-content"
 								disabled={copyPending}
 								aria-label="Copy to clipboard"
 								onclick={() => void copyActive()}
 							>
 								{#if copyPending}
-									<span class="loading loading-spinner loading-sm text-base-content/60" aria-hidden="true"
+									<span
+										class="loading loading-spinner loading-sm text-base-content/60"
+										aria-hidden="true"
 									></span>
 								{:else}
 									<svg
@@ -224,8 +225,7 @@
 										<path
 											d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"
 										></path>
-										<path
-											d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v0z"
+										<path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v0z"
 										></path>
 									</svg>
 								{/if}
@@ -234,13 +234,15 @@
 						<div class={ICON_TOOLTIP_CLASS} data-tip="PDF">
 							<button
 								type="button"
-								class="btn btn-ghost btn-sm btn-square h-9 w-9 min-h-0 rounded-md text-base-content/80 hover:text-base-content disabled:opacity-40"
+								class="btn btn-square btn-ghost btn-sm h-9 min-h-0 w-9 rounded-md text-base-content/80 hover:text-base-content disabled:opacity-40"
 								disabled={!canDownload || downloadPending}
 								aria-label="Download as PDF"
 								onclick={() => void downloadActive()}
 							>
 								{#if downloadPending}
-									<span class="loading loading-spinner loading-sm text-base-content/60" aria-hidden="true"
+									<span
+										class="loading loading-spinner loading-sm text-base-content/60"
+										aria-hidden="true"
 									></span>
 								{:else}
 									<svg
@@ -262,13 +264,15 @@
 						<div class={ICON_TOOLTIP_CLASS} data-tip="Regenerate">
 							<button
 								type="button"
-								class="btn btn-ghost btn-sm btn-square h-9 w-9 min-h-0 rounded-md text-base-content/80 hover:text-base-content"
+								class="btn btn-square btn-ghost btn-sm h-9 min-h-0 w-9 rounded-md text-base-content/80 hover:text-base-content"
 								disabled={$regenerateMutation.isPending}
 								aria-label="Regenerate document"
 								onclick={() => void refreshActiveDocument()}
 							>
 								{#if $regenerateMutation.isPending}
-									<span class="loading loading-spinner loading-sm text-base-content/60" aria-hidden="true"
+									<span
+										class="loading loading-spinner loading-sm text-base-content/60"
+										aria-hidden="true"
 									></span>
 								{:else}
 									<svg
@@ -281,21 +285,17 @@
 										stroke-linejoin="round"
 										aria-hidden="true"
 									>
-										<path
-											d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
-										></path>
+										<path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
 										<path d="M3 3v5h5"></path>
-										<path
-											d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"
-										></path>
+										<path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
 										<path d="M16 16h5v5"></path>
 									</svg>
 								{/if}
 							</button>
 						</div>
+					</div>
 				</div>
 			</div>
-		</div>
 		</div>
 	{/snippet}
 </Modal>

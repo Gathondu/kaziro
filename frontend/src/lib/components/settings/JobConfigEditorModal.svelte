@@ -3,7 +3,11 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import { ApiError } from '$lib/api/errors';
 	import { FETCH_CRON_DAILY } from '$lib/constants/fetchSchedule';
-	import { useCreateJobConfig, useSchedulePresets, useUpdateJobConfig } from '$lib/hooks/useJobConfig';
+	import {
+		useCreateJobConfig,
+		useSchedulePresets,
+		useUpdateJobConfig
+	} from '$lib/hooks/useJobConfig';
 	import { jobConfigFormSchema } from '$lib/schemas/jobConfig';
 	import type { JobConfig } from '$lib/types/jobConfig';
 	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
@@ -153,7 +157,7 @@
 	const title = $derived(mode === 'create' ? 'New job config' : 'Edit job config');
 </script>
 
-<Modal bind:open title={title} boxClass="max-w-lg">
+<Modal bind:open {title} boxClass="max-w-lg">
 	{#snippet children()}
 		<form id="job-config-editor-form" class="space-y-4" onsubmit={onSubmit}>
 			{#if fieldErrors.form}
@@ -258,18 +262,18 @@
 		</form>
 	{/snippet}
 	{#snippet footer()}
-		<button type="button" class="btn btn-ghost rounded-xl" onclick={() => (open = false)}>Cancel</button>
+		<button type="button" class="btn btn-ghost rounded-xl" onclick={() => (open = false)}
+			>Cancel</button
+		>
 		<button
 			type="submit"
 			form="job-config-editor-form"
-			class="btn btn-primary font-medium rounded-xl"
-			disabled={
-				saving ||
+			class="btn btn-primary rounded-xl font-medium"
+			disabled={saving ||
 				$createMut.isPending ||
 				$updateMut.isPending ||
 				$presets.isPending ||
-				$presets.isError
-			}
+				$presets.isError}
 		>
 			{saving || $createMut.isPending || $updateMut.isPending ? 'Saving…' : 'Save'}
 		</button>

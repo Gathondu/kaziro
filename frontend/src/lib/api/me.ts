@@ -25,7 +25,10 @@ export async function assertAppAccountWithAccessToken(accessToken: string): Prom
 	});
 	const json = (await res.json()) as unknown;
 	if (res.status === 403 && browser) {
-		const err = json && typeof json === 'object' && 'error' in json ? (json as { error?: unknown }).error : null;
+		const err =
+			json && typeof json === 'object' && 'error' in json
+				? (json as { error?: unknown }).error
+				: null;
 		if (
 			err &&
 			typeof err === 'object' &&

@@ -8,7 +8,11 @@
 		getOnboardingPendingCv,
 		setOnboardingPendingCv
 	} from '$lib/utils/onboarding-pending-cv';
-	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
+	import {
+		loadOnboardingDraft,
+		resumeOnboardingPath,
+		saveOnboardingDraft
+	} from '$lib/utils/onboarding';
 	import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 	import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 	import { get } from 'svelte/store';
@@ -141,7 +145,8 @@
 		onchange={onPick}
 	/>
 	<div class="flex items-center gap-3">
-		<Button type="button" variant="outline" onclick={() => fileInputEl?.click()}>Choose file</Button>
+		<Button type="button" variant="outline" onclick={() => fileInputEl?.click()}>Choose file</Button
+		>
 		<span class="text-sm text-base-content/70" title={selectedFileLabel}>{selectedFileLabel}</span>
 	</div>
 </label>

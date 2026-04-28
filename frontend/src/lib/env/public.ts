@@ -19,6 +19,13 @@ export function getPublicSupabaseAnonKey(): string {
 	return env.PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder-anon-key';
 }
 
+/** Canonical site origin for SEO (no trailing slash). Prefer over `url.origin` behind proxies. */
+export function getPublicSiteUrl(): string | undefined {
+	const raw = env.PUBLIC_SITE_URL?.trim();
+	if (!raw) return undefined;
+	return raw.replace(/\/$/, '');
+}
+
 /** Optional contact for GDPR / data-deletion requests (settings UI, etc.). */
 export function getPublicSupportEmail(): string | undefined {
 	const v = env.PUBLIC_SUPPORT_EMAIL?.trim();

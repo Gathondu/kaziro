@@ -2,7 +2,11 @@
 	import { get } from 'svelte/store';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { ApiError } from '$lib/api/errors';
-	import { useDisableJobConfig, useRunJobConfigPipeline, useUpdateJobConfig } from '$lib/hooks/useJobConfig';
+	import {
+		useDisableJobConfig,
+		useRunJobConfigPipeline,
+		useUpdateJobConfig
+	} from '$lib/hooks/useJobConfig';
 	import { toast } from '$lib/stores/toast';
 
 	const {
