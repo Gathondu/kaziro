@@ -131,83 +131,82 @@
 	<p class="text-error text-sm">Could not load profile.</p>
 {:else}
 	<form class="w-full space-y-4" onsubmit={submit}>
-		<label class="form-control w-full md:w-1/3">
-			<span class="label-text font-medium">Full name</span>
+		<label class="block w-full space-y-1.5">
+			<span class="text-sm font-medium">Full name</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-200 rounded-xl"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.full_name
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				bind:value={full_name}
 			/>
-			{#if fieldErrors.full_name}<span class="label-text-alt text-error"
-					>{fieldErrors.full_name}</span
+			{#if fieldErrors.full_name}<span class="text-error text-xs">{fieldErrors.full_name}</span
 				>{/if}
 		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Summary</span>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Summary</span>
 			<textarea
-				class="textarea textarea-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.professional_summary
-					? 'textarea-error'
-					: ''}"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full resize-y rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.professional_summary
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				rows={rowsForText(professional_summary)}
 				bind:value={professional_summary}
 				oninput={() => clearField('professional_summary')}
 			></textarea>
 			{#if fieldErrors.professional_summary}
-				<span class="label-text-alt text-error">{fieldErrors.professional_summary}</span>
+				<span class="text-error text-xs">{fieldErrors.professional_summary}</span>
 			{/if}
 		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Skills (comma-separated)</span>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Skills (comma-separated)</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.skillsText
-					? 'input-error'
-					: ''}"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.skillsText
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				bind:value={skillsText}
 				oninput={() => clearField('skillsText')}
 			/>
 			{#if fieldErrors.skillsText}
-				<span class="label-text-alt text-error">{fieldErrors.skillsText}</span>
+				<span class="text-error text-xs">{fieldErrors.skillsText}</span>
 			{/if}
 		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Domain</span>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Domain</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.domain
-					? 'input-error'
-					: ''}"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.domain
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				bind:value={domain}
 				oninput={() => clearField('domain')}
 			/>
-			{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span
-				>{/if}
+			{#if fieldErrors.domain}<span class="text-error text-xs">{fieldErrors.domain}</span>{/if}
 		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">Values</span>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Values</span>
 			<textarea
-				class="textarea textarea-bordered border-base-300 bg-base-200 rounded-xl"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 border-base-300 focus:border-primary focus:ring-primary/25 block w-full resize-y rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
 				rows={rowsForText(values_statement)}
 				bind:value={values_statement}
 			></textarea>
 		</label>
-		<label class="form-control">
-			<span class="label-text font-medium">LinkedIn URL</span>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">LinkedIn URL</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.linkedin_url
-					? 'input-error'
-					: ''}"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.linkedin_url
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				placeholder="https://www.linkedin.com/in/your-handle"
 				bind:value={linkedin_url}
 				oninput={() => clearField('linkedin_url')}
 			/>
 			{#if fieldErrors.linkedin_url}
-				<span class="label-text-alt text-error">{fieldErrors.linkedin_url}</span>
+				<span class="text-error text-xs">{fieldErrors.linkedin_url}</span>
 			{/if}
 		</label>
 		<Button type="submit" disabled={$save.isPending}
 			>{$save.isPending ? 'Saving…' : 'Save profile'}</Button
 		>
 	</form>
-	<div class="divider"></div>
-	<div class="space-y-2">
+	<div class="border-base-300 mt-6 space-y-2 border-t pt-6">
 		<h3 class="text-error text-sm font-medium">Danger zone</h3>
 		<p class="text-base-content/70 text-sm">
 			Deactivate your account. Your session will end immediately.
@@ -242,12 +241,12 @@
 						(ask your organization for the right contact address).
 					{/if}
 				</p>
-				<label class="form-control w-full">
-					<span class="label-text font-medium"
+				<label class="block w-full space-y-1.5">
+					<span class="text-sm font-medium"
 						>Type <span class="text-error font-mono">delete</span> to confirm</span
 					>
 					<input
-						class="input input-bordered border-base-300 bg-base-200 rounded-xl"
+						class="bg-base-200 text-base-content placeholder:text-base-content/45 border-base-300 focus:border-primary focus:ring-primary/25 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none"
 						type="text"
 						autocomplete="off"
 						placeholder="delete"

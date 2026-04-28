@@ -7,18 +7,18 @@
 	}
 
 	const btnBase =
-		'btn btn-ghost btn-sm min-h-10 flex-1 rounded-lg border border-transparent transition-colors';
+		'btn btn-ghost btn-sm min-h-10 flex-1 rounded-none border-y-0 border-transparent transition-colors';
 	const active = 'border-base-300 bg-base-200';
 </script>
 
 <div
-	class="join join-horizontal border-base-300 bg-base-100 w-full border"
+	class="border-base-300 bg-base-100 divide-base-300 inline-flex w-full divide-x overflow-hidden rounded-xl border"
 	role="group"
 	aria-label="Color scheme"
 >
 	<button
 		type="button"
-		class="{btnBase} join-item {appearance.value === 'light' ? active : ''}"
+		class="{btnBase} {appearance.value === 'light' ? active : ''}"
 		aria-pressed={appearance.value === 'light'}
 		aria-label="Light theme"
 		onclick={() => pick('light')}
@@ -27,7 +27,7 @@
 	</button>
 	<button
 		type="button"
-		class="{btnBase} join-item {appearance.value === 'dark' ? active : ''}"
+		class="{btnBase} {appearance.value === 'dark' ? active : ''}"
 		aria-pressed={appearance.value === 'dark'}
 		aria-label="Dark theme"
 		onclick={() => pick('dark')}
@@ -36,7 +36,7 @@
 	</button>
 	<button
 		type="button"
-		class="{btnBase} join-item {appearance.value === 'system' ? active : ''}"
+		class="{btnBase} {appearance.value === 'system' ? active : ''}"
 		aria-pressed={appearance.value === 'system'}
 		aria-label="Use system theme"
 		onclick={() => pick('system')}

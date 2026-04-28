@@ -158,109 +158,129 @@
 </script>
 
 <Modal bind:open {title} boxClass="max-w-lg">
-	{#snippet children()}
-		<form id="job-config-editor-form" class="space-y-4" onsubmit={onSubmit}>
-			{#if fieldErrors.form}
-				<p class="text-error text-sm" role="alert">{fieldErrors.form}</p>
+	<form id="job-config-editor-form" class="space-y-4" onsubmit={onSubmit}>
+		{#if fieldErrors.form}
+			<p class="text-error text-sm" role="alert">{fieldErrors.form}</p>
+		{/if}
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Config name (optional)</span>
+			<input
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.name
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
+				bind:value={name}
+				oninput={onNameInput}
+			/>
+			{#if fieldErrors.name}<span class="text-error text-xs">{fieldErrors.name}</span>{/if}
+		</label>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Keywords (comma-separated)</span>
+			<input
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.keywordsText
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
+				bind:value={keywordsText}
+				oninput={onKeywordsInput}
+			/>
+			{#if fieldErrors.keywordsText}
+				<span class="text-error text-xs">{fieldErrors.keywordsText}</span>
 			{/if}
-			<label class="form-control">
-				<span class="label-text font-medium">Config name (optional)</span>
+		</label>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Location</span>
+			<input
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.location
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
+				bind:value={location}
+				oninput={onLocationInput}
+			/>
+			{#if fieldErrors.location}
+				<span class="text-error text-xs">{fieldErrors.location}</span>
+			{/if}
+		</label>
+		<div class="block space-y-1.5">
+			<label
+				class="bg-base-200 border-base-300 flex w-full items-start gap-3 rounded-xl border px-3 py-2.5"
+			>
 				<input
-					class="input input-bordered border-base-300 bg-base-200 rounded-xl"
-					bind:value={name}
-					oninput={onNameInput}
+					type="checkbox"
+					class="border-base-400 bg-base-100 text-primary focus:ring-primary/30 mt-0.5 h-4 w-4 rounded focus:ring-2"
+					bind:checked={remote_only}
 				/>
+				<div class="space-y-0.5">
+					<span class="text-sm font-medium">Remote only</span>
+					<p class="text-base-content/70 text-xs">Only include jobs that are fully remote.</p>
+				</div>
 			</label>
-			<label class="form-control">
-				<span class="label-text font-medium">Keywords (comma-separated)</span>
+		</div>
+		<div class="grid gap-4 sm:grid-cols-2">
+			<label class="block space-y-1.5">
+				<span class="text-sm font-medium">Salary min</span>
 				<input
-					class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.keywordsText
-						? 'input-error'
-						: ''}"
-					bind:value={keywordsText}
-					oninput={onKeywordsInput}
+					class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.salary_min
+						? 'border-error focus:ring-error/35'
+						: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
+					type="text"
+					inputmode="numeric"
+					pattern="[0-9]*"
+					autocomplete="off"
+					maxlength="9"
+					value={salaryMinInput}
+					oninput={onSalaryMinInput}
 				/>
-				{#if fieldErrors.keywordsText}
-					<span class="label-text-alt text-error">{fieldErrors.keywordsText}</span>
+				{#if fieldErrors.salary_min}
+					<span class="text-error text-xs">{fieldErrors.salary_min}</span>
 				{/if}
 			</label>
-			<label class="form-control">
-				<span class="label-text font-medium">Location</span>
+			<label class="block space-y-1.5">
+				<span class="text-sm font-medium">Salary max</span>
 				<input
-					class="input input-bordered border-base-300 bg-base-200 rounded-xl"
-					bind:value={location}
-					oninput={onLocationInput}
+					class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.salary_max
+						? 'border-error focus:ring-error/35'
+						: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
+					type="text"
+					inputmode="numeric"
+					pattern="[0-9]*"
+					autocomplete="off"
+					maxlength="9"
+					value={salaryMaxInput}
+					oninput={onSalaryMaxInput}
 				/>
-			</label>
-			<label class="label cursor-pointer justify-start gap-3">
-				<input type="checkbox" class="checkbox-primary checkbox" bind:checked={remote_only} />
-				<span class="font-medium">Remote only</span>
-			</label>
-			<div class="grid gap-4 sm:grid-cols-2">
-				<label class="form-control">
-					<span class="label-text font-medium">Salary min</span>
-					<input
-						class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.salary_min
-							? 'input-error'
-							: ''}"
-						type="text"
-						inputmode="numeric"
-						pattern="[0-9]*"
-						autocomplete="off"
-						maxlength="9"
-						value={salaryMinInput}
-						oninput={onSalaryMinInput}
-					/>
-					{#if fieldErrors.salary_min}
-						<span class="label-text-alt text-error">{fieldErrors.salary_min}</span>
-					{/if}
-				</label>
-				<label class="form-control">
-					<span class="label-text font-medium">Salary max</span>
-					<input
-						class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.salary_max
-							? 'input-error'
-							: ''}"
-						type="text"
-						inputmode="numeric"
-						pattern="[0-9]*"
-						autocomplete="off"
-						maxlength="9"
-						value={salaryMaxInput}
-						oninput={onSalaryMaxInput}
-					/>
-					{#if fieldErrors.salary_max}
-						<span class="label-text-alt text-error">{fieldErrors.salary_max}</span>
-					{/if}
-				</label>
-			</div>
-			<label class="form-control">
-				<span class="label-text font-medium">Fetch schedule</span>
-				{#if $presets.isPending}
-					<select class="select select-bordered border-base-300 bg-base-200 rounded-xl" disabled>
-						<option>Loading…</option>
-					</select>
-				{:else if $presets.isError}
-					<p class="text-error text-sm">Could not load schedules.</p>
-				{:else if $presets.data}
-					<select
-						class="select select-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.fetch_schedule_cron
-							? 'select-error'
-							: ''}"
-						bind:value={fetch_schedule_cron}
-						onchange={onFetchScheduleChange}
-					>
-						{#each $presets.data as p (p.id)}
-							<option value={p.fetch_schedule_cron}>{p.label}</option>
-						{/each}
-					</select>
-				{/if}
-				{#if fieldErrors.fetch_schedule_cron}
-					<span class="label-text-alt text-error">{fieldErrors.fetch_schedule_cron}</span>
+				{#if fieldErrors.salary_max}
+					<span class="text-error text-xs">{fieldErrors.salary_max}</span>
 				{/if}
 			</label>
-		</form>
-	{/snippet}
+		</div>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Fetch schedule</span>
+			{#if $presets.isPending}
+				<select
+					class="bg-base-200 text-base-content border-base-300 block w-full cursor-not-allowed rounded-xl border px-3 py-2.5 opacity-60"
+					disabled
+				>
+					<option>Loading…</option>
+				</select>
+			{:else if $presets.isError}
+				<p class="text-error text-sm">Could not load schedules.</p>
+			{:else if $presets.data}
+				<select
+					class="bg-base-200 text-base-content block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.fetch_schedule_cron
+						? 'border-error focus:ring-error/35'
+						: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
+					bind:value={fetch_schedule_cron}
+					onchange={onFetchScheduleChange}
+				>
+					{#each $presets.data as p (p.id)}
+						<option value={p.fetch_schedule_cron}>{p.label}</option>
+					{/each}
+				</select>
+			{/if}
+			{#if fieldErrors.fetch_schedule_cron}
+				<span class="text-error text-xs">{fieldErrors.fetch_schedule_cron}</span>
+			{/if}
+		</label>
+	</form>
 	{#snippet footer()}
 		<button type="button" class="btn btn-ghost rounded-xl" onclick={() => (open = false)}
 			>Cancel</button

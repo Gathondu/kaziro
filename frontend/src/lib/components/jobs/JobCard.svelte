@@ -31,14 +31,8 @@
 	<span
 		class="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
 	>
-		<span
-			class="absolute -inset-28 animate-spin blur-lg"
-			style="background: conic-gradient(from 0deg, transparent 0deg, transparent 185deg, oklch(from var(--color-primary) l c h / 0.72) 235deg, oklch(from var(--color-primary) l c h / 1) 275deg, oklch(from var(--color-secondary) l c h / 1) 315deg, oklch(from var(--color-accent) l c h / 1) 345deg, oklch(from var(--color-accent) l c h / 0.72) 360deg); animation-duration: 3.4s;"
-		></span>
-		<span
-			class="absolute -inset-24 animate-spin"
-			style="background: conic-gradient(from 0deg, transparent 0deg, transparent 195deg, oklch(from var(--color-primary) l c h / 0.8) 245deg, oklch(from var(--color-primary) l c h / 1) 285deg, oklch(from var(--color-secondary) l c h / 1) 320deg, oklch(from var(--color-accent) l c h / 1) 348deg, oklch(from var(--color-accent) l c h / 0.8) 360deg); animation-duration: 3.4s;"
-		></span>
+		<span class="kaziro-card-sheen-blur absolute -inset-28 animate-spin blur-lg"></span>
+		<span class="kaziro-card-sheen-sharp absolute -inset-24 animate-spin"></span>
 	</span>
 	<span
 		class="border-base-300 bg-base-100 relative z-10 m-0.5 block rounded-2xl border p-4 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
