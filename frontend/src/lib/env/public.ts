@@ -2,7 +2,11 @@ import { env } from '$env/dynamic/public';
 
 /** API origin without trailing slash (defaults for CI / `pnpm build` without `.env`). */
 export function getPublicApiUrl(): string {
-	return (env.PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
+	return normalizePublicApiUrl(env.PUBLIC_API_URL ?? 'http://localhost:8000');
+}
+
+export function normalizePublicApiUrl(value: string): string {
+	return value.replace(/\/$/, '').replace(/\/api\/v1$/, '');
 }
 
 /** Optional websocket origin; falls back to PUBLIC_API_URL when unset. */

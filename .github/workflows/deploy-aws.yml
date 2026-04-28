@@ -251,7 +251,7 @@ jobs:
 
       - name: Build frontend
         env:
-          PUBLIC_API_URL: ${{ needs.terraform.outputs.api_v1_base_url }}
+          PUBLIC_API_URL: ${{ needs.terraform.outputs.api_base_url }}
           PUBLIC_WS_URL: ${{ needs.terraform.outputs.websocket_url }}
           PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
           PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
