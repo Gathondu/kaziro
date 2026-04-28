@@ -14,10 +14,10 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.45.6
         version: 2.104.0
-      '@tanstack/query-persist-client-core':
+      '@tanstack/query-async-storage-persister':
         specifier: ^5.90.2
         version: 5.90.2
-      '@tanstack/query-sync-storage-persister':
+      '@tanstack/query-persist-client-core':
         specifier: ^5.90.2
         version: 5.90.2
       '@tanstack/svelte-query':
@@ -968,14 +968,14 @@ packages:
   '@tailwindcss/postcss@4.2.4':
     resolution: {integrity: sha512-wgAVj6nUWAolAu8YFvzT2cTBIElWHkjZwFYovF+xsqKsW2ADxM/X2opxj5NsF/qVccAOjRNe8X2IdPzMsWyHTg==}
 
+  '@tanstack/query-async-storage-persister@5.90.2':
+    resolution: {integrity: sha512-oyb7IHW85hsRdSZZNPu5dowQJFX3agOR/1O4M6Qc5V7s5dfnex5CqipEu0tbScNRMc2knna2ihQUiEQuTXWrEQ==}
+
   '@tanstack/query-core@5.90.2':
     resolution: {integrity: sha512-k/TcR3YalnzibscALLwxeiLUub6jN5EDLwKDiO7q5f4ICEoptJ+n9+7vcEFy5/x/i6Q+Lb/tXrsKCggf5uQJXQ==}
 
   '@tanstack/query-persist-client-core@5.90.2':
     resolution: {integrity: sha512-rgJRgqqziPc3KgK2mav2HNR4PoI5e7fkiIrkg85xZ5j29mHPzTp3A0QcceQXVaV9qcPp/SMDJA48A6BpGJGHZg==}
-
-  '@tanstack/query-sync-storage-persister@5.90.2':
-    resolution: {integrity: sha512-vofHRbeLS6ufL/hOndbuBbMJGAJb2EdckJUT6C1jv1Px7b0y6s7ZHbb/lNiAA3yrIxQILw6feGFl/6/Fu58viQ==}
 
   '@tanstack/svelte-query@5.90.2':
     resolution: {integrity: sha512-owjnp0w8sOXlMhLZhucHrsYvCjgjHrVyII/wlqMGefxKFyroZS3xCwTee+IUx7UHbL+QmKr/HQTeTqhgxmxPQw==}
@@ -3140,16 +3140,16 @@ snapshots:
       postcss: 8.5.10
       tailwindcss: 4.2.4
 
+  '@tanstack/query-async-storage-persister@5.90.2':
+    dependencies:
+      '@tanstack/query-core': 5.90.2
+      '@tanstack/query-persist-client-core': 5.90.2
+
   '@tanstack/query-core@5.90.2': {}
 
   '@tanstack/query-persist-client-core@5.90.2':
     dependencies:
       '@tanstack/query-core': 5.90.2
-
-  '@tanstack/query-sync-storage-persister@5.90.2':
-    dependencies:
-      '@tanstack/query-core': 5.90.2
-      '@tanstack/query-persist-client-core': 5.90.2
 
   '@tanstack/svelte-query@5.90.2(svelte@5.55.5(@typescript-eslint/types@8.59.0))':
     dependencies:

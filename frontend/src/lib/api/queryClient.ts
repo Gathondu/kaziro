@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { QueryClient } from '@tanstack/svelte-query';
 import { persistQueryClient } from '@tanstack/query-persist-client-core';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 
 const QUERY_CACHE_KEY = 'kaziro-query-cache-v1';
 const QUERY_CACHE_MAX_AGE_MS = 15 * 60_000;
@@ -35,18 +35,27 @@ export function createAppQueryClient(): QueryClient {
 	});
 
 	if (browser) {
-		const persister = createSyncStoragePersister({
-			storage: window.localStorage,
+		const persister = createAsyncStoragePersister({
+			storage: {
+				getItem: async (key: string) => window.localStorage.getItem(key),
+				setItem: async (key: string, value: string) => {
+					window.localStorage.setItem(key, value);
+				},
+				removeItem: async (key: string) => {
+					window.localStorage.removeItem(key);
+				}
+			},
 			key: QUERY_CACHE_KEY
 		});
-		void persistQueryClient({
+		const [, restorePromise] = persistQueryClient({
 			queryClient: client,
 			persister,
 			maxAge: QUERY_CACHE_MAX_AGE_MS,
 			dehydrateOptions: {
 				shouldDehydrateQuery: (query) => shouldPersistQuery(query.queryKey)
 			}
-		}).catch(() => {
+		});
+		void restorePromise.catch(() => {
 			// If persisted payload is corrupted/non-JSON (e.g. HTML), recover by clearing it.
 			window.localStorage.removeItem(QUERY_CACHE_KEY);
 		});
