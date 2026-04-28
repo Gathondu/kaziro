@@ -66,6 +66,24 @@ def _seed_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
         get_settings.cache_clear()
 
 
+@pytest.fixture(autouse=True)
+def _reset_async_db_engine_cache() -> Iterator[None]:
+    """Prevent asyncpg connections from leaking across asyncio event loops.
+
+    Some tests use different async contexts; reusing a cached engine can bind
+    pooled connections to a closed/foreign loop and trigger "different loop"
+    RuntimeError from asyncpg. Resetting the test engine cache keeps each test
+    isolated.
+    """
+    from backend.db.session import _reset_for_tests
+
+    _reset_for_tests()
+    try:
+        yield
+    finally:
+        _reset_for_tests()
+
+
 def pytest_configure(config: pytest.Config) -> None:
     """Ensure ``APP_ENV=test`` even before fixtures load (e.g. import-time)."""
     for key, value in _REQUIRED_ENV.items():

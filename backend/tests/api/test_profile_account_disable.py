@@ -61,7 +61,7 @@ def test_profile_account_disable_sets_is_active_false() -> None:
                     text(
                         "INSERT INTO users (id, email, is_active, subscription_tier, "
                         "created_at, updated_at) VALUES "
-                        "(CAST(:id AS uuid), :email, true, 'FREE', NOW(), NOW())"
+                        "(CAST(:id AS uuid), :email, true, 'free', NOW(), NOW())"
                     ),
                     {"id": str(uid), "email": email},
                 )

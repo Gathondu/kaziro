@@ -67,8 +67,8 @@ async def two_users(engine: AsyncEngine) -> AsyncIterator[tuple[uuid.UUID, uuid.
             text(
                 "INSERT INTO users (id, email, is_active, subscription_tier, "
                 "created_at, updated_at) VALUES "
-                "(:a, :ea, true, 'FREE', NOW(), NOW()), "
-                "(:b, :eb, true, 'FREE', NOW(), NOW())"
+                "(:a, :ea, true, 'free', NOW(), NOW()), "
+                "(:b, :eb, true, 'free', NOW(), NOW())"
             ),
             {"a": user_a, "b": user_b, "ea": f"{user_a}@t.x", "eb": f"{user_b}@t.x"},
         )
