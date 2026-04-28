@@ -48,22 +48,24 @@
 	</p>
 {:else}
 	<form class="space-y-4" onsubmit={submit}>
-		<label class="form-control">
-			<span class="label-text font-medium">Email</span>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Email</span>
 			<input
-				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.email
-					? 'input-error'
-					: ''}"
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.email
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
 				type="email"
 				autocomplete="email"
 				bind:value={email}
 				oninput={onEmailInput}
 			/>
-			{#if fieldErrors.email}<span class="label-text-alt text-error">{fieldErrors.email}</span>{/if}
+			{#if fieldErrors.email}<span class="text-error text-xs">{fieldErrors.email}</span>{/if}
 		</label>
-		<Button type="submit" disabled={pending}>{pending ? 'Sending…' : 'Send reset link'}</Button>
+		<Button type="submit" class="h-11 w-full justify-center" disabled={pending}
+			>{pending ? 'Sending…' : 'Send reset link'}</Button
+		>
 	</form>
 {/if}
 <p class="mt-4 text-sm">
-	<a class="link font-medium" href="/login">Back to log in</a>
+	<a class="font-medium underline-offset-4 hover:underline" href="/login">Back to log in</a>
 </p>
