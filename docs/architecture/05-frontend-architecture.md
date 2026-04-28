@@ -1,7 +1,7 @@
 # Frontend Architecture
 
 **Status**: Active
-**Last updated**: 2026-04-22
+**Last updated**: 2026-04-28
 **Source**: Section 7 of [`Kaziro_Design_Document.pdf`](../../Kaziro_Design_Document.pdf)
 **Related ADRs**: [ADR-0007](../decisions/ADR-0007-frontend-sveltekit.md)
 **Code (target)**: [`frontend/`](../../frontend/)
@@ -29,8 +29,7 @@
 ```
 frontend/src/
 ├── routes/                       # SvelteKit pages
-│   ├── +layout.svelte            # Root layout (auth guard, nav)
-│   ├── +layout.server.ts         # Root load (appearance cookie → theme)
+│   ├── +layout.svelte            # Root layout (query client, auth bootstrap, theme init)
 │   ├── onboarding/
 │   ├── dashboard/
 │   ├── jobs/
