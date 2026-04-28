@@ -90,7 +90,7 @@ async def test_document_agent_persists_text_and_pdfs(
 
     tailored = (
         "WORK EXPERIENCE\nSenior Engineer at Acme Corp using Python "
-        "and PostgreSQL daily. Highlighted relevance to data pipelines.\n"
+        "and PostgreSQL daily for distributed systems.\n"
     )
     cover = (
         "Dear Fabrikam hiring team,\nI am excited about the Backend "
