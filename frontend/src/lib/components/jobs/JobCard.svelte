@@ -26,7 +26,7 @@
 
 <a
 	href={detailHref}
-	class="group relative z-0 block overflow-hidden rounded-2xl bg-base-300 transition-transform duration-200 hover:z-20 hover:-translate-y-0.5 hover:scale-[1.01]"
+	class="group bg-base-300 relative z-0 block overflow-hidden rounded-2xl transition-transform duration-200 hover:z-20 hover:-translate-y-0.5 hover:scale-[1.01]"
 >
 	<span
 		class="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -41,19 +41,19 @@
 		></span>
 	</span>
 	<span
-		class="relative z-10 block m-0.5 rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
+		class="border-base-300 bg-base-100 relative z-10 m-0.5 block rounded-2xl border p-4 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
 	>
 		<div class="flex flex-wrap items-start justify-between gap-2">
 			<div>
 				<h3 class="font-semibold">{job.title}</h3>
-				<p class="text-sm text-base-content/70">{job.company_name}</p>
+				<p class="text-base-content/70 text-sm">{job.company_name}</p>
 			</div>
 			{#if classification}
 				<Badge variant={badgeVariant}>{classification}</Badge>
 			{/if}
 		</div>
 		{#if job.location}
-			<p class="mt-2 text-xs text-base-content/60">
+			<p class="text-base-content/60 mt-2 text-xs">
 				{job.location}{job.remote_flag ? ' · Remote' : ''}
 			</p>
 		{/if}

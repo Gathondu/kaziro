@@ -105,7 +105,7 @@
 </script>
 
 <section
-	class="space-y-4 rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm"
+	class="border-base-300 bg-base-100 space-y-4 rounded-2xl border p-5 shadow-sm"
 	aria-label="Evaluation"
 >
 	<div class="flex flex-wrap items-center justify-between gap-2">
@@ -118,7 +118,7 @@
 			{/if}
 		</Badge>
 	</div>
-	<p class="text-sm text-base-content/70">
+	<p class="text-base-content/70 text-sm">
 		Overall score: <span class="font-semibold tabular-nums"
 			>{evaluation.overall_score.toFixed(2)}</span
 		>
@@ -126,18 +126,20 @@
 	<div>
 		<h3 class="mb-2 text-sm font-semibold">Dimension scores</h3>
 		{#if scoreGroups.length === 0}
-			<p class="rounded-xl bg-base-200 p-3 text-sm text-base-content/70">No dimension scores yet.</p>
+			<p class="bg-base-200 text-base-content/70 rounded-xl p-3 text-sm">
+				No dimension scores yet.
+			</p>
 		{:else}
 			<div class="grid gap-2 sm:grid-cols-2">
 				{#each scoreGroups as group (group.id)}
-					<div class="rounded-xl bg-base-200 p-3 text-sm">
-						<p class="mb-2 font-semibold text-base-content/80">{group.label}</p>
+					<div class="bg-base-200 rounded-xl p-3 text-sm">
+						<p class="text-base-content/80 mb-2 font-semibold">{group.label}</p>
 						<ul class="space-y-2">
 							{#each group.bars as bar (bar.id)}
 								<li>
 									<div class="mb-1 flex items-center justify-between gap-2">
 										<span class="truncate font-medium">{bar.label}</span>
-										<span class="shrink-0 tabular-nums text-base-content/80">{bar.raw}</span>
+										<span class="text-base-content/80 shrink-0 tabular-nums">{bar.raw}</span>
 									</div>
 									<progress
 										class="progress h-1.5 w-full {progressClass(bar.tone)}"
@@ -155,6 +157,6 @@
 	</div>
 	<div>
 		<h3 class="mb-2 text-sm font-semibold">Judge rationale</h3>
-		<p class="rounded-xl bg-base-200 p-3 text-sm leading-relaxed">{evaluation.final_feedback}</p>
+		<p class="bg-base-200 rounded-xl p-3 text-sm leading-relaxed">{evaluation.final_feedback}</p>
 	</div>
 </section>

@@ -48,10 +48,7 @@
 				clearOnboardingDraft();
 				await goto('/dashboard');
 			} catch (e) {
-				if (
-					e instanceof ApiError &&
-					(e.code === 'profile_not_found' || e.status === 404)
-				) {
+				if (e instanceof ApiError && (e.code === 'profile_not_found' || e.status === 404)) {
 					return;
 				}
 			}
@@ -62,22 +59,26 @@
 	});
 </script>
 
-<div class="flex min-h-screen flex-col bg-base-200">
+<svelte:head>
+	<meta name="robots" content="noindex,nofollow" />
+</svelte:head>
+
+<div class="bg-base-200 flex min-h-screen flex-col">
 	<header
-		class="shrink-0 border-b border-base-300 bg-base-100/90 backdrop-blur-sm"
+		class="border-base-300 bg-base-100/90 shrink-0 border-b backdrop-blur-sm"
 		aria-label="Onboarding"
 	>
 		<div class="mx-auto flex w-full max-w-xl items-center justify-center px-4 py-3">
 			{#if stepMeta}
-				<span class="text-xs font-medium tabular-nums text-base-content/70">
+				<span class="text-base-content/70 text-xs font-medium tabular-nums">
 					Step {stepMeta.current} of {stepMeta.total}
 				</span>
 			{/if}
 		</div>
 		{#if stepMeta}
-			<div class="h-1 w-full bg-base-300" aria-hidden="true">
+			<div class="bg-base-300 h-1 w-full" aria-hidden="true">
 				<div
-					class="h-full bg-primary transition-[width] duration-300 ease-out"
+					class="bg-primary h-full transition-[width] duration-300 ease-out"
 					style={`width: ${progressPct}%`}
 				></div>
 			</div>
@@ -89,7 +90,7 @@
 			{#if showBack}
 				<button
 					type="button"
-					class="btn btn-ghost btn-sm -ml-2 mb-4 gap-1 px-2 font-normal text-base-content/80 hover:text-base-content"
+					class="btn btn-ghost btn-sm text-base-content/80 hover:text-base-content mb-4 -ml-2 gap-1 px-2 font-normal"
 					onclick={onBack}
 				>
 					<ChevronLeft class="size-4 shrink-0" aria-hidden="true" />

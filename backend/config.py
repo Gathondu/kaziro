@@ -19,7 +19,7 @@ import sys
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Any, Literal, cast
+from typing import Annotated, Literal
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import AnyHttpUrl, Field, PostgresDsn, RedisDsn, SecretStr, field_validator
@@ -313,7 +313,7 @@ def get_settings() -> Settings:
     Cached via ``lru_cache`` so the env is parsed exactly once per worker.
     Tests can clear the cache with ``get_settings.cache_clear()``.
     """
-    return cast(Any, Settings)()
+    return Settings()
 
 
 # Convenience re-export so callers can ``from backend.config import settings``.

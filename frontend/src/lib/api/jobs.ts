@@ -65,9 +65,7 @@ export function regenerateJobDocuments(
 	jobId: string,
 	options?: { part?: RegenerateDocumentsPart }
 ): Promise<TriggerEvaluationBody> {
-	const body = JSON.stringify(
-		options?.part != null ? { part: options.part } : {}
-	);
+	const body = JSON.stringify(options?.part != null ? { part: options.part } : {});
 	return apiFetch<TriggerEvaluationBody>(`/api/v1/jobs/${jobId}/regenerate-documents`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },

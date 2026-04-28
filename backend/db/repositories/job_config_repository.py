@@ -69,14 +69,13 @@ async def deactivate_all_for_user(session: AsyncSession, user_id: uuid.UUID) -> 
             JobSearchConfig.is_active.is_(True),
         )
         .values(is_active=False, updated_at=datetime.now(UTC))
+        .returning(JobSearchConfig.id)
     )
     result = await session.execute(stmt)
-    return int(result.rowcount or 0)
+    return len(result.scalars().all())
 
 
-async def get_by_id_unscoped(
-    session: AsyncSession, config_id: uuid.UUID
-) -> JobSearchConfig | None:
+async def get_by_id_unscoped(session: AsyncSession, config_id: uuid.UUID) -> JobSearchConfig | None:
     """Background-task fetch by primary key (no user scoping).
 
     Only Celery tasks and the Pipeline Orchestrator should call this.
@@ -115,9 +114,7 @@ async def update(
     return config
 
 
-async def delete_by_id(
-    session: AsyncSession, user_id: uuid.UUID, config_id: uuid.UUID
-) -> bool:
+async def delete_by_id(session: AsyncSession, user_id: uuid.UUID, config_id: uuid.UUID) -> bool:
     """Hard-delete a config; returns ``True`` iff a row was removed."""
     stmt = (
         delete(JobSearchConfig)

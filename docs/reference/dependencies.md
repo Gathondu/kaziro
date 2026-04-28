@@ -1,7 +1,7 @@
 # Dependencies Reference
 
 **Status**: Living
-**Last updated**: 2026-04-22
+**Last updated**: 2026-04-27
 **Source**: Kaziro Design Document §13 + `.cursor/rules/{002-backend,003-frontend}.mdc`
 
 The canonical, opinionated list of runtime + dev dependencies for both
@@ -88,6 +88,7 @@ Versioning policy:
 | `daisyui`               | `^4.12` | Tailwind component library.                            |
 | `@tanstack/svelte-query` | `^5.59` | Server-state management.                              |
 | `@supabase/supabase-js` | `^2.45` | Supabase client (auth + storage).                      |
+| `@supabase/ssr`         | `^0.10` | Cookie-aware Supabase clients for SvelteKit SSR (shared session with `hooks.server.ts`). |
 | `pdfjs-dist`            | `^4.7`  | Render uploaded CVs in-browser for preview.            |
 | `@tiptap/core`          | `^2.8`  | Rich-text editor for cover-letter editing.             |
 | `@tiptap/starter-kit`   | `^2.8`  | Default TipTap extensions.                             |

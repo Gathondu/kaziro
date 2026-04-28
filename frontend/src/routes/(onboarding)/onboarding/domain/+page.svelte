@@ -5,7 +5,11 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { onboardingDomainSchema } from '$lib/schemas/profile';
 	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
-	import { loadOnboardingDraft, resumeOnboardingPath, saveOnboardingDraft } from '$lib/utils/onboarding';
+	import {
+		loadOnboardingDraft,
+		resumeOnboardingPath,
+		saveOnboardingDraft
+	} from '$lib/utils/onboarding';
 	import { get } from 'svelte/store';
 
 	const DOMAIN_MAX = 100;
@@ -79,7 +83,7 @@
 </svelte:head>
 
 <h1 class="mb-2 text-xl font-semibold">Your domain</h1>
-<p class="mb-6 text-sm text-base-content/70">
+<p class="text-base-content/70 mb-6 text-sm">
 	Your domain is the industry or problem space you work in (for example, healthcare IT, fintech
 	payments, or climate hardware). It helps us match roles and language to your context.
 </p>
@@ -88,7 +92,7 @@
 		<span class="label-text font-medium">Domain</span>
 		<div class="relative">
 			<textarea
-				class="textarea textarea-bordered min-h-24 w-full rounded-xl border-base-300 bg-base-200 pb-10 pr-14 {fieldErrors.domain
+				class="textarea textarea-bordered border-base-300 bg-base-200 min-h-24 w-full rounded-xl pr-14 pb-10 {fieldErrors.domain
 					? 'textarea-error'
 					: ''}"
 				maxlength={DOMAIN_MAX}
@@ -97,7 +101,7 @@
 				oninput={onDomainInput}
 			></textarea>
 			<span
-				class="pointer-events-none absolute bottom-3 right-3 text-xs tabular-nums text-base-content/60"
+				class="text-base-content/60 pointer-events-none absolute right-3 bottom-3 text-xs tabular-nums"
 				aria-live="polite"
 			>
 				{domainLen}/{DOMAIN_MAX}

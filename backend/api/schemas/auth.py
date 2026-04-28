@@ -37,9 +37,7 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": [
-                {"email": "candidate@example.com", "password": "hunter2hunter2"}
-            ]
+            "examples": [{"email": "candidate@example.com", "password": "hunter2hunter2"}]
         }
     )
 
@@ -52,11 +50,7 @@ class RefreshRequest(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [{"email": "candidate@example.com"}]
-        }
-    )
+    model_config = ConfigDict(json_schema_extra={"examples": [{"email": "candidate@example.com"}]})
 
     email: EmailStr
 

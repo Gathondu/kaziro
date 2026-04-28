@@ -13,7 +13,7 @@
 </script>
 
 <aside
-	class="flex w-52 shrink-0 flex-col border-r border-base-300 bg-base-100"
+	class="border-base-300 bg-base-100 flex w-52 shrink-0 flex-col border-r"
 	aria-label="Main navigation"
 >
 	<nav class="flex flex-1 flex-col gap-1 p-3" aria-label="Main">
@@ -22,8 +22,8 @@
 		<a class={linkCls('/applications')} href="/applications">Applications</a>
 		<a class={linkCls('/settings')} href="/settings">Settings</a>
 	</nav>
-	<div class="flex flex-col gap-2 border-t border-base-300 p-3">
-		<span class="text-xs font-medium uppercase tracking-wide text-base-content/60">Appearance</span>
+	<div class="border-base-300 flex flex-col gap-2 border-t p-3">
+		<span class="text-base-content/60 text-xs font-medium tracking-wide uppercase">Appearance</span>
 		<AppearanceIconSwitch />
 	</div>
 </aside>

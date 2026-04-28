@@ -125,9 +125,7 @@ async def test_research_cache_miss_persists_summary(
     assert result.summary_id is not None
 
     async with async_session_factory() as session:
-        row = await company_summary_repository.get_for_posting(
-            session, posting_id
-        )
+        row = await company_summary_repository.get_for_posting(session, posting_id)
         assert row is not None
         assert row.ai_summary == "Contoso builds cloud infra."
         assert row.expires_at > datetime.now(UTC) + timedelta(days=29)
@@ -152,7 +150,5 @@ async def test_research_brief_failure_no_persist(test_user_id: uuid.UUID) -> Non
     assert result.error is not None
 
     async with async_session_factory() as session:
-        row = await company_summary_repository.get_for_posting(
-            session, posting_id
-        )
+        row = await company_summary_repository.get_for_posting(session, posting_id)
         assert row is None

@@ -1,7 +1,7 @@
 # Frontend Routes
 
 **Status**: Active
-**Last updated**: 2026-04-22
+**Last updated**: 2026-04-27
 **Source**: Section 7.1 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
 **Related**: [`../../architecture/05-frontend-architecture.md`](../../architecture/05-frontend-architecture.md)
 
@@ -12,18 +12,23 @@ SvelteKit file-based routing tree under `frontend/src/routes/`.
 ```
 src/routes/
 ├── +layout.svelte                 # Auth gate, top nav, toast container
-├── +layout.ts                     # Server-side auth check + Supabase client
+├── +layout.server.ts              # Root layout load: `appearance` cookie (default `system` → OS preference)
 ├── +error.svelte                  # Global error fallback
-├── +page.svelte                   # Marketing landing (unauth) → redirects to /dashboard if authed
-├── login/
-│   └── +page.svelte
-├── signup/
-│   └── +page.svelte
-├── onboarding/
-│   ├── +page.svelte               # Step 1 — basic profile
-│   ├── upload-cv/+page.svelte     # Step 2 — CV upload
-│   └── preferences/+page.svelte   # Step 3 — first job-search config
-├── (app)/                         # Auth-gated route group
+├── (marketing)/                   # `/`, `/privacy`, `/terms` — inherits `<html data-theme>` (same as app); `data-marketing-surface` tweaks light-terracotta text only
+│   ├── +layout.svelte
+│   ├── +page.server.ts            # `/` SSR redirect if authed; SEO data
+│   ├── +page.svelte               # Landing
+│   ├── privacy/+page.svelte
+│   └── terms/+page.svelte
+├── (auth)/                        # `noindex` in `+layout.svelte`
+│   ├── +layout.svelte
+│   ├── login/+page.svelte
+│   ├── signup/+page.svelte
+│   └── forgot-password/+page.svelte
+├── (onboarding)/                  # `noindex` in `+layout.svelte`
+│   ├── +layout.svelte
+│   └── onboarding/                # step routes (about-you, cv, config, …)
+├── (app)/                         # Auth-gated route group (`noindex` in layout `<svelte:head>`)
 │   ├── +layout.svelte             # Sidebar nav, WS subscription mount
 │   ├── dashboard/
 │   │   └── +page.svelte           # KPIs + activity feed
@@ -45,22 +50,41 @@ src/routes/
 └── api/                           # SvelteKit server endpoints (proxy / BFF if needed)
 ```
 
+Supabase cookie SSR: [`frontend/src/hooks.server.ts`](../../../frontend/src/hooks.server.ts)
+(`createServerClient` from `@supabase/ssr`, per-request `event.locals.supabase`).
+
+### `(marketing)` layout
+
+- Wraps **`/`**, **`/privacy`**, **`/terms`** in `data-theme="terracotta"` so public pages always use the
+  light brand palette, independent of the user’s appearance cookie / system theme on `<html>`.
+
 ## Route specs
 
 ### `/` (landing)
 
-- Public marketing page.
-- If session detected, redirect to `/dashboard` server-side in `+page.ts`
-  `load`.
+- Public marketing page (hero, features, how-it-works, footer with legal links).
+- **`index,follow`** in `<svelte:head>` — primary marketing URL; `/privacy` and `/terms` are also indexable public pages.
+- If a **verified** Supabase user is present (cookie session), redirect to
+  `/dashboard` from [`(marketing)/+page.server.ts`](../../../frontend/src/routes/(marketing)/+page.server.ts)
+  (`getUser()`), not from client-only effects.
+- SEO: `<title>`, meta description, canonical, Open Graph, Twitter card, JSON-LD
+  `WebSite` — canonical base from `PUBLIC_SITE_URL` when set, else request origin.
+
+### `/privacy` & `/terms`
+
+- Public pages (placeholders until full policy/terms ship) linked from the landing footer.
+- **`index,follow`** — indexed alongside `/` as public-facing site pages.
 
 ### `/login` & `/signup`
 
+- Under `(auth)/+layout.svelte`: **`noindex,nofollow`** (auth is never indexed).
 - Forms posting to Supabase Auth via `@supabase/supabase-js`.
 - After success, redirect target is `?redirect=...` query param or
   `/dashboard`.
 
 ### `/onboarding/*`
 
+- **`noindex,nofollow`** via `(onboarding)/+layout.svelte` (post-auth flow, not public marketing).
 - Full-screen **step flow** (no tab strip): linear profile steps
   `/onboarding/about-you` → `summary` → `domain` → `experience` →
   `skills`, then **CV** (`/onboarding/cv`), then **first job search
@@ -152,8 +176,10 @@ src/routes/
 
 ## SEO & meta
 
-- `<svelte:head>` per page sets `title`, `description`, and `og:image`.
-- `robots: noindex` on every authenticated route.
+- `<svelte:head>` per page sets `title`, `description`, and (where relevant) `og:image`.
+- **Indexable:** **`/`** (full SEO on [`(marketing)/+page.svelte`](../../../frontend/src/routes/(marketing)/+page.svelte)), **`/privacy`**, **`/terms`**
+  (`index,follow` + title/description on each page).
+- **Not indexable:** `(app)/*`, `(auth)/*`, `(onboarding)/*` — group layouts use `meta name="robots" content="noindex,nofollow"`.
 
 ## Adding a new route — checklist
 

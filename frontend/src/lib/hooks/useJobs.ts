@@ -119,8 +119,7 @@ export type RegenerateJobDocumentsInput = {
 export function useRegenerateJobDocuments() {
 	const qc = useQueryClient();
 	return createMutation<TriggerEvaluationBody, Error, RegenerateJobDocumentsInput>({
-		mutationFn: ({ jobId, part }) =>
-			regenerateJobDocuments(jobId, part != null ? { part } : {}),
+		mutationFn: ({ jobId, part }) => regenerateJobDocuments(jobId, part != null ? { part } : {}),
 		onSuccess: (_data, { jobId }) => {
 			void qc.invalidateQueries({ queryKey: ['job', jobId, 'evaluation'] });
 		}

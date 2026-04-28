@@ -3,7 +3,11 @@
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import { ApiError } from '$lib/api/errors';
 	import { FETCH_CRON_DAILY } from '$lib/constants/fetchSchedule';
-	import { useCreateJobConfig, useSchedulePresets, useUpdateJobConfig } from '$lib/hooks/useJobConfig';
+	import {
+		useCreateJobConfig,
+		useSchedulePresets,
+		useUpdateJobConfig
+	} from '$lib/hooks/useJobConfig';
 	import { jobConfigFormSchema } from '$lib/schemas/jobConfig';
 	import type { JobConfig } from '$lib/types/jobConfig';
 	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
@@ -153,16 +157,16 @@
 	const title = $derived(mode === 'create' ? 'New job config' : 'Edit job config');
 </script>
 
-<Modal bind:open title={title} boxClass="max-w-lg">
+<Modal bind:open {title} boxClass="max-w-lg">
 	{#snippet children()}
 		<form id="job-config-editor-form" class="space-y-4" onsubmit={onSubmit}>
 			{#if fieldErrors.form}
-				<p class="text-sm text-error" role="alert">{fieldErrors.form}</p>
+				<p class="text-error text-sm" role="alert">{fieldErrors.form}</p>
 			{/if}
 			<label class="form-control">
 				<span class="label-text font-medium">Config name (optional)</span>
 				<input
-					class="input input-bordered rounded-xl border-base-300 bg-base-200"
+					class="input input-bordered border-base-300 bg-base-200 rounded-xl"
 					bind:value={name}
 					oninput={onNameInput}
 				/>
@@ -170,7 +174,7 @@
 			<label class="form-control">
 				<span class="label-text font-medium">Keywords (comma-separated)</span>
 				<input
-					class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.keywordsText
+					class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.keywordsText
 						? 'input-error'
 						: ''}"
 					bind:value={keywordsText}
@@ -183,7 +187,7 @@
 			<label class="form-control">
 				<span class="label-text font-medium">Location</span>
 				<input
-					class="input input-bordered rounded-xl border-base-300 bg-base-200"
+					class="input input-bordered border-base-300 bg-base-200 rounded-xl"
 					bind:value={location}
 					oninput={onLocationInput}
 				/>
@@ -196,7 +200,7 @@
 				<label class="form-control">
 					<span class="label-text font-medium">Salary min</span>
 					<input
-						class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.salary_min
+						class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.salary_min
 							? 'input-error'
 							: ''}"
 						type="text"
@@ -214,7 +218,7 @@
 				<label class="form-control">
 					<span class="label-text font-medium">Salary max</span>
 					<input
-						class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.salary_max
+						class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.salary_max
 							? 'input-error'
 							: ''}"
 						type="text"
@@ -233,14 +237,14 @@
 			<label class="form-control">
 				<span class="label-text font-medium">Fetch schedule</span>
 				{#if $presets.isPending}
-					<select class="select select-bordered rounded-xl border-base-300 bg-base-200" disabled>
+					<select class="select select-bordered border-base-300 bg-base-200 rounded-xl" disabled>
 						<option>Loading…</option>
 					</select>
 				{:else if $presets.isError}
-					<p class="text-sm text-error">Could not load schedules.</p>
+					<p class="text-error text-sm">Could not load schedules.</p>
 				{:else if $presets.data}
 					<select
-						class="select select-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.fetch_schedule_cron
+						class="select select-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.fetch_schedule_cron
 							? 'select-error'
 							: ''}"
 						bind:value={fetch_schedule_cron}
@@ -258,18 +262,18 @@
 		</form>
 	{/snippet}
 	{#snippet footer()}
-		<button type="button" class="btn btn-ghost rounded-xl" onclick={() => (open = false)}>Cancel</button>
+		<button type="button" class="btn btn-ghost rounded-xl" onclick={() => (open = false)}
+			>Cancel</button
+		>
 		<button
 			type="submit"
 			form="job-config-editor-form"
-			class="btn btn-primary font-medium rounded-xl"
-			disabled={
-				saving ||
+			class="btn btn-primary rounded-xl font-medium"
+			disabled={saving ||
 				$createMut.isPending ||
 				$updateMut.isPending ||
 				$presets.isPending ||
-				$presets.isError
-			}
+				$presets.isError}
 		>
 			{saving || $createMut.isPending || $updateMut.isPending ? 'Saving…' : 'Save'}
 		</button>

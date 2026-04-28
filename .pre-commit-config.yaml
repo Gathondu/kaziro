@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: kaziro-changed-linters
+        name: kaziro changed-file linters
+        entry: python scripts/precommit_changed_linters.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]

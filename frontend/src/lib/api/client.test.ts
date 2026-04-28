@@ -10,7 +10,8 @@ vi.mock('$env/dynamic/public', () => ({
 
 vi.mock('./auth', () => ({
 	getJwt: () => 'test-token',
-	signOutEverywhere: vi.fn()
+	signOutEverywhere: vi.fn(),
+	waitForAuthReady: vi.fn().mockResolvedValue(undefined)
 }));
 
 describe('apiFetch', () => {

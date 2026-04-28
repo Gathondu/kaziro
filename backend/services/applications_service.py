@@ -10,11 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.exceptions import ConflictError, NotFoundError
 from backend.db.models.application import Application
+from backend.db.models.application_event import ApplicationEvent
 from backend.db.models.enums import (
     ApplicationEventType,
     ApplicationStatus,
     Classification,
 )
+from backend.db.pagination import Page
 from backend.db.repositories import (
     application_doc_repository,
     application_event_repository,
@@ -130,7 +132,7 @@ async def list_application_events(
     *,
     cursor: str | None,
     limit: int,
-):
+) -> Page[ApplicationEvent]:
     app = await application_repository.get_by_id(session, user_id, application_id)
     if app is None:
         raise NotFoundError("application not found", code="application_not_found")

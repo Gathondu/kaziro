@@ -38,19 +38,19 @@
 	let linkedin_url = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
-function countSentences(text: string): number {
-	return text
-		.split(/[.!?]+/)
-		.map((part) => part.trim())
-		.filter(Boolean).length;
-}
+	function countSentences(text: string): number {
+		return text
+			.split(/[.!?]+/)
+			.map((part) => part.trim())
+			.filter(Boolean).length;
+	}
 
-function rowsForText(text: string): number {
-	const sentenceCount = countSentences(text);
-	if (sentenceCount === 0 || sentenceCount <= 3) return 3;
-	if (sentenceCount > 10) return 20;
-	return 10;
-}
+	function rowsForText(text: string): number {
+		const sentenceCount = countSentences(text);
+		if (sentenceCount === 0 || sentenceCount <= 3) return 3;
+		if (sentenceCount > 10) return 20;
+		return 10;
+	}
 
 	$effect(() => {
 		const p = $profile.data;
@@ -114,7 +114,7 @@ function rowsForText(text: string): number {
 			await postDisableOwnAccount();
 			deleteModalOpen = false;
 			await signOutEverywhere();
-			await goto('/login');
+			await goto('/');
 		} catch (e) {
 			const msg = e instanceof Error ? e.message : 'Something went wrong';
 			deleteModalError = msg;
@@ -126,15 +126,15 @@ function rowsForText(text: string): number {
 </script>
 
 {#if $profile.isPending}
-	<p class="text-sm text-base-content/60">Loading profile…</p>
+	<p class="text-base-content/60 text-sm">Loading profile…</p>
 {:else if $profile.isError}
-	<p class="text-sm text-error">Could not load profile.</p>
+	<p class="text-error text-sm">Could not load profile.</p>
 {:else}
 	<form class="w-full space-y-4" onsubmit={submit}>
 		<label class="form-control w-full md:w-1/3">
 			<span class="label-text font-medium">Full name</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200"
+				class="input input-bordered border-base-300 bg-base-200 rounded-xl"
 				bind:value={full_name}
 			/>
 			{#if fieldErrors.full_name}<span class="label-text-alt text-error"
@@ -144,7 +144,7 @@ function rowsForText(text: string): number {
 		<label class="form-control">
 			<span class="label-text font-medium">Summary</span>
 			<textarea
-				class="textarea textarea-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.professional_summary
+				class="textarea textarea-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.professional_summary
 					? 'textarea-error'
 					: ''}"
 				rows={rowsForText(professional_summary)}
@@ -158,7 +158,7 @@ function rowsForText(text: string): number {
 		<label class="form-control">
 			<span class="label-text font-medium">Skills (comma-separated)</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.skillsText
+				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.skillsText
 					? 'input-error'
 					: ''}"
 				bind:value={skillsText}
@@ -171,18 +171,19 @@ function rowsForText(text: string): number {
 		<label class="form-control">
 			<span class="label-text font-medium">Domain</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.domain
+				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.domain
 					? 'input-error'
 					: ''}"
 				bind:value={domain}
 				oninput={() => clearField('domain')}
 			/>
-			{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span>{/if}
+			{#if fieldErrors.domain}<span class="label-text-alt text-error">{fieldErrors.domain}</span
+				>{/if}
 		</label>
 		<label class="form-control">
 			<span class="label-text font-medium">Values</span>
 			<textarea
-				class="textarea textarea-bordered rounded-xl border-base-300 bg-base-200"
+				class="textarea textarea-bordered border-base-300 bg-base-200 rounded-xl"
 				rows={rowsForText(values_statement)}
 				bind:value={values_statement}
 			></textarea>
@@ -190,7 +191,7 @@ function rowsForText(text: string): number {
 		<label class="form-control">
 			<span class="label-text font-medium">LinkedIn URL</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.linkedin_url
+				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.linkedin_url
 					? 'input-error'
 					: ''}"
 				placeholder="https://www.linkedin.com/in/your-handle"
@@ -207,11 +208,11 @@ function rowsForText(text: string): number {
 	</form>
 	<div class="divider"></div>
 	<div class="space-y-2">
-		<h3 class="text-sm font-medium text-error">Danger zone</h3>
-		<p class="text-sm text-base-content/70">
+		<h3 class="text-error text-sm font-medium">Danger zone</h3>
+		<p class="text-base-content/70 text-sm">
 			Deactivate your account. Your session will end immediately.
 		</p>
-		{#if deleteError}<p class="text-sm text-error">{deleteError}</p>{/if}
+		{#if deleteError}<p class="text-error text-sm">{deleteError}</p>{/if}
 		<Button
 			type="button"
 			variant="outline"
@@ -225,27 +226,28 @@ function rowsForText(text: string): number {
 
 	<Modal bind:open={deleteModalOpen} title="Deactivate your account?">
 		{#snippet children()}
-			<div class="space-y-3 text-sm text-base-content/90">
+			<div class="text-base-content/90 space-y-3 text-sm">
 				<p>
-					This only <strong>disables</strong> your Kaziro account. You will be signed out and will
-					not be able to use the app until support turns your access back on. Your profile and
-					related data stay in our systems unless you ask for a full deletion separately.
+					This only <strong>disables</strong> your Kaziro account. You will be signed out and will not
+					be able to use the app until support turns your access back on. Your profile and related data
+					stay in our systems unless you ask for a full deletion separately.
 				</p>
 				<p>
 					If you want <strong>all of your data permanently deleted</strong>, email the administrator
 					{#if supportEmail}
 						at
-						<a class="link link-primary font-medium" href="mailto:{supportEmail}">{supportEmail}</a>.
+						<a class="link link-primary font-medium" href="mailto:{supportEmail}">{supportEmail}</a
+						>.
 					{:else}
 						(ask your organization for the right contact address).
 					{/if}
 				</p>
 				<label class="form-control w-full">
 					<span class="label-text font-medium"
-						>Type <span class="font-mono text-error">delete</span> to confirm</span
+						>Type <span class="text-error font-mono">delete</span> to confirm</span
 					>
 					<input
-						class="input input-bordered rounded-xl border-base-300 bg-base-200"
+						class="input input-bordered border-base-300 bg-base-200 rounded-xl"
 						type="text"
 						autocomplete="off"
 						placeholder="delete"
@@ -254,12 +256,16 @@ function rowsForText(text: string): number {
 					/>
 				</label>
 				{#if deleteModalError}
-					<p class="text-sm text-error">{deleteModalError}</p>
+					<p class="text-error text-sm">{deleteModalError}</p>
 				{/if}
 			</div>
 		{/snippet}
 		{#snippet footer()}
-			<button type="button" class="btn btn-ghost rounded-xl" onclick={() => (deleteModalOpen = false)}>
+			<button
+				type="button"
+				class="btn btn-ghost rounded-xl"
+				onclick={() => (deleteModalOpen = false)}
+			>
 				Cancel
 			</button>
 			<button

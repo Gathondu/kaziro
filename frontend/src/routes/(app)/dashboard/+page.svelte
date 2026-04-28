@@ -11,9 +11,9 @@
 </svelte:head>
 
 {#if $dashboard.isPending}
-	<p class="text-sm text-base-content/60" aria-live="polite">Loading dashboard…</p>
+	<p class="text-base-content/60 text-sm" aria-live="polite">Loading dashboard…</p>
 {:else if $dashboard.isError}
-	<p class="text-sm text-error">Could not load dashboard.</p>
+	<p class="text-error text-sm">Could not load dashboard.</p>
 {:else if $dashboard.data}
 	<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 		<KpiTile label="Jobs" value={$dashboard.data.jobsTotal} href="/jobs" />

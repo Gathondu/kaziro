@@ -68,7 +68,7 @@
 	<label class="form-control">
 		<span class="label-text font-medium">Email</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.email
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.email
 				? 'input-error'
 				: ''}"
 			type="email"
@@ -81,7 +81,7 @@
 	<label class="form-control">
 		<span class="label-text font-medium">Password</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.password
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.password
 				? 'input-error'
 				: ''}"
 			type="password"
@@ -95,7 +95,7 @@
 	<label class="form-control">
 		<span class="label-text font-medium">Confirm password</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.confirm
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.confirm
 				? 'input-error'
 				: ''}"
 			type="password"
@@ -107,7 +107,7 @@
 			>{/if}
 	</label>
 	{#if formError}
-		<p class="text-sm text-error" role="alert">{formError}</p>
+		<p class="text-error text-sm" role="alert">{formError}</p>
 	{/if}
 	<Button type="submit" disabled={pending}>{pending ? 'Creating…' : 'Sign up'}</Button>
 </form>

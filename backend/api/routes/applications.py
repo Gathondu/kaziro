@@ -68,9 +68,7 @@ def _to_response(
         application_doc=ApplicationDocSnippet.model_validate(app.application_doc)
         if app.application_doc
         else None,
-        evaluation=_job_evaluation_without_documents(
-            evaluation, application_id=app.id
-        )
+        evaluation=_job_evaluation_without_documents(evaluation, application_id=app.id)
         if evaluation
         else None,
     )

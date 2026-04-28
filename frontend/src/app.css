@@ -1,12 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
 	html {
-		@apply font-sans font-normal antialiased;
+		font-family:
+			'Plus Jakarta Sans',
+			ui-sans-serif,
+			system-ui,
+			-apple-system,
+			'Segoe UI',
+			Roboto,
+			'Helvetica Neue',
+			Arial,
+			sans-serif;
+		font-weight: 400;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 		/* Firefox: viewport bar stays recessive; nested panes use `.scroll-region`. */
 		scrollbar-width: thin;
 		scrollbar-color: color-mix(in srgb, currentColor 10%, transparent) transparent;
@@ -18,7 +28,8 @@
 	}
 
 	.form-control .label-text {
-		@apply mb-1 inline-block;
+		margin-bottom: 0.25rem;
+		display: inline-block;
 	}
 
 	/* Chromium / WebKit: no arrow buttons. */
@@ -62,6 +73,26 @@
 	body::-webkit-scrollbar-thumb:hover {
 		background-color: color-mix(in srgb, currentColor 20%, transparent);
 	}
+
+	/*
+	 * Chromium / WebKit autofill paints a bright blue/yellow fill that ignores `bg-*` utilities.
+	 * Paint the same surface as our inputs (`--b2`) and keep text readable (`--bc`).
+	 */
+	input:-webkit-autofill,
+	input:-webkit-autofill:hover,
+	input:-webkit-autofill:focus,
+	input:-webkit-autofill:active,
+	textarea:-webkit-autofill,
+	textarea:-webkit-autofill:hover,
+	textarea:-webkit-autofill:focus,
+	select:-webkit-autofill,
+	select:-webkit-autofill:hover,
+	select:-webkit-autofill:focus {
+		-webkit-text-fill-color: oklch(var(--bc) / 1);
+		caret-color: oklch(var(--bc) / 1);
+		-webkit-box-shadow: 0 0 0 1000px oklch(var(--b2) / 1) inset;
+		box-shadow: 0 0 0 1000px oklch(var(--b2) / 1) inset;
+	}
 }
 
 @layer utilities {
@@ -85,6 +116,13 @@
 }
 
 @layer components {
+	/* Hero “clarity” (marketing): Handlee via `<link>` in `app.html`; explicit family avoids Tailwind/Daisy font-* merge issues. */
+	.marketing-hero-clarity-word {
+		font-family: 'Handlee', cursive;
+		font-weight: 400;
+		font-style: normal;
+	}
+
 	/*
 	 * Classic browser resize grip (three corner lines, same affordance as Chromium’s default).
 	 * Drawn here so we keep the standard look without the extra border chrome on ::-webkit-resizer.
@@ -113,9 +151,224 @@
 		background-repeat: no-repeat;
 	}
 
+	/*
+	 * Marketing: “glow inside the surface” (radial primary over base ramp) — same language as
+	 * feature icon wells, not a flat / linear `btn-primary` paint.
+	 */
+	.landing-icon-well {
+		display: inline-flex;
+		width: 3.5rem;
+		height: 3.5rem;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		border-radius: 1rem;
+		border: 1px solid oklch(var(--p) / 0.22);
+		color: oklch(var(--p) / 1);
+		/* Light: shallow b1→b2 plate so rims never read charcoal; dark: overridden below */
+		background-image:
+			radial-gradient(
+				ellipse 78% 82% at 50% 38%,
+				oklch(var(--p) / 0.36) 0%,
+				oklch(var(--p) / 0.08) 52%,
+				transparent 72%
+			),
+			linear-gradient(to bottom right, oklch(var(--b1) / 1), oklch(var(--b2) / 1));
+		box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.05);
+	}
+
+	.landing-icon-well--sm {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 0.75rem;
+	}
+
+	.landing-cta-primary {
+		box-sizing: border-box;
+		display: inline-flex;
+		min-height: 3rem;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		border-radius: 1rem;
+		border: 1px solid oklch(var(--p) / 0.42);
+		padding-inline: 2rem;
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.5;
+		/* `primary-content` on pale `b2`/`b3` fails contrast; match readable type to the plate. */
+		color: oklch(var(--bc) / 1);
+		text-decoration: none;
+		/* Light terracotta: warm lift only — avoid b2→b3 + heavy drop shadow (reads as muddy black on cream) */
+		background-image:
+			radial-gradient(
+				ellipse 102% 132% at 50% 22%,
+				oklch(var(--p) / 0.62) 0%,
+				oklch(var(--p) / 0.32) 40%,
+				oklch(var(--p) / 0.12) 62%,
+				transparent 84%
+			),
+			linear-gradient(to bottom, oklch(var(--b1) / 1), oklch(var(--b2) / 1));
+		box-shadow:
+			0 3px 16px -8px oklch(var(--p) / 0.22),
+			inset 0 1px 0 oklch(100% 0 0 / 0.08);
+		transition:
+			filter 0.15s ease,
+			box-shadow 0.15s ease;
+	}
+
+	.landing-cta-primary:hover {
+		filter: brightness(1.05);
+		box-shadow:
+			0 4px 22px -8px oklch(var(--p) / 0.28),
+			inset 0 1px 0 oklch(100% 0 0 / 0.09);
+	}
+
+	.landing-cta-primary:active {
+		filter: brightness(0.94);
+	}
+
+	.landing-cta-primary:focus-visible {
+		outline: 2px solid oklch(var(--p) / 1);
+		outline-offset: 2px;
+	}
+
+	.landing-cta-primary--sm {
+		min-height: 2.25rem;
+		padding-inline: 0.875rem;
+		border-radius: 0.75rem;
+		font-size: 0.875rem;
+	}
+
+	.landing-step-disc {
+		display: flex;
+		width: 3rem;
+		height: 3rem;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		border-radius: 9999px;
+		border: 1px solid oklch(var(--p) / 0.26);
+		font-size: 1.125rem;
+		font-weight: 700;
+		line-height: 1;
+		color: oklch(var(--bc) / 1);
+		background-image:
+			radial-gradient(
+				circle at 48% 36%,
+				oklch(var(--p) / 0.46) 0%,
+				oklch(var(--p) / 0.1) 52%,
+				transparent 72%
+			),
+			linear-gradient(to bottom right, oklch(var(--b1) / 1), oklch(var(--b2) / 1));
+		box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.05);
+	}
+
+	/* Dark marketing: restore depth (b2→b3 + stronger glow) without affecting light cream UI */
+	html[data-theme='terracotta_dark'] .landing-icon-well {
+		background-image:
+			radial-gradient(
+				ellipse 78% 82% at 50% 38%,
+				oklch(var(--p) / 0.36) 0%,
+				oklch(var(--p) / 0.08) 52%,
+				transparent 72%
+			),
+			linear-gradient(to bottom right, oklch(var(--b2) / 1), oklch(var(--b3) / 1));
+	}
+
+	html[data-theme='terracotta_dark'] .landing-cta-primary {
+		border-color: oklch(var(--p) / 0.55);
+		background-image:
+			radial-gradient(
+				ellipse 96% 125% at 50% 24%,
+				oklch(var(--p) / 0.78) 0%,
+				oklch(var(--p) / 0.42) 36%,
+				oklch(var(--p) / 0.2) 56%,
+				transparent 78%
+			),
+			linear-gradient(to bottom, oklch(var(--b2) / 1), oklch(var(--b3) / 1));
+		box-shadow:
+			0 8px 26px -10px oklch(var(--p) / 0.42),
+			inset 0 1px 0 oklch(100% 0 0 / 0.06);
+	}
+
+	html[data-theme='terracotta_dark'] .landing-cta-primary:hover {
+		filter: brightness(1.07);
+		box-shadow:
+			0 10px 32px -10px oklch(var(--p) / 0.5),
+			inset 0 1px 0 oklch(100% 0 0 / 0.07);
+	}
+
+	html[data-theme='terracotta_dark'] .landing-step-disc {
+		background-image:
+			radial-gradient(
+				circle at 48% 36%,
+				oklch(var(--p) / 0.46) 0%,
+				oklch(var(--p) / 0.1) 52%,
+				transparent 72%
+			),
+			linear-gradient(to bottom right, oklch(var(--b2) / 1), oklch(var(--b3) / 1));
+	}
+
+	/*
+	 * Marketing cards / hero: Tailwind `shadow-lg` / `shadow-2xl` use cool gray and read as dirty
+	 * black smudges on light terracotta. Use warm, low-chroma lifts instead.
+	 */
+	.shadow-marketing-card {
+		box-shadow:
+			0 4px 22px -10px oklch(var(--p) / 0.1),
+			0 2px 10px -6px oklch(var(--bc) / 0.04);
+	}
+
+	.shadow-marketing-card:hover {
+		box-shadow:
+			0 10px 32px -10px oklch(var(--p) / 0.14),
+			0 4px 14px -6px oklch(var(--bc) / 0.05);
+	}
+
+	html[data-theme='terracotta_dark'] .shadow-marketing-card {
+		box-shadow:
+			0 14px 40px -14px rgb(0 0 0 / 0.48),
+			0 6px 18px -8px rgb(0 0 0 / 0.35);
+	}
+
+	html[data-theme='terracotta_dark'] .shadow-marketing-card:hover {
+		box-shadow:
+			0 18px 44px -14px rgb(0 0 0 / 0.55),
+			0 8px 22px -10px rgb(0 0 0 / 0.4);
+	}
+
+	.shadow-marketing-header {
+		box-shadow: 0 2px 14px -6px oklch(var(--bc) / 0.05);
+	}
+
+	html[data-theme='terracotta_dark'] .shadow-marketing-header {
+		box-shadow: 0 8px 26px -10px rgb(0 0 0 / 0.42);
+	}
+
+	.shadow-marketing-hero {
+		box-shadow:
+			0 8px 40px -12px oklch(var(--p) / 0.12),
+			0 4px 16px -8px oklch(var(--bc) / 0.05);
+	}
+
+	html[data-theme='terracotta_dark'] .shadow-marketing-hero {
+		box-shadow:
+			0 24px 64px -20px rgb(0 0 0 / 0.55),
+			0 10px 28px -12px oklch(var(--p) / 0.25);
+	}
+
 	/* DaisyUI tooltips: render above modal + scroll stacking contexts */
 	.modal.modal-open .tooltip::before,
 	.modal.modal-open .tooltip::after {
 		z-index: 99999 !important;
 	}
+}
+
+/*
+ * Marketing routes only (`(marketing)/+layout.svelte`): slightly stronger body text on cream
+ * when the document theme is light terracotta. Theme comes from `<html data-theme>` (cookie / system).
+ */
+html[data-theme='terracotta'] [data-marketing-surface] {
+	--bc: 24.3379% 0.013746 41.611483;
 }

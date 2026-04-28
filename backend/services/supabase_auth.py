@@ -67,10 +67,13 @@ def _parse_response(resp: httpx.Response, *, auth_event: str) -> dict[str, Any]:
     """Translate non-2xx GoTrue responses into structured ApiError instances."""
     if resp.is_success:
         try:
-            return resp.json()
+            payload = resp.json()
         except ValueError as exc:
             log.error("auth.bad_response_json", auth_op=auth_event)
             raise UpstreamError("invalid response from authentication service") from exc
+        if isinstance(payload, dict):
+            return payload
+        raise UpstreamError("invalid response from authentication service")
 
     body = _safe_json(resp)
     message = body.get("msg") or body.get("error_description") or body.get("error") or resp.text
@@ -119,7 +122,7 @@ def _token_from_session(session: dict[str, Any]) -> TokenResponse:
 
 def _extract_user_id(user: object) -> str | None:
     if isinstance(user, dict):
-        value = user.get("id")  # type: ignore[union-attr]
+        value = user.get("id")
         if isinstance(value, str):
             return value
     return None

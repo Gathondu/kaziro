@@ -9,7 +9,6 @@ import {
 	updateJobConfig
 } from '$lib/api/jobConfigs';
 import type { JobConfig } from '$lib/types/jobConfig';
-import type { SchedulePreset } from '$lib/types/schedulePreset';
 
 export function useSchedulePresets() {
 	return createQuery({

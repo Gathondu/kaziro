@@ -35,10 +35,13 @@ def apply_langsmith_tracing_from_settings(settings: Settings) -> None:
         return
 
     api_key = settings.LANGSMITH_API_KEY.get_secret_value()
-    client_kwargs: dict[str, str] = {"api_key": api_key}
     if settings.LANGSMITH_ENDPOINT is not None:
-        client_kwargs["api_url"] = str(settings.LANGSMITH_ENDPOINT).rstrip("/")
-    client = Client(**client_kwargs)
+        client = Client(
+            api_key=api_key,
+            api_url=str(settings.LANGSMITH_ENDPOINT).rstrip("/"),
+        )
+    else:
+        client = Client(api_key=api_key)
 
     if settings.LANGSMITH_PROJECT:
         configure(enabled=True, client=client, project_name=settings.LANGSMITH_PROJECT)

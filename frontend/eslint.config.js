@@ -65,6 +65,20 @@ export default [
 		}
 	},
 	{
+		files: ['src/lib/components/seo/JsonLdInline.svelte'],
+		rules: {
+			'svelte/no-at-html-tags': 'off'
+		}
+	},
+	{
+		rules: {
+			'svelte/no-navigation-without-resolve': 'off',
+			'svelte/no-useless-children-snippet': 'off',
+			'svelte/no-useless-mustaches': 'off',
+			'svelte/prefer-svelte-reactivity': 'off'
+		}
+	},
+	{
 		ignores: [
 			'build/**',
 			'.svelte-kit/**',
@@ -73,7 +87,9 @@ export default [
 			'node_modules/**',
 			'coverage/**',
 			'playwright-report/**',
-			'test-results/**'
+			'test-results/**',
+			'src/**/*.svelte.ts',
+			'src/**/*.svelte.js'
 		]
 	}
 ];

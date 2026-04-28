@@ -19,15 +19,11 @@ async def get_by_id(
     session: AsyncSession, user_id: uuid.UUID, raw_job_id: uuid.UUID
 ) -> RawJob | None:
     """User-scoped fetch by primary key."""
-    stmt = select(RawJob).where(
-        RawJob.id == raw_job_id, RawJob.user_id == user_id
-    )
+    stmt = select(RawJob).where(RawJob.id == raw_job_id, RawJob.user_id == user_id)
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
-async def list_pending(
-    session: AsyncSession, *, limit: int = 100
-) -> list[RawJob]:
+async def list_pending(session: AsyncSession, *, limit: int = 100) -> list[RawJob]:
     """Return up to ``limit`` ``PENDING`` rows for the parser worker."""
     stmt = (
         select(RawJob)
@@ -94,9 +90,7 @@ async def insert_dedup(
     return result.scalar_one_or_none()
 
 
-async def mark_parsed(
-    session: AsyncSession, raw_job_id: uuid.UUID
-) -> RawJob | None:
+async def mark_parsed(session: AsyncSession, raw_job_id: uuid.UUID) -> RawJob | None:
     """Flip a row to ``PARSED`` after the parser commits a posting."""
     raw = await session.get(RawJob, raw_job_id)
     if raw is None:
@@ -107,9 +101,7 @@ async def mark_parsed(
     return raw
 
 
-async def mark_failed(
-    session: AsyncSession, raw_job_id: uuid.UUID, *, error: str
-) -> RawJob | None:
+async def mark_failed(session: AsyncSession, raw_job_id: uuid.UUID, *, error: str) -> RawJob | None:
     """Flip a row to ``FAILED`` after the parser exhausts retries."""
     raw = await session.get(RawJob, raw_job_id)
     if raw is None:

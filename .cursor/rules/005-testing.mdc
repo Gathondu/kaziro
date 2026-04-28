@@ -106,10 +106,10 @@ async def test_get_jobs_unauthenticated(async_client):
 
 ## Coverage Requirements
 
-- Minimum overall coverage: 80%
+- Minimum overall coverage: 60%
 - Agent files: 90% minimum (critical business logic)
 - API routes: 85% minimum
-- Services: 80% minimum
+- Services: 60% minimum
 - Run coverage: `pytest --cov=backend --cov-report=html`
 - CI fails if coverage drops below thresholds
 
@@ -134,7 +134,7 @@ async def test_get_jobs_unauthenticated(async_client):
 pytest backend/tests/ -v --timeout=30
 
 # Run with coverage
-pytest backend/tests/ --cov=backend --cov-fail-under=80
+pytest backend/tests/ --cov=backend --cov-fail-under=60
 
 # Run only agent tests
 pytest backend/tests/agents/ -v

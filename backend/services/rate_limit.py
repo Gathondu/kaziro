@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from typing import Final
+from urllib.parse import unquote, urlsplit
 
 from backend.config import get_settings
 from backend.logging_config import get_logger
@@ -41,7 +42,22 @@ async def check_sliding_window(
     now_ms = int(time.time() * 1000)
     window_start = now_ms - window_seconds * 1000
     member = f"{now_ms}:{uuid.uuid4()}"
-    client = aioredis.from_url(_cache_redis_url(), encoding="utf-8", decode_responses=True)
+    redis_url = urlsplit(_cache_redis_url())
+    host = redis_url.hostname or "localhost"
+    port = redis_url.port or 6379
+    db = int(redis_url.path.lstrip("/") or "0")
+    username = redis_url.username
+    password = unquote(redis_url.password) if redis_url.password else None
+    client = aioredis.Redis(
+        host=host,
+        port=port,
+        db=db,
+        username=username,
+        password=password,
+        ssl=redis_url.scheme == "rediss",
+        encoding="utf-8",
+        decode_responses=True,
+    )
     try:
         await client.zremrangebyscore(key, "-inf", window_start)
         await client.zadd(key, {member: float(now_ms)})

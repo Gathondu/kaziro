@@ -7,7 +7,11 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { putProfile, uploadCvPdf } from '$lib/api/profile';
 	import { FETCH_CRON_DAILY } from '$lib/constants/fetchSchedule';
-	import { useCreateJobConfig, useRunJobConfigPipeline, useSchedulePresets } from '$lib/hooks/useJobConfig';
+	import {
+		useCreateJobConfig,
+		useRunJobConfigPipeline,
+		useSchedulePresets
+	} from '$lib/hooks/useJobConfig';
 	import { jobConfigFormSchema } from '$lib/schemas/jobConfig';
 	import {
 		clearOnboardingDraft,
@@ -164,21 +168,25 @@
 </svelte:head>
 
 <h1 class="mb-2 text-xl font-semibold">First job search</h1>
-<p class="mb-6 text-sm text-base-content/70">
+<p class="text-base-content/70 mb-6 text-sm">
 	We will enqueue your first pipeline run so evaluations can start flowing in.
 </p>
 <form class="space-y-4" onsubmit={finish}>
 	{#if fieldErrors.form}
-		<p class="text-sm text-error" role="alert">{fieldErrors.form}</p>
+		<p class="text-error text-sm" role="alert">{fieldErrors.form}</p>
 	{/if}
 	<label class="form-control">
 		<span class="label-text font-medium">Config name (optional)</span>
-		<input class="input input-bordered rounded-xl border-base-300 bg-base-200" bind:value={name} />
+		<input
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl"
+			bind:value={name}
+			oninput={onNameInput}
+		/>
 	</label>
 	<label class="form-control">
 		<span class="label-text font-medium">Keywords (comma-separated)</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.keywordsText
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.keywordsText
 				? 'input-error'
 				: ''}"
 			bind:value={keywordsText}
@@ -191,7 +199,7 @@
 	<label class="form-control">
 		<span class="label-text font-medium">Location</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200"
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl"
 			bind:value={location}
 			oninput={onLocationInput}
 		/>
@@ -204,7 +212,7 @@
 		<label class="form-control">
 			<span class="label-text font-medium">Salary min</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.salary_min
+				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.salary_min
 					? 'input-error'
 					: ''}"
 				type="text"
@@ -222,7 +230,7 @@
 		<label class="form-control">
 			<span class="label-text font-medium">Salary max</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.salary_max
+				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.salary_max
 					? 'input-error'
 					: ''}"
 				type="text"
@@ -241,14 +249,14 @@
 	<label class="form-control">
 		<span class="label-text font-medium">Fetch schedule</span>
 		{#if $presets.isPending}
-			<select class="select select-bordered rounded-xl border-base-300 bg-base-200" disabled>
+			<select class="select select-bordered border-base-300 bg-base-200 rounded-xl" disabled>
 				<option>Loading…</option>
 			</select>
 		{:else if $presets.isError}
-			<p class="text-sm text-error">Could not load schedules. Refresh and try again.</p>
+			<p class="text-error text-sm">Could not load schedules. Refresh and try again.</p>
 		{:else if $presets.data}
 			<select
-				class="select select-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.fetch_schedule_cron
+				class="select select-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.fetch_schedule_cron
 					? 'select-error'
 					: ''}"
 				bind:value={fetch_schedule_cron}

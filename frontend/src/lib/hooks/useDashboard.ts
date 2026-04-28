@@ -1,8 +1,6 @@
 import { createQuery } from '@tanstack/svelte-query';
 import { listApplications } from '$lib/api/applications';
-import {
-	API_LIST_MAX_LIMIT
-} from '$lib/api/limits';
+import { API_LIST_MAX_LIMIT } from '$lib/api/limits';
 import { listJobs } from '$lib/api/jobs';
 import type { Application } from '$lib/types/applications';
 import type { JobPosting } from '$lib/types/jobs';
@@ -31,7 +29,11 @@ async function listAllGoodFitJobs(): Promise<JobPosting[]> {
 	let cursor: string | null = null;
 	const all: JobPosting[] = [];
 	for (;;) {
-		const page = await listJobs({ limit: API_LIST_MAX_LIMIT, cursor, classification: ['GOOD_FIT'] });
+		const page = await listJobs({
+			limit: API_LIST_MAX_LIMIT,
+			cursor,
+			classification: ['GOOD_FIT']
+		});
 		all.push(...page.items);
 		if (!page.nextCursor) break;
 		cursor = page.nextCursor;
@@ -63,7 +65,9 @@ export function useDashboard() {
 			]);
 			const interactedJobIds = new Set(allApplications.map((a) => a.job_posting_id));
 			const jobsTotal = allJobs.length;
-			const goodFitUninteracted = allGoodFitJobs.filter((job) => !interactedJobIds.has(job.id)).length;
+			const goodFitUninteracted = allGoodFitJobs.filter(
+				(job) => !interactedJobIds.has(job.id)
+			).length;
 			const applicationsDraft = allApplications.filter((a) => a.status === 'DRAFT').length;
 			const sentCount = allApplications.filter((a) => a.status === 'SENT').length;
 			const recent = allApplications.slice(0, 12).map((a) => ({

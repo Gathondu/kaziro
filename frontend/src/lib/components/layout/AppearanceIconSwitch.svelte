@@ -12,7 +12,7 @@
 </script>
 
 <div
-	class="join join-horizontal w-full border border-base-300 bg-base-100"
+	class="join join-horizontal border-base-300 bg-base-100 w-full border"
 	role="group"
 	aria-label="Color scheme"
 >
