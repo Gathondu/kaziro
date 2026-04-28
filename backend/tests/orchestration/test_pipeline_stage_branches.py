@@ -10,9 +10,8 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
 import backend.agents.pipeline_orchestrator as orch
+import pytest
 from backend.db.models.enums import Classification
 from backend.services.job_fetcher import JobFetchError
 

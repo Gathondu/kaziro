@@ -8,9 +8,8 @@ from collections.abc import Iterator
 from contextlib import asynccontextmanager, contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 import backend.agents.pipeline_orchestrator as orch
+import pytest
 from backend.db.models.enums import Classification
 
 
