@@ -24,8 +24,9 @@ describe('apiFetch', () => {
 			'fetch',
 			vi.fn().mockResolvedValue({
 				ok: true,
+				status: 200,
 				headers: new Headers({ 'content-type': 'application/json' }),
-				json: async () => ({ data: { ok: true }, meta: null, error: null })
+				text: async () => JSON.stringify({ data: { ok: true }, meta: null, error: null })
 			})
 		);
 		const out = await apiFetch<{ ok: boolean }>('/api/v1/profile');
@@ -40,11 +41,12 @@ describe('apiFetch', () => {
 				ok: false,
 				status: 401,
 				headers: new Headers({ 'content-type': 'application/json' }),
-				json: async () => ({
-					data: null,
-					meta: null,
-					error: { code: 'unauthorized', message: 'nope' }
-				})
+				text: async () =>
+					JSON.stringify({
+						data: null,
+						meta: null,
+						error: { code: 'unauthorized', message: 'nope' }
+					})
 			})
 		);
 		await expect(apiFetch('/api/v1/jobs')).rejects.toBeInstanceOf(ApiError);
@@ -58,11 +60,12 @@ describe('apiFetch', () => {
 				ok: true,
 				status: 200,
 				headers: new Headers({ 'content-type': 'application/json' }),
-				json: async () => ({
-					data: null,
-					meta: null,
-					error: { code: 'internal_server_error', message: 'boom' }
-				})
+				text: async () =>
+					JSON.stringify({
+						data: null,
+						meta: null,
+						error: { code: 'internal_server_error', message: 'boom' }
+					})
 			})
 		);
 		await expect(apiFetch('/api/v1/jobs')).rejects.toMatchObject({
