@@ -98,9 +98,7 @@ async def mark_job_not_interested(
 ) -> JobEvaluation:
     """User rejects the job: ``REJECT`` + metadata, remove tailored docs and application."""
     log_bound = log.bind(user_id=str(user_id), job_posting_id=str(job_posting_id))
-    evaluation = await evaluation_repository.get_for_user_posting(
-        session, user_id, job_posting_id
-    )
+    evaluation = await evaluation_repository.get_for_user_posting(session, user_id, job_posting_id)
     if evaluation is None:
         raise NotFoundError("evaluation not found", code="evaluation_not_found")
 
@@ -113,9 +111,7 @@ async def mark_job_not_interested(
             code="job_already_rejected",
         )
 
-    doc = await application_doc_repository.get_by_evaluation_id(
-        session, user_id, evaluation.id
-    )
+    doc = await application_doc_repository.get_by_evaluation_id(session, user_id, evaluation.id)
     app = await application_repository.get_by_user_posting(session, user_id, job_posting_id)
 
     if doc is not None:
@@ -211,9 +207,7 @@ async def trigger_regenerate_documents(
             "application documents are not ready yet",
             code="application_documents_not_ready",
         )
-    key = _REGENERATE_DOCS_LOCK_KEY.format(
-        user_id=str(user_id), job_posting_id=str(job_posting_id)
-    )
+    key = _REGENERATE_DOCS_LOCK_KEY.format(user_id=str(user_id), job_posting_id=str(job_posting_id))
     r = get_redis()
     got_lock = await r.set(key, _PENDING, nx=True, ex=_LOCK_TTL_SEC)
     if not got_lock:
@@ -262,14 +256,10 @@ async def signed_url_for_job_posting_doc_pdf(
 
     ``doc_kind`` is ``cv`` or ``cover_letter`` / ``cover-letter``.
     """
-    evaluation = await evaluation_repository.get_for_user_posting(
-        session, user_id, job_posting_id
-    )
+    evaluation = await evaluation_repository.get_for_user_posting(session, user_id, job_posting_id)
     if evaluation is None:
         raise NotFoundError("evaluation not found", code="evaluation_not_found")
-    doc = await application_doc_repository.get_by_evaluation_id(
-        session, user_id, evaluation.id
-    )
+    doc = await application_doc_repository.get_by_evaluation_id(session, user_id, evaluation.id)
     if doc is None:
         raise NotFoundError(
             "application documents are not ready yet",

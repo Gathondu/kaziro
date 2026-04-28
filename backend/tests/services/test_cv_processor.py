@@ -30,9 +30,7 @@ async def test_process_cv_upload_happy_path(
     monkeypatch.setattr(
         "backend.services.cv_processor.profile_repository",
         MagicMock(
-            get_by_user_id=AsyncMock(
-                return_value=MagicMock(id=uuid.uuid4(), user_id=uid)
-            ),
+            get_by_user_id=AsyncMock(return_value=MagicMock(id=uuid.uuid4(), user_id=uid)),
             update_master_cv=AsyncMock(),
             update_embedding=AsyncMock(),
         ),

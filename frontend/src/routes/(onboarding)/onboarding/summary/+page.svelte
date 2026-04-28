@@ -81,14 +81,14 @@
 </svelte:head>
 
 <h1 class="mb-2 text-xl font-semibold">Professional summary</h1>
-<p class="mb-6 text-sm text-base-content/70">
+<p class="text-base-content/70 mb-6 text-sm">
 	A short overview helps us tailor recommendations. Optional — you can skip.
 </p>
 <form class="space-y-4" onsubmit={skipOrNext}>
 	<label class="form-control">
 		<span class="label-text font-medium">Summary</span>
 		<textarea
-			class="textarea textarea-bordered min-h-28 rounded-xl border-base-300 bg-base-200 {fieldErrors.professional_summary
+			class="textarea textarea-bordered border-base-300 bg-base-200 min-h-28 rounded-xl {fieldErrors.professional_summary
 				? 'textarea-error'
 				: ''}"
 			bind:value={professional_summary}

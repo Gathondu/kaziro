@@ -99,9 +99,7 @@ async def upsert(
         existing.updated_at = datetime.now(UTC)
         return existing
 
-    evaluation = JobEvaluation(
-        user_id=user_id, job_posting_id=job_posting_id, **payload
-    )
+    evaluation = JobEvaluation(user_id=user_id, job_posting_id=job_posting_id, **payload)
     session.add(evaluation)
     await session.flush()
     return evaluation

@@ -60,9 +60,7 @@ class ApplicationDoc(TimestampedBase):
         nullable=False,
     )
 
-    job_evaluation: Mapped[JobEvaluation] = relationship(
-        back_populates="application_doc"
-    )
+    job_evaluation: Mapped[JobEvaluation] = relationship(back_populates="application_doc")
     user: Mapped[User] = relationship(back_populates="application_docs")
     application: Mapped[Application | None] = relationship(
         back_populates="application_doc",

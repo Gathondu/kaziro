@@ -46,7 +46,7 @@
 	<div class="flex min-h-0 flex-1 overflow-hidden">
 		<AppSidebar />
 		<main
-			class="mx-auto flex min-h-0 w-full min-w-0 max-w-6xl flex-1 flex-col overflow-hidden px-4 py-6"
+			class="mx-auto flex min-h-0 w-full max-w-6xl min-w-0 flex-1 flex-col overflow-hidden px-4 py-6"
 		>
 			{@render children()}
 		</main>

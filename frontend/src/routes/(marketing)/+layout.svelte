@@ -10,7 +10,7 @@
 
 <div
 	data-marketing-surface
-	class="min-h-screen bg-gradient-to-b from-base-100 via-base-100 to-base-200 text-base-content antialiased"
+	class="from-base-100 via-base-100 to-base-200 text-base-content min-h-screen bg-gradient-to-b antialiased"
 >
 	{@render children()}
 </div>

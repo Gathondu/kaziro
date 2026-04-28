@@ -104,10 +104,7 @@ class JobPosting(TimestampedBase):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<JobPosting id={self.id} title={self.title!r} "
-            f"company={self.company_name!r}>"
-        )
+        return f"<JobPosting id={self.id} title={self.title!r} company={self.company_name!r}>"
 
 
 __all__ = ["EMBEDDING_DIM", "JobPosting"]

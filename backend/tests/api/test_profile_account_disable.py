@@ -61,7 +61,7 @@ def test_profile_account_disable_sets_is_active_false() -> None:
                     text(
                         "INSERT INTO users (id, email, is_active, subscription_tier, "
                         "created_at, updated_at) VALUES "
-                        "(CAST(:id AS uuid), :email, true, 'FREE', NOW(), NOW())"
+                        "(CAST(:id AS uuid), :email, true, 'free', NOW(), NOW())"
                     ),
                     {"id": str(uid), "email": email},
                 )
@@ -78,10 +78,14 @@ def test_profile_account_disable_sets_is_active_false() -> None:
         assert response.status_code == 204
 
         with sync_eng.connect() as conn:
-            row = conn.execute(
-                text("SELECT is_active FROM users WHERE id = CAST(:id AS uuid)"),
-                {"id": str(uid)},
-            ).mappings().one()
+            row = (
+                conn.execute(
+                    text("SELECT is_active FROM users WHERE id = CAST(:id AS uuid)"),
+                    {"id": str(uid)},
+                )
+                .mappings()
+                .one()
+            )
         assert row["is_active"] is False
     finally:
         if inserted_row:

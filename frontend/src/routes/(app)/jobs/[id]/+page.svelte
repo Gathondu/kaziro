@@ -71,15 +71,15 @@
 
 <div class="scroll-region h-full min-h-0 overflow-y-auto pr-1">
 	{#if $jobQ.isPending || $evQ.isPending}
-		<p class="text-sm text-base-content/60">Loading…</p>
+		<p class="text-base-content/60 text-sm">Loading…</p>
 	{:else if $jobQ.isError || $evQ.isError}
-		<p class="text-sm text-error">Job or evaluation not found.</p>
+		<p class="text-error text-sm">Job or evaluation not found.</p>
 	{:else if $jobQ.data && $evQ.data}
-		<div class="sticky top-0 z-10 -mx-1 mb-6 bg-base-100/95 px-1 pb-3 pt-1 backdrop-blur">
+		<div class="bg-base-100/95 sticky top-0 z-10 -mx-1 mb-6 px-1 pt-1 pb-3 backdrop-blur">
 			<div class="mb-3">
 				<a
 					href={backHref}
-					class="btn btn-ghost btn-sm gap-2 rounded-xl text-base-content/80 hover:text-base-content"
+					class="btn btn-ghost btn-sm text-base-content/80 hover:text-base-content gap-2 rounded-xl"
 					aria-label="Back to jobs list"
 				>
 					<svg viewBox="0 0 24 24" fill="none" class="h-4 w-4" aria-hidden="true">
@@ -123,7 +123,7 @@
 			</div>
 		</div>
 		<div class="grid gap-6 lg:grid-cols-2">
-			<section class="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
+			<section class="border-base-300 bg-base-100 rounded-2xl border p-5 shadow-sm">
 				<h1 class="text-2xl font-semibold">{$jobQ.data.title}</h1>
 				<p class="text-base-content/70">{$jobQ.data.company_name}</p>
 				<a
@@ -136,7 +136,7 @@
 				</a>
 				<h2 class="mt-6 text-sm font-semibold">Description</h2>
 				<div
-					class="mt-2 max-w-none whitespace-pre-wrap text-sm leading-relaxed text-base-content/80"
+					class="text-base-content/80 mt-2 max-w-none text-sm leading-relaxed whitespace-pre-wrap"
 				>
 					{$jobQ.data.description}
 				</div>

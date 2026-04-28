@@ -4,7 +4,19 @@
 
 @layer base {
 	html {
-		@apply font-sans font-normal antialiased;
+		font-family:
+			'Plus Jakarta Sans',
+			ui-sans-serif,
+			system-ui,
+			-apple-system,
+			'Segoe UI',
+			Roboto,
+			'Helvetica Neue',
+			Arial,
+			sans-serif;
+		font-weight: 400;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 		/* Firefox: viewport bar stays recessive; nested panes use `.scroll-region`. */
 		scrollbar-width: thin;
 		scrollbar-color: color-mix(in srgb, currentColor 10%, transparent) transparent;
@@ -16,7 +28,8 @@
 	}
 
 	.form-control .label-text {
-		@apply mb-1 inline-block;
+		margin-bottom: 0.25rem;
+		display: inline-block;
 	}
 
 	/* Chromium / WebKit: no arrow buttons. */
@@ -153,7 +166,8 @@
 		border: 1px solid oklch(var(--p) / 0.22);
 		color: oklch(var(--p) / 1);
 		/* Light: shallow b1→b2 plate so rims never read charcoal; dark: overridden below */
-		background-image: radial-gradient(
+		background-image:
+			radial-gradient(
 				ellipse 78% 82% at 50% 38%,
 				oklch(var(--p) / 0.36) 0%,
 				oklch(var(--p) / 0.08) 52%,
@@ -186,7 +200,8 @@
 		color: oklch(var(--bc) / 1);
 		text-decoration: none;
 		/* Light terracotta: warm lift only — avoid b2→b3 + heavy drop shadow (reads as muddy black on cream) */
-		background-image: radial-gradient(
+		background-image:
+			radial-gradient(
 				ellipse 102% 132% at 50% 22%,
 				oklch(var(--p) / 0.62) 0%,
 				oklch(var(--p) / 0.32) 40%,
@@ -238,7 +253,8 @@
 		font-weight: 700;
 		line-height: 1;
 		color: oklch(var(--bc) / 1);
-		background-image: radial-gradient(
+		background-image:
+			radial-gradient(
 				circle at 48% 36%,
 				oklch(var(--p) / 0.46) 0%,
 				oklch(var(--p) / 0.1) 52%,
@@ -250,7 +266,8 @@
 
 	/* Dark marketing: restore depth (b2→b3 + stronger glow) without affecting light cream UI */
 	html[data-theme='terracotta_dark'] .landing-icon-well {
-		background-image: radial-gradient(
+		background-image:
+			radial-gradient(
 				ellipse 78% 82% at 50% 38%,
 				oklch(var(--p) / 0.36) 0%,
 				oklch(var(--p) / 0.08) 52%,
@@ -261,7 +278,8 @@
 
 	html[data-theme='terracotta_dark'] .landing-cta-primary {
 		border-color: oklch(var(--p) / 0.55);
-		background-image: radial-gradient(
+		background-image:
+			radial-gradient(
 				ellipse 96% 125% at 50% 24%,
 				oklch(var(--p) / 0.78) 0%,
 				oklch(var(--p) / 0.42) 36%,
@@ -282,7 +300,8 @@
 	}
 
 	html[data-theme='terracotta_dark'] .landing-step-disc {
-		background-image: radial-gradient(
+		background-image:
+			radial-gradient(
 				circle at 48% 36%,
 				oklch(var(--p) / 0.46) 0%,
 				oklch(var(--p) / 0.1) 52%,

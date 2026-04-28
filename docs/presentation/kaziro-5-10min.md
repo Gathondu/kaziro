@@ -220,4 +220,3 @@ Close by reinforcing business value: faster, more consistent job application wor
 - If limited to 5 minutes: cover Sections 1-4 and the top 2 bullets in Section 5.
 - If audience is more technical: expand Section 3 decisions and Section 4 sequence details.
 - If audience is less technical: stay on system context + user-visible outcomes.
-

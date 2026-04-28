@@ -25,6 +25,7 @@ class _ProfileLike(Protocol):
     created_at: datetime
     updated_at: datetime
 
+
 class ProfileResponse(ORMModel):
     """Public projection of a :class:`UserProfile` row.
 

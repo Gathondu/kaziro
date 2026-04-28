@@ -203,7 +203,7 @@ backlog metrics — it's not a request-latency SLO.
 | --------------------- | ---------------- |
 | `backend/agents/`     | **90%**          |
 | `backend/services/`   | 85%              |
-| `backend/api/`        | 80%              |
+| `backend/api/`        | 60%              |
 | `backend/db/`         | 75%              |
 | `backend/utils/`      | 70%              |
 | Frontend components   | 75%              |

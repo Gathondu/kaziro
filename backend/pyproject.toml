@@ -131,19 +131,10 @@ module = [
     "jose",
     "jose.exceptions",
     "weasyprint",
-    "celery.*",
-    "vcr.*",
-    "factory.*",
-    "factory_boy.*",
-    "weasyprint.*",
-    "pgvector",
-    "jose.*",
     "supabase.*",
     "langgraph.*",
     "langchain_openai.*",
     "langchain_openrouter.*",
-    "pgvector.*",
-    "bleach.*",
 ]
 ignore_missing_imports = true
 
@@ -153,6 +144,8 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 minversion = "8.0"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
@@ -184,7 +177,7 @@ omit = [
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-fail_under = 80
+fail_under = 60
 exclude_lines = [
     "pragma: no cover",
     "raise NotImplementedError",

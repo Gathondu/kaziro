@@ -22,12 +22,12 @@
 	}
 </script>
 
-<div class="flex flex-col gap-3 rounded-2xl border border-base-300 bg-base-200 p-4">
+<div class="border-base-300 bg-base-200 flex flex-col gap-3 rounded-2xl border p-4">
 	<div class="flex flex-wrap items-end gap-3">
 		<label class="form-control w-full min-w-64 flex-1">
 			<span class="label-text text-sm font-medium">Keyword</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-100"
+				class="input input-bordered border-base-300 bg-base-100 rounded-xl"
 				type="search"
 				placeholder="Title, company, description…"
 				value={keyword}
@@ -42,7 +42,7 @@
 		<label class="form-control w-full max-w-xs">
 			<span class="label-text text-sm font-medium">Posted after</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-100"
+				class="input input-bordered border-base-300 bg-base-100 rounded-xl"
 				type="date"
 				value={postedAfter}
 				oninput={(e) =>

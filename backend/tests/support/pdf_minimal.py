@@ -18,9 +18,7 @@ def pdf_bytes_with_text(body: str) -> bytes:
     """
     text = _pdf_escape(body)
     font_obj = b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
-    content = (
-        b"BT /F1 11 Tf 72 720 Td (" + text.encode("latin-1", errors="replace") + b") Tj ET"
-    )
+    content = b"BT /F1 11 Tf 72 720 Td (" + text.encode("latin-1", errors="replace") + b") Tj ET"
     content_compressed = zlib.compress(content)
 
     objects: list[bytes] = []
@@ -31,8 +29,7 @@ def pdf_bytes_with_text(body: str) -> bytes:
         b"/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>"
     )
     objects.append(
-        b"<< /Length %d /Filter /FlateDecode >>\nstream\n"
-        % len(content_compressed)
+        b"<< /Length %d /Filter /FlateDecode >>\nstream\n" % len(content_compressed)
         + content_compressed
         + b"\nendstream"
     )

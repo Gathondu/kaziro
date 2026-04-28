@@ -64,13 +64,13 @@
 </svelte:head>
 
 {#if !applicationId}
-	<p class="text-sm text-error">Missing application. Open this page from the job detail action.</p>
+	<p class="text-error text-sm">Missing application. Open this page from the job detail action.</p>
 {:else if $appQ.isPending}
-	<p class="text-sm text-base-content/60">Loading application…</p>
+	<p class="text-base-content/60 text-sm">Loading application…</p>
 {:else if $appQ.isError}
-	<p class="text-sm text-error">Application not found.</p>
+	<p class="text-error text-sm">Application not found.</p>
 {:else if $appQ.data}
-	<p class="mb-6 text-sm text-base-content/70">
+	<p class="text-base-content/70 mb-6 text-sm">
 		Job: <strong>{$appQ.data.job_posting?.title ?? ''}</strong>
 	</p>
 	<div class="grid gap-6 lg:grid-cols-2">

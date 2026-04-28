@@ -68,13 +68,13 @@
 	</div>
 
 	{#if $q.isPending}
-		<p class="pt-6 text-sm text-base-content/60">Loading jobs…</p>
+		<p class="text-base-content/60 pt-6 text-sm">Loading jobs…</p>
 	{:else if $q.isError}
-		<p class="pt-6 text-sm text-error">Could not load jobs.</p>
+		<p class="text-error pt-6 text-sm">Could not load jobs.</p>
 	{:else}
 		<div class="scroll-region min-h-0 flex-1 overflow-y-auto px-2">
 			{#if flat.length > 100}
-				<p class="mb-2 text-xs text-base-content/60" role="status">
+				<p class="text-base-content/60 mb-2 text-xs" role="status">
 					Showing {flat.length} loaded jobs — refine filters to narrow results.
 				</p>
 			{/if}
@@ -85,7 +85,7 @@
 			{/each}
 			<div bind:this={sentinel} class="h-4"></div>
 			{#if $q.isFetchingNextPage}
-				<p class="py-3 text-center text-sm text-base-content/60">Loading more…</p>
+				<p class="text-base-content/60 py-3 text-center text-sm">Loading more…</p>
 			{/if}
 		</div>
 	{/if}

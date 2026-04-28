@@ -13,7 +13,7 @@
 <div class="toast toast-end toast-bottom z-50 w-full max-w-sm gap-2">
 	{#each list as t (t.id)}
 		<div
-			class="alert rounded-xl border border-base-300 shadow-sm {t.level === 'success'
+			class="alert border-base-300 rounded-xl border shadow-sm {t.level === 'success'
 				? 'alert-success'
 				: t.level === 'warning'
 					? 'alert-warning'

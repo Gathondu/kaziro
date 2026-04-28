@@ -145,13 +145,17 @@ def _decode_jwt_via_jwks(
         msg = "no matching JWK for token"
         raise JWTError(msg)
     signing_key = jwk.construct(key_data)
-    return jwt.decode(
+    payload = jwt.decode(
         token,
         signing_key,
         algorithms=[alg],
         audience=EXPECTED_AUDIENCE,
         options={"require": ["sub", "exp", "aud"]},
     )
+    if not isinstance(payload, dict):
+        msg = "decoded JWT payload is not a JSON object"
+        raise JWTError(msg)
+    return payload
 
 
 def _decode_jwt(token: str, settings: Settings) -> dict[str, object]:
@@ -169,14 +173,18 @@ def _decode_jwt(token: str, settings: Settings) -> dict[str, object]:
             log.warning("auth.invalid_token", error=f"disallowed jwt alg: {alg}")
             raise _credentials_error("invalid token")
 
+        payload: dict[str, object]
         if alg == SUPABASE_ALGORITHM:
-            payload = jwt.decode(
+            decoded_payload = jwt.decode(
                 token,
                 settings.SUPABASE_JWT_SECRET.get_secret_value(),
                 algorithms=[SUPABASE_ALGORITHM],
                 audience=EXPECTED_AUDIENCE,
                 options={"require": ["sub", "exp", "aud"]},
             )
+            if not isinstance(decoded_payload, dict):
+                raise _credentials_error("invalid token")
+            payload = decoded_payload
         else:
             kid_raw = header.get("kid") if isinstance(header, dict) else None
             kid = kid_raw if isinstance(kid_raw, str) else None
@@ -224,10 +232,10 @@ def _is_admin_payload(payload: dict[str, object], role: str) -> bool:
         return True
     metadata = payload.get("app_metadata")
     if isinstance(metadata, dict):
-        flag = metadata.get("is_admin")  # type: ignore[arg-type]
+        flag = metadata.get("is_admin")
         if isinstance(flag, bool) and flag:
             return True
-        roles = metadata.get("roles")  # type: ignore[arg-type]
+        roles = metadata.get("roles")
         if isinstance(roles, list) and ADMIN_ROLE in roles:
             return True
     return False

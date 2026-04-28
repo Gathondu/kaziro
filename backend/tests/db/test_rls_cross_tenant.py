@@ -46,9 +46,7 @@ async def engine() -> AsyncIterator[AsyncEngine]:
             try:
                 await conn.execute(text("SELECT 1 FROM users LIMIT 1"))
             except SQLAlchemyError as exc:
-                pytest.skip(
-                    f"users table missing — run alembic upgrade head first ({exc})"
-                )
+                pytest.skip(f"users table missing — run alembic upgrade head first ({exc})")
         await _install_auth_shim(eng)
     except SQLAlchemyError as exc:
         await eng.dispose()
@@ -69,8 +67,8 @@ async def two_users(engine: AsyncEngine) -> AsyncIterator[tuple[uuid.UUID, uuid.
             text(
                 "INSERT INTO users (id, email, is_active, subscription_tier, "
                 "created_at, updated_at) VALUES "
-                "(:a, :ea, true, 'FREE', NOW(), NOW()), "
-                "(:b, :eb, true, 'FREE', NOW(), NOW())"
+                "(:a, :ea, true, 'free', NOW(), NOW()), "
+                "(:b, :eb, true, 'free', NOW(), NOW())"
             ),
             {"a": user_a, "b": user_b, "ea": f"{user_a}@t.x", "eb": f"{user_b}@t.x"},
         )
@@ -137,10 +135,7 @@ async def test_user_cannot_update_other_users_job_configs(
     async with AsyncSession(engine, expire_on_commit=False) as session:
         await _set_authenticated_role(session, user_a)
         result = await session.execute(
-            text(
-                "UPDATE job_search_configs SET is_active = false "
-                "WHERE user_id = :u RETURNING id"
-            ),
+            text("UPDATE job_search_configs SET is_active = false WHERE user_id = :u RETURNING id"),
             {"u": user_b},
         )
         affected = list(result.scalars().all())
@@ -206,9 +201,7 @@ async def _install_auth_shim(engine: AsyncEngine) -> None:
 
 
 async def _role_exists(conn: AsyncConnection, role: str) -> bool:
-    result = await conn.execute(
-        text("SELECT 1 FROM pg_roles WHERE rolname = :r"), {"r": role}
-    )
+    result = await conn.execute(text("SELECT 1 FROM pg_roles WHERE rolname = :r"), {"r": role})
     return result.scalar() is not None
 
 

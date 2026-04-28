@@ -64,14 +64,14 @@
 </svelte:head>
 
 <h1 class="mb-2 text-xl font-semibold">Tell us about yourself</h1>
-<p class="mb-6 text-sm text-base-content/70">
+<p class="text-base-content/70 mb-6 text-sm">
 	We use this to evaluate job fit and tailor documents.
 </p>
 <form class="space-y-4" onsubmit={submit}>
 	<label class="form-control">
 		<span class="label-text font-medium">Name</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.full_name
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.full_name
 				? 'input-error'
 				: ''}"
 			autocomplete="name"

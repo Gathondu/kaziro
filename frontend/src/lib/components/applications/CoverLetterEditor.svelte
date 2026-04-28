@@ -43,7 +43,7 @@
 
 <div
 	bind:this={host}
-	class="min-h-64 rounded-xl border border-base-300 bg-base-100 p-3 text-sm leading-relaxed"
+	class="border-base-300 bg-base-100 min-h-64 rounded-xl border p-3 text-sm leading-relaxed"
 	role="textbox"
 	aria-label="Cover letter editor"
 ></div>

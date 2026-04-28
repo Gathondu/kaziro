@@ -17,7 +17,7 @@
 {#if href}
 	<a
 		{href}
-		class="group relative block overflow-hidden rounded-2xl bg-base-300 transition-transform duration-200 hover:-translate-y-0.5 hover:scale-105"
+		class="group bg-base-300 relative block overflow-hidden rounded-2xl transition-transform duration-200 hover:-translate-y-0.5 hover:scale-105"
 	>
 		{#if animated}
 			<span
@@ -34,21 +34,21 @@
 			</span>
 		{/if}
 		<span
-			class="relative z-10 m-0.5 block rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
+			class="border-base-300 bg-base-100 relative z-10 m-0.5 block rounded-2xl border p-5 shadow-sm transition-shadow duration-200 group-hover:shadow-md"
 		>
-			<p class="text-sm font-medium text-base-content/70">{label}</p>
+			<p class="text-base-content/70 text-sm font-medium">{label}</p>
 			<p class="mt-2 text-3xl font-semibold tabular-nums">{value}</p>
 			{#if hint}
-				<p class="mt-1 text-xs text-base-content/60">{hint}</p>
+				<p class="text-base-content/60 mt-1 text-xs">{hint}</p>
 			{/if}
 		</span>
 	</a>
 {:else}
-	<div class="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-sm">
-		<p class="text-sm font-medium text-base-content/70">{label}</p>
+	<div class="border-base-300 bg-base-100 rounded-2xl border p-5 shadow-sm">
+		<p class="text-base-content/70 text-sm font-medium">{label}</p>
 		<p class="mt-2 text-3xl font-semibold tabular-nums">{value}</p>
 		{#if hint}
-			<p class="mt-1 text-xs text-base-content/60">{hint}</p>
+			<p class="text-base-content/60 mt-1 text-xs">{hint}</p>
 		{/if}
 	</div>
 {/if}

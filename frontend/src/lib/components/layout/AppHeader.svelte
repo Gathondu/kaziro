@@ -47,9 +47,9 @@
 </script>
 
 <header
-	class="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-base-300 bg-base-100 px-4 py-3"
+	class="border-base-300 bg-base-100 sticky top-0 z-40 flex items-center justify-between gap-3 border-b px-4 py-3"
 >
-	<a href="/dashboard" class="text-lg font-semibold text-primary">Kaziro</a>
+	<a href="/dashboard" class="text-primary text-lg font-semibold">Kaziro</a>
 	<div class="flex items-center gap-2">
 		<div class="dropdown dropdown-end">
 			<button
@@ -60,7 +60,7 @@
 			>
 				<UserRound class="size-6" aria-hidden="true" />
 				<span
-					class="absolute bottom-1 right-1 size-2 rounded-full ring-2 ring-base-100 {wsState ===
+					class="ring-base-100 absolute right-1 bottom-1 size-2 rounded-full ring-2 {wsState ===
 					'live'
 						? 'bg-success'
 						: wsState === 'pending'
@@ -71,12 +71,12 @@
 				></span>
 			</button>
 			<ul
-				class="menu dropdown-content z-50 mt-2 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-sm"
+				class="menu dropdown-content rounded-box border-base-300 bg-base-100 z-50 mt-2 w-52 border p-2 shadow-sm"
 			>
 				{#if $profile.isSuccess && $profile.data.full_name?.trim()}
-					<li class="pointer-events-none border-b border-base-200 pb-2">
+					<li class="border-base-200 pointer-events-none border-b pb-2">
 						<span
-							class="block whitespace-normal break-words px-1 py-0.5 text-center text-xs font-semibold uppercase leading-snug text-base-content/70"
+							class="text-base-content/70 block px-1 py-0.5 text-center text-xs leading-snug font-semibold break-words whitespace-normal uppercase"
 							aria-label="Signed in as {$profile.data.full_name}"
 						>
 							{$profile.data.full_name.trim()}

@@ -12,9 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db.models.user_profile import UserProfile
 
 
-async def get_by_user_id(
-    session: AsyncSession, user_id: uuid.UUID
-) -> UserProfile | None:
+async def get_by_user_id(session: AsyncSession, user_id: uuid.UUID) -> UserProfile | None:
     """Return the (single) profile for ``user_id`` or ``None``."""
     stmt = select(UserProfile).where(UserProfile.user_id == user_id)
     return (await session.execute(stmt)).scalar_one_or_none()
