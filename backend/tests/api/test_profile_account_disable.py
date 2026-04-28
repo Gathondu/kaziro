@@ -78,10 +78,14 @@ def test_profile_account_disable_sets_is_active_false() -> None:
         assert response.status_code == 204
 
         with sync_eng.connect() as conn:
-            row = conn.execute(
-                text("SELECT is_active FROM users WHERE id = CAST(:id AS uuid)"),
-                {"id": str(uid)},
-            ).mappings().one()
+            row = (
+                conn.execute(
+                    text("SELECT is_active FROM users WHERE id = CAST(:id AS uuid)"),
+                    {"id": str(uid)},
+                )
+                .mappings()
+                .one()
+            )
         assert row["is_active"] is False
     finally:
         if inserted_row:

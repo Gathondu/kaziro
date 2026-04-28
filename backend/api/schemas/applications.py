@@ -34,11 +34,7 @@ class ApplicationEventResponse(ORMModel):
 
 class ApplicationCreateRequest(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {"job_posting_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"}
-            ]
-        }
+        json_schema_extra={"examples": [{"job_posting_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"}]}
     )
 
     job_posting_id: uuid.UUID

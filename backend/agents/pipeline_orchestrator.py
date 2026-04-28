@@ -249,9 +249,7 @@ async def run_document_stage(
     bound.info("pipeline.document_start")
     rs = regenerate_scope if regenerate_scope in ("cv", "cover_letter") else None
     try:
-        result = await run_document_agent(
-            job_evaluation_id, user_id, regenerate_scope=rs
-        )
+        result = await run_document_agent(job_evaluation_id, user_id, regenerate_scope=rs)
     except Exception as exc:
         bound.error("pipeline.document_exception", error=str(exc))
         return False

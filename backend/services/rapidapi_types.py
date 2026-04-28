@@ -17,4 +17,3 @@ class RapidApiQuerySpec(BaseModel):
         default_factory=dict,
         description="Provider-specific query parameters.",
     )
-

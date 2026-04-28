@@ -160,7 +160,7 @@
 				</div>
 			</div>
 			<div
-				class="relative flex min-h-0 flex-1 flex-col overflow-visible text-sm leading-relaxed text-base-content/90"
+				class="text-base-content/90 relative flex min-h-0 flex-1 flex-col overflow-visible text-sm leading-relaxed"
 			>
 				<div class="flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-3">
 					{#if activeTab === 'cover'}
@@ -169,7 +169,7 @@
 							id="job-doc-cover-draft"
 							bind:value={coverDraft}
 							rows={1}
-							class="textarea box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto whitespace-pre-wrap border-0 bg-transparent pb-2.5 pl-3 pr-10 pt-11 font-sans text-sm leading-relaxed text-base-content shadow-none outline-none ring-0 transition-[box-shadow] focus:border-0 focus:outline-none focus:ring-2 focus:ring-primary/40 sm:pr-44"
+							class="textarea text-base-content focus:ring-primary/40 box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto border-0 bg-transparent pt-11 pr-10 pb-2.5 pl-3 font-sans text-sm leading-relaxed whitespace-pre-wrap shadow-none ring-0 transition-[box-shadow] outline-none focus:border-0 focus:ring-2 focus:outline-none sm:pr-44"
 							spellcheck="true"
 						></textarea>
 					{:else}
@@ -178,13 +178,13 @@
 							id="job-doc-cv-draft"
 							bind:value={cvDraft}
 							rows={1}
-							class="textarea box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto whitespace-pre-wrap border-0 bg-transparent pb-2.5 pl-3 pr-10 pt-11 font-sans text-sm leading-relaxed text-base-content shadow-none outline-none ring-0 transition-[box-shadow] focus:border-0 focus:outline-none focus:ring-2 focus:ring-primary/40 sm:pr-44"
+							class="textarea text-base-content focus:ring-primary/40 box-border h-full min-h-0 w-full flex-1 resize-none overflow-y-auto border-0 bg-transparent pt-11 pr-10 pb-2.5 pl-3 font-sans text-sm leading-relaxed whitespace-pre-wrap shadow-none ring-0 transition-[box-shadow] outline-none focus:border-0 focus:ring-2 focus:outline-none sm:pr-44"
 							spellcheck="true"
 						></textarea>
 					{/if}
 				</div>
 				<div
-					class="pointer-events-none absolute right-4 top-2 z-[80] flex max-w-[calc(100%-1rem)] items-start justify-end gap-2 sm:right-8 sm:top-3"
+					class="pointer-events-none absolute top-2 right-4 z-[80] flex max-w-[calc(100%-1rem)] items-start justify-end gap-2 sm:top-3 sm:right-8"
 				>
 					{#if !canPersist || $updateDocsMutation.isPending || isDirty}
 						<div
@@ -201,7 +201,7 @@
 						<div class={ICON_TOOLTIP_CLASS} data-tip="Copy">
 							<button
 								type="button"
-								class="btn btn-square btn-ghost btn-sm h-9 min-h-0 w-9 rounded-md text-base-content/80 hover:text-base-content"
+								class="btn btn-square btn-ghost btn-sm text-base-content/80 hover:text-base-content h-9 min-h-0 w-9 rounded-md"
 								disabled={copyPending}
 								aria-label="Copy to clipboard"
 								onclick={() => void copyActive()}
@@ -234,7 +234,7 @@
 						<div class={ICON_TOOLTIP_CLASS} data-tip="PDF">
 							<button
 								type="button"
-								class="btn btn-square btn-ghost btn-sm h-9 min-h-0 w-9 rounded-md text-base-content/80 hover:text-base-content disabled:opacity-40"
+								class="btn btn-square btn-ghost btn-sm text-base-content/80 hover:text-base-content h-9 min-h-0 w-9 rounded-md disabled:opacity-40"
 								disabled={!canDownload || downloadPending}
 								aria-label="Download as PDF"
 								onclick={() => void downloadActive()}
@@ -264,7 +264,7 @@
 						<div class={ICON_TOOLTIP_CLASS} data-tip="Regenerate">
 							<button
 								type="button"
-								class="btn btn-square btn-ghost btn-sm h-9 min-h-0 w-9 rounded-md text-base-content/80 hover:text-base-content"
+								class="btn btn-square btn-ghost btn-sm text-base-content/80 hover:text-base-content h-9 min-h-0 w-9 rounded-md"
 								disabled={$regenerateMutation.isPending}
 								aria-label="Regenerate document"
 								onclick={() => void refreshActiveDocument()}

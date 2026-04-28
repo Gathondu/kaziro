@@ -82,18 +82,18 @@
 </svelte:head>
 
 <h1 class="mb-2 text-xl font-semibold">Skills</h1>
-<p class="mb-6 text-sm text-base-content/70">
+<p class="text-base-content/70 mb-6 text-sm">
 	Optional — list strengths as comma-separated keywords (for example, TypeScript, Postgres, team
 	leadership). Skip if you want to add these later in Settings.
 </p>
 <form class="space-y-4" onsubmit={skipOrNext}>
 	{#if fieldErrors.form}
-		<p class="text-sm text-error" role="alert">{fieldErrors.form}</p>
+		<p class="text-error text-sm" role="alert">{fieldErrors.form}</p>
 	{/if}
 	<label class="form-control">
 		<span class="label-text font-medium">Skills (comma-separated)</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.skills
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.skills
 				? 'input-error'
 				: ''}"
 			autocomplete="off"

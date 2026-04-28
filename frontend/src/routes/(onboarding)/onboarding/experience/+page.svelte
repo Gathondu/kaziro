@@ -85,14 +85,14 @@
 </svelte:head>
 
 <h1 class="mb-2 text-xl font-semibold">Years of experience</h1>
-<p class="mb-6 text-sm text-base-content/70">
+<p class="text-base-content/70 mb-6 text-sm">
 	Optional — rough total years in roles relevant to your search. Skip if you prefer not to say.
 </p>
 <form class="space-y-4" onsubmit={skipOrNext}>
 	<label class="form-control">
 		<span class="label-text font-medium">Years of experience</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.experience_years
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.experience_years
 				? 'input-error'
 				: ''}"
 			type="text"

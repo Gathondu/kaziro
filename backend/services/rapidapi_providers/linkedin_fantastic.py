@@ -186,4 +186,3 @@ def validate_and_clamp_spec(spec: RapidApiQuerySpec, *, settings: Settings) -> R
     lim = max(10, min(lim, settings.RAPIDAPI_JOB_FETCH_LIMIT))
     clean["limit"] = lim
     return RapidApiQuerySpec(path=path, query_params=clean)
-

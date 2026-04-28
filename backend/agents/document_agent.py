@@ -121,9 +121,7 @@ class PdfRendererProtocol(Protocol):
 class _PdfRendererAdapter:
     """Adapt the function-based ``pdf_renderer`` module to a protocol."""
 
-    async def render_pdf_and_upload(
-        self, content: str, *, title: str, storage_path: str
-    ) -> str:
+    async def render_pdf_and_upload(self, content: str, *, title: str, storage_path: str) -> str:
         return await default_pdf_renderer.render_pdf_and_upload(
             content, title=title, storage_path=storage_path
         )
@@ -209,9 +207,7 @@ def _strip_json_fence(raw: str) -> str:
 
 
 async def load_context_node(state: DocumentState) -> DocumentState:
-    bound = log.bind(
-        job_evaluation_id=state.job_evaluation_id, node="load_context"
-    )
+    bound = log.bind(job_evaluation_id=state.job_evaluation_id, node="load_context")
     bound.info("document.load_start")
 
     user_uuid = uuid.UUID(state.user_id)
@@ -219,16 +215,12 @@ async def load_context_node(state: DocumentState) -> DocumentState:
     saved_doc = None
 
     async with async_session_factory() as session:
-        evaluation = await evaluation_repository.get_by_id(
-            session, user_uuid, eval_uuid
-        )
+        evaluation = await evaluation_repository.get_by_id(session, user_uuid, eval_uuid)
         if evaluation is None:
             bound.error("document.evaluation_not_found")
             return state.model_copy(update={"error": "Evaluation not found"})
 
-        job = await job_posting_repository.get_by_id(
-            session, evaluation.job_posting_id
-        )
+        job = await job_posting_repository.get_by_id(session, evaluation.job_posting_id)
         profile = await profile_repository.get_by_user_id(session, user_uuid)
         if job is None or profile is None:
             bound.error(
@@ -236,9 +228,7 @@ async def load_context_node(state: DocumentState) -> DocumentState:
                 job_found=bool(job),
                 profile_found=bool(profile),
             )
-            return state.model_copy(
-                update={"error": "Job or profile not found"}
-            )
+            return state.model_copy(update={"error": "Job or profile not found"})
 
         company = await company_summary_repository.get_for_posting(
             session, evaluation.job_posting_id
@@ -276,16 +266,12 @@ async def load_context_node(state: DocumentState) -> DocumentState:
     if state.regenerate_scope == "cover_letter":
         if saved_doc is None:
             bound.error("document.regenerate_missing_row", scope="cover_letter")
-            return state.model_copy(
-                update={**updates, "error": "No saved documents to regenerate"}
-            )
+            return state.model_copy(update={**updates, "error": "No saved documents to regenerate"})
         updates["tailored_cv_text"] = saved_doc.tailored_cv_text
     elif state.regenerate_scope == "cv":
         if saved_doc is None:
             bound.error("document.regenerate_missing_row", scope="cv")
-            return state.model_copy(
-                update={**updates, "error": "No saved documents to regenerate"}
-            )
+            return state.model_copy(update={**updates, "error": "No saved documents to regenerate"})
         updates["cover_letter_text"] = saved_doc.cover_letter_text
 
     return state.model_copy(update=updates)
@@ -351,8 +337,8 @@ COMPANY CONTEXT:
 - About: {state.company_summary}
 
 CANDIDATE PROFILE:
-- Skills: {', '.join(state.user_skills)}
-- Experience: {state.user_experience_years or 'not specified'} years
+- Skills: {", ".join(state.user_skills)}
+- Experience: {state.user_experience_years or "not specified"} years
 - Summary: {state.user_summary}
 - Personal Values: {state.user_values}
 
@@ -392,7 +378,7 @@ CHECK FOR:
 4. Are there any factual contradictions between the CV and cover letter?
 5. Are there any obvious errors, placeholders, or template artifacts?
 
-USER SKILLS (ground truth): {', '.join(state.user_skills)}
+USER SKILLS (ground truth): {", ".join(state.user_skills)}
 
 CV:
 {state.tailored_cv_text[:QUALITY_CHECK_CV_TRUNCATE]}
@@ -416,9 +402,7 @@ Respond in this exact JSON format (no other text):
         if issues:
             notes = f"{notes} Issues: " + "; ".join(str(i) for i in issues)
         bound.info("document.quality_check_complete", passed=passed)
-        return state.model_copy(
-            update={"quality_passed": passed, "quality_notes": notes}
-        )
+        return state.model_copy(update={"quality_passed": passed, "quality_notes": notes})
     except Exception as exc:
         bound.warning("document.quality_check_failed", error=str(exc))
         # Non-fatal — default to passed but record the failure.
@@ -431,9 +415,7 @@ Respond in this exact JSON format (no other text):
 
 
 async def render_and_persist_node(state: DocumentState) -> DocumentState:
-    bound = log.bind(
-        job_evaluation_id=state.job_evaluation_id, node="render_persist"
-    )
+    bound = log.bind(job_evaluation_id=state.job_evaluation_id, node="render_persist")
     if state.error:
         pipeline_jobs_total.labels(stage="document", status="failed").inc()
         return state
@@ -521,9 +503,7 @@ async def render_and_persist_node(state: DocumentState) -> DocumentState:
             doc_id = doc.id
             bound.info("document.persist_create", application_doc_id=str(doc_id))
 
-    cv_path = renderer.storage_path_for_doc(
-        user_id=user_uuid, doc_kind="cv", doc_id=doc_id
-    )
+    cv_path = renderer.storage_path_for_doc(user_id=user_uuid, doc_kind="cv", doc_id=doc_id)
     cl_path = renderer.storage_path_for_doc(
         user_id=user_uuid, doc_kind="cover_letter", doc_id=doc_id
     )
@@ -729,9 +709,7 @@ async def run_document_agent(
     try:
         result = await _get_graph().ainvoke(initial)
     finally:
-        agent_duration_seconds.labels(agent_name=AGENT_NAME).observe(
-            time.perf_counter() - started
-        )
+        agent_duration_seconds.labels(agent_name=AGENT_NAME).observe(time.perf_counter() - started)
     if isinstance(result, DocumentState):
         return result
     return DocumentState.model_validate(result)

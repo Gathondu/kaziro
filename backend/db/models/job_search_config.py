@@ -68,15 +68,10 @@ class JobSearchConfig(TimestampedBase):
         passive_deletes=True,
     )
 
-    __table_args__ = (
-        Index("ix_job_search_configs_user_id_active", "user_id", "is_active"),
-    )
+    __table_args__ = (Index("ix_job_search_configs_user_id_active", "user_id", "is_active"),)
 
     def __repr__(self) -> str:
-        return (
-            f"<JobSearchConfig id={self.id} user_id={self.user_id} "
-            f"keywords={self.keywords!r}>"
-        )
+        return f"<JobSearchConfig id={self.id} user_id={self.user_id} keywords={self.keywords!r}>"
 
 
 __all__ = ["JobSearchConfig"]

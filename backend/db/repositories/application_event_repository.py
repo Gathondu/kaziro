@@ -57,9 +57,7 @@ async def list_for_application(
     via :func:`backend.db.repositories.application_repository.get_by_id`
     first — this method does not re-check.
     """
-    stmt = select(ApplicationEvent).where(
-        ApplicationEvent.application_id == application_id
-    )
+    stmt = select(ApplicationEvent).where(ApplicationEvent.application_id == application_id)
     return await paginate(
         session,
         stmt,

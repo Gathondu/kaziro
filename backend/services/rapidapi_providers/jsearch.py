@@ -99,7 +99,10 @@ def _coerce_query_value(original_key: str, canonical_key: str, value: Any) -> An
         if isinstance(value, (list, tuple)):
             return " OR ".join(str(v) for v in value)
         return value
-    if original_key in {"EmploymentTypeFilter", "type_filter"} and canonical_key == "employment_types":
+    if (
+        original_key in {"EmploymentTypeFilter", "type_filter"}
+        and canonical_key == "employment_types"
+    ):
         if isinstance(value, (list, tuple)):
             return ",".join(str(v).replace("_", "").strip().upper() for v in value)
         return value
@@ -175,4 +178,3 @@ def validate_and_clamp_spec(spec: RapidApiQuerySpec, *, settings: Settings) -> R
     clean.pop("limit", None)
     clean.pop("offset", None)
     return RapidApiQuerySpec(path=path, query_params=clean)
-

@@ -124,9 +124,7 @@ async def test_evaluator_critic_failure_falls_back_to_draft(
         "overall_score": 7.0,
         "feedback": "Despite critic noise, still a fit.",
     }
-    set_llm_for_tests(
-        _json_llm(_pass1(), ValueError("critic LLM unavailable"), pass3)
-    )
+    set_llm_for_tests(_json_llm(_pass1(), ValueError("critic LLM unavailable"), pass3))
     posting_id = await _seed_posting(test_user_id)
 
     result = await run_evaluator_agent(str(posting_id), str(test_user_id))

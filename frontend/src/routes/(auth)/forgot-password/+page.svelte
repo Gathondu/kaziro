@@ -43,7 +43,7 @@
 
 <h1 class="mb-4 text-xl font-semibold">Reset password</h1>
 {#if done}
-	<p class="text-sm text-base-content/80">
+	<p class="text-base-content/80 text-sm">
 		If an account exists for that email, you will receive recovery instructions shortly.
 	</p>
 {:else}
@@ -51,7 +51,7 @@
 		<label class="form-control">
 			<span class="label-text font-medium">Email</span>
 			<input
-				class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.email
+				class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.email
 					? 'input-error'
 					: ''}"
 				type="email"

@@ -86,9 +86,7 @@ async def update(
     return doc
 
 
-async def delete_by_id(
-    session: AsyncSession, user_id: uuid.UUID, doc_id: uuid.UUID
-) -> bool:
+async def delete_by_id(session: AsyncSession, user_id: uuid.UUID, doc_id: uuid.UUID) -> bool:
     """Hard-delete a document bundle row. Returns whether a row was removed."""
     stmt = (
         delete(ApplicationDoc)

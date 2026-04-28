@@ -67,7 +67,9 @@ def pick_best_cache_object_name(
     3. Ties: prefer smaller ``|C|`` (tighter cached query).
     4. Ties: lexicographically smallest name (deterministic).
     """
-    names = [str(row.get("name", "")) for row in listing if str(row.get("name", "")).endswith(".json")]
+    names = [
+        str(row.get("name", "")) for row in listing if str(row.get("name", "")).endswith(".json")
+    ]
     exact = f"{exact_basename}.json"
     if exact in names:
         return exact

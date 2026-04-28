@@ -45,9 +45,9 @@
 
 <div class="scroll-region h-full min-h-0 overflow-y-auto pr-1">
 	<div
-		class="sticky top-0 z-10 -mx-1 mb-6 flex flex-wrap items-center justify-between gap-3 bg-base-100/95 px-1 py-1 backdrop-blur"
+		class="bg-base-100/95 sticky top-0 z-10 -mx-1 mb-6 flex flex-wrap items-center justify-between gap-3 px-1 py-1 backdrop-blur"
 	>
-		<div class="tabs-boxed tabs w-fit rounded-xl border border-base-300 bg-base-200 p-1">
+		<div class="tabs-boxed tabs border-base-300 bg-base-200 w-fit rounded-xl border p-1">
 			<a
 				class="tab rounded-lg {activeTab === 'job-configs' ? 'tab-active' : ''}"
 				href="/settings?tab=job-configs">Job configs</a

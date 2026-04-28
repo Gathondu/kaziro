@@ -8,45 +8,45 @@
 </script>
 
 <section
-	class="relative border-y border-base-content/15 bg-base-200 px-4 py-16 sm:py-24"
+	class="border-base-content/15 bg-base-200 relative border-y px-4 py-16 sm:py-24"
 	aria-labelledby="how-heading"
 >
 	<div class={sectionVeilClass} aria-hidden="true"></div>
 	<div class="relative mx-auto max-w-5xl">
-		<p class="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-primary">
+		<p class="text-primary mb-2 text-center text-xs font-semibold tracking-widest uppercase">
 			Simple flow
 		</p>
 		<h2
 			id="how-heading"
-			class="mb-12 text-center text-3xl font-bold tracking-tight text-base-content sm:text-4xl"
+			class="text-base-content mb-12 text-center text-3xl font-bold tracking-tight sm:text-4xl"
 		>
 			Three steps to momentum
 		</h2>
 		<div class="grid gap-6 md:grid-cols-3">
 			<div
-				class="shadow-marketing-card rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center ring-1 ring-base-content/10"
+				class="shadow-marketing-card border-base-content/20 bg-base-100 ring-base-content/10 rounded-2xl border p-8 text-center ring-1"
 			>
 				<span class="landing-step-disc mx-auto mb-4">1</span>
-				<h3 class="mb-2 text-lg font-bold text-base-content">Create your profile</h3>
-				<p class="text-sm leading-relaxed text-base-content/90">
+				<h3 class="text-base-content mb-2 text-lg font-bold">Create your profile</h3>
+				<p class="text-base-content/90 text-sm leading-relaxed">
 					Add your experience, skills, and job preferences so evaluations are grounded in you.
 				</p>
 			</div>
 			<div
-				class="shadow-marketing-card rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center ring-1 ring-base-content/10"
+				class="shadow-marketing-card border-base-content/20 bg-base-100 ring-base-content/10 rounded-2xl border p-8 text-center ring-1"
 			>
 				<span class="landing-step-disc mx-auto mb-4">2</span>
-				<h3 class="mb-2 text-lg font-bold text-base-content">Discover &amp; review</h3>
-				<p class="text-sm leading-relaxed text-base-content/90">
+				<h3 class="text-base-content mb-2 text-lg font-bold">Discover &amp; review</h3>
+				<p class="text-base-content/90 text-sm leading-relaxed">
 					See surfaced roles with fit summaries and company context before you invest time.
 				</p>
 			</div>
 			<div
-				class="shadow-marketing-card rounded-2xl border border-base-content/20 bg-base-100 p-8 text-center ring-1 ring-base-content/10"
+				class="shadow-marketing-card border-base-content/20 bg-base-100 ring-base-content/10 rounded-2xl border p-8 text-center ring-1"
 			>
 				<span class="landing-step-disc mx-auto mb-4">3</span>
-				<h3 class="mb-2 text-lg font-bold text-base-content">Apply with polish</h3>
-				<p class="text-sm leading-relaxed text-base-content/90">
+				<h3 class="text-base-content mb-2 text-lg font-bold">Apply with polish</h3>
+				<p class="text-base-content/90 text-sm leading-relaxed">
 					Generate tailored documents when you are ready, then send with confidence.
 				</p>
 			</div>

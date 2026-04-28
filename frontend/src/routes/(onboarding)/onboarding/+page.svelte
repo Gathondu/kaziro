@@ -10,4 +10,4 @@
 	});
 </script>
 
-<p class="text-sm text-base-content/60">Redirecting…</p>
+<p class="text-base-content/60 text-sm">Redirecting…</p>

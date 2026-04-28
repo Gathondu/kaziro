@@ -105,26 +105,20 @@ def run_parser_for_raw_job(self: Any, raw_job_id: str) -> dict[str, Any]:
     bind=True,
     **_RETRY_KWARGS,
 )
-def run_evaluator_for_user(
-    self: Any, job_posting_id: str, user_id: str
-) -> dict[str, Any]:
+def run_evaluator_for_user(self: Any, job_posting_id: str, user_id: str) -> dict[str, Any]:
     log.info(
         "tasks.evaluator_start",
         job_posting_id=job_posting_id,
         user_id=user_id,
         attempt=self.request.retries + 1,
     )
-    result = run_sqlalchemy_async(
-        lambda: run_evaluator_agent(job_posting_id, user_id)
-    )
+    result = run_sqlalchemy_async(lambda: run_evaluator_agent(job_posting_id, user_id))
     return {
         "job_posting_id": job_posting_id,
         "user_id": user_id,
         "evaluation_id": result.job_evaluation_id,
         "classification": (
-            result.final_classification.value
-            if result.final_classification
-            else None
+            result.final_classification.value if result.final_classification else None
         ),
         "overall_score": result.overall_score,
         "error": result.error,
@@ -158,9 +152,7 @@ def run_research_for_posting(self: Any, job_posting_id: str) -> dict[str, Any]:
     bind=True,
     **_RETRY_KWARGS,
 )
-def run_document_for_evaluation(
-    self: Any, job_evaluation_id: str, user_id: str
-) -> dict[str, Any]:
+def run_document_for_evaluation(self: Any, job_evaluation_id: str, user_id: str) -> dict[str, Any]:
     log.info(
         "tasks.document_start",
         job_evaluation_id=job_evaluation_id,
@@ -174,9 +166,7 @@ def run_document_for_evaluation(
             user_uuid = uuid.UUID(user_id)
             eval_uuid = uuid.UUID(job_evaluation_id)
             async with async_session_factory() as session:
-                ev_row = await evaluation_repository.get_by_id(
-                    session, user_uuid, eval_uuid
-                )
+                ev_row = await evaluation_repository.get_by_id(session, user_uuid, eval_uuid)
                 if ev_row is not None:
                     await applications_service.ensure_draft_application_after_documents(
                         session,
@@ -206,9 +196,7 @@ def run_document_for_evaluation(
     bind=True,
     **_RETRY_KWARGS,
 )
-def run_pipeline_for_config_task(
-    self: Any, config_id: str, user_id: str
-) -> dict[str, Any]:
+def run_pipeline_for_config_task(self: Any, config_id: str, user_id: str) -> dict[str, Any]:
     """Run fetch → parse → evaluate → research → document for one config."""
     log.info(
         "tasks.pipeline_full_start",
@@ -216,9 +204,7 @@ def run_pipeline_for_config_task(
         user_id=user_id,
         attempt=self.request.retries + 1,
     )
-    return run_sqlalchemy_async(
-        lambda: run_full_pipeline_for_config(config_id, user_id)
-    )
+    return run_sqlalchemy_async(lambda: run_full_pipeline_for_config(config_id, user_id))
 
 
 @shared_task(
@@ -237,9 +223,7 @@ def run_pipeline_for_single_job_task(
         user_id=user_id,
         attempt=self.request.retries + 1,
     )
-    return run_sqlalchemy_async(
-        lambda: run_pipeline_for_single_job(job_posting_id, user_id)
-    )
+    return run_sqlalchemy_async(lambda: run_pipeline_for_single_job(job_posting_id, user_id))
 
 
 @shared_task(
@@ -263,9 +247,7 @@ def run_research_then_document_for_evaluation_task(
         attempt=self.request.retries + 1,
     )
     return run_sqlalchemy_async(
-        lambda: run_research_then_document_for_evaluation(
-            job_posting_id, evaluation_id, user_id
-        )
+        lambda: run_research_then_document_for_evaluation(job_posting_id, evaluation_id, user_id)
     )
 
 
@@ -321,9 +303,7 @@ def enqueue_active_pipelines(self: Any) -> dict[str, Any]:
 
     async def _list_active() -> list[tuple[str, str, str]]:
         async with async_session_factory() as session:
-            configs = await job_config_repository.list_active_for_scheduler(
-                session
-            )
+            configs = await job_config_repository.list_active_for_scheduler(session)
         return [(str(c.id), str(c.user_id), c.fetch_schedule_cron) for c in configs]
 
     rows = run_sqlalchemy_async(_list_active)

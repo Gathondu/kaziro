@@ -100,7 +100,7 @@
 	<label class="form-control">
 		<span class="label-text font-medium">Email</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.email
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.email
 				? 'input-error'
 				: ''}"
 			type="email"
@@ -113,7 +113,7 @@
 	<label class="form-control">
 		<span class="label-text font-medium">Password</span>
 		<input
-			class="input input-bordered rounded-xl border-base-300 bg-base-200 {fieldErrors.password
+			class="input input-bordered border-base-300 bg-base-200 rounded-xl {fieldErrors.password
 				? 'input-error'
 				: ''}"
 			type="password"
@@ -125,11 +125,11 @@
 			>{/if}
 	</label>
 	{#if formError}
-		<p class="text-sm text-error" role="alert">{formError}</p>
+		<p class="text-error text-sm" role="alert">{formError}</p>
 	{/if}
 	<Button type="submit" disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</Button>
 </form>
-<p class="mt-4 text-sm text-base-content/70">
+<p class="text-base-content/70 mt-4 text-sm">
 	<a class="link link-primary font-medium" href="/forgot-password">Forgot password?</a>
 	·
 	<a class="link font-medium" href="/signup">Create an account</a>

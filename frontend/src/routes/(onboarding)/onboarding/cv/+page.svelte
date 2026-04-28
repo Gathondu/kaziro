@@ -132,7 +132,7 @@
 </svelte:head>
 
 <h1 class="mb-2 text-xl font-semibold">Upload your CV</h1>
-<p class="mb-6 text-sm text-base-content/70">
+<p class="text-base-content/70 mb-6 text-sm">
 	We extract text for embeddings and keep the PDF in secure storage.
 </p>
 <label class="form-control mb-4">
@@ -147,16 +147,16 @@
 	<div class="flex items-center gap-3">
 		<Button type="button" variant="outline" onclick={() => fileInputEl?.click()}>Choose file</Button
 		>
-		<span class="text-sm text-base-content/70" title={selectedFileLabel}>{selectedFileLabel}</span>
+		<span class="text-base-content/70 text-sm" title={selectedFileLabel}>{selectedFileLabel}</span>
 	</div>
 </label>
 {#if err}
-	<p class="mb-4 text-sm text-error">{err}</p>
+	<p class="text-error mb-4 text-sm">{err}</p>
 {/if}
 {#if previewUrl}
 	<div
 		bind:clientWidth={previewContainerWidth}
-		class={`mb-6 rounded-2xl border border-base-300 bg-base-200 ${allowHorizontalOverflow ? 'scroll-region overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}
+		class={`border-base-300 bg-base-200 mb-6 rounded-2xl border ${allowHorizontalOverflow ? 'scroll-region overflow-x-auto overflow-y-hidden' : 'overflow-hidden'}`}
 	>
 		<iframe
 			title="CV preview"

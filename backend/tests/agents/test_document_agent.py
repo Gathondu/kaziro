@@ -132,9 +132,7 @@ async def test_document_agent_persists_text_and_pdfs(
     async with async_session_factory() as session:
         from backend.db.repositories import application_doc_repository
 
-        doc = await application_doc_repository.get_by_evaluation_id(
-            session, test_user_id, eval_id
-        )
+        doc = await application_doc_repository.get_by_evaluation_id(session, test_user_id, eval_id)
         assert doc is not None
         assert "Acme" in doc.tailored_cv_text
         assert "Fabrikam" in doc.cover_letter_text
@@ -147,9 +145,7 @@ async def test_document_agent_persists_text_and_pdfs(
         profile = await profile_repository.get_by_user_id(session, test_user_id)
         assert profile is not None
         master_cv = profile.master_cv_text or ""
-    assert pdf_text_contains_only_master_words(
-        result.tailored_cv_text or "", master_cv
-    )
+    assert pdf_text_contains_only_master_words(result.tailored_cv_text or "", master_cv)
 
 
 @pytest.mark.asyncio
@@ -167,9 +163,7 @@ async def test_document_quality_warning_still_persists(
             if self.step <= 2:
                 return SimpleNamespace(content="Short text for doc.")
             return SimpleNamespace(
-                content=json.dumps(
-                    {"passed": False, "issues": ["tone"], "summary": "weak"}
-                )
+                content=json.dumps({"passed": False, "issues": ["tone"], "summary": "weak"})
             )
 
     class _Pdf:
@@ -212,9 +206,7 @@ async def test_document_agent_second_run_updates_same_row(
             if self.step == 2:
                 return SimpleNamespace(content=self._cover)
             return SimpleNamespace(
-                content=json.dumps(
-                    {"passed": True, "issues": [], "summary": "ok"}
-                )
+                content=json.dumps({"passed": True, "issues": [], "summary": "ok"})
             )
 
     class _Pdf:
@@ -228,18 +220,14 @@ async def test_document_agent_second_run_updates_same_row(
         ) -> str:
             return f"users/{user_id}/docs/{doc_kind}/{doc_id}.pdf"
 
-    set_llm_for_tests(
-        _LLM("FIRST_RUN_CV_UNIQUE", "FIRST_RUN_COVER_UNIQUE")
-    )
+    set_llm_for_tests(_LLM("FIRST_RUN_CV_UNIQUE", "FIRST_RUN_COVER_UNIQUE"))
     set_pdf_renderer_for_tests(_Pdf())
 
     first = await run_document_agent(str(eval_id), str(test_user_id))
     assert first.error is None
     first_doc_id = uuid.UUID(first.application_doc_id or "")
 
-    set_llm_for_tests(
-        _LLM("SECOND_RUN_CV_UNIQUE", "SECOND_RUN_COVER_UNIQUE")
-    )
+    set_llm_for_tests(_LLM("SECOND_RUN_CV_UNIQUE", "SECOND_RUN_COVER_UNIQUE"))
     set_pdf_renderer_for_tests(_Pdf())
 
     second = await run_document_agent(str(eval_id), str(test_user_id))
@@ -249,9 +237,7 @@ async def test_document_agent_second_run_updates_same_row(
     async with async_session_factory() as session:
         from backend.db.repositories import application_doc_repository
 
-        doc = await application_doc_repository.get_by_evaluation_id(
-            session, test_user_id, eval_id
-        )
+        doc = await application_doc_repository.get_by_evaluation_id(session, test_user_id, eval_id)
     assert doc is not None
     assert doc.id == first_doc_id
     assert "SECOND_RUN_CV_UNIQUE" in doc.tailored_cv_text
