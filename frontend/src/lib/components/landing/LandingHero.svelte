@@ -38,9 +38,21 @@
 							clarity
 						</span>
 						<!-- Felt-tip swoosh: single smooth arc — left low, peak ~⅔, right mid  -->
-						<svg viewBox="0 0 200 20" class="pointer-events-none absolute bottom-[0.5rem] left-1/2 z-30 h-[0.74rem] w-[110%] max-w-none -translate-x-1/2 overflow-visible text-primary sm:h-[0.82rem] sm:w-[112%]" preserveAspectRatio="none" aria-hidden="true" xmlns="http://w3.org">
+						<svg
+							viewBox="0 0 200 20"
+							class="pointer-events-none absolute bottom-[0.5rem] left-1/2 z-30 h-[0.74rem] w-[110%] max-w-none -translate-x-1/2 overflow-visible text-primary sm:h-[0.82rem] sm:w-[112%]"
+							preserveAspectRatio="none"
+							aria-hidden="true"
+							xmlns="http://w3.org"
+						>
 							<!-- The Path: Starts low, arcs high, ends higher -->
-							<path d="M 42 16 Q 105 -5 210 0" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" />
+							<path
+								d="M 42 16 Q 105 -5 210 0"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="3.5"
+								stroke-linecap="round"
+							/>
 						</svg>
 					</span>
 				</h1>
