@@ -1,4 +1,4 @@
-"""Pipeline orchestrator tests (mocked stages + notifications)."""
+"""Pipeline orchestrator flow tests (mocked stages + notifications)."""
 
 from __future__ import annotations
 
