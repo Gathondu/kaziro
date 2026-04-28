@@ -56,7 +56,11 @@ async def replay_pipeline(config_id: str, user_id: str) -> str:
         user_id=user_id,
         task_id=async_result.id,
     )
-    return async_result.id
+    task_id = async_result.id
+    if not isinstance(task_id, str):
+        msg = "celery did not return a task id"
+        raise RuntimeError(msg)
+    return task_id
 
 
 async def replay_single_job(job_posting_id: str, user_id: str) -> str:
@@ -70,7 +74,11 @@ async def replay_single_job(job_posting_id: str, user_id: str) -> str:
         user_id=user_id,
         task_id=async_result.id,
     )
-    return async_result.id
+    task_id = async_result.id
+    if not isinstance(task_id, str):
+        msg = "celery did not return a task id"
+        raise RuntimeError(msg)
+    return task_id
 
 
 async def pipeline_status_snapshot() -> dict[str, Any]:

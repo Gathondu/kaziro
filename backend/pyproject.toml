@@ -131,19 +131,10 @@ module = [
     "jose",
     "jose.exceptions",
     "weasyprint",
-    "celery.*",
-    "vcr.*",
-    "factory.*",
-    "factory_boy.*",
-    "weasyprint.*",
-    "pgvector",
-    "jose.*",
     "supabase.*",
     "langgraph.*",
     "langchain_openai.*",
     "langchain_openrouter.*",
-    "pgvector.*",
-    "bleach.*",
 ]
 ignore_missing_imports = true
 

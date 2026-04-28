@@ -69,9 +69,10 @@ async def deactivate_all_for_user(session: AsyncSession, user_id: uuid.UUID) -> 
             JobSearchConfig.is_active.is_(True),
         )
         .values(is_active=False, updated_at=datetime.now(UTC))
+        .returning(JobSearchConfig.id)
     )
     result = await session.execute(stmt)
-    return int(result.rowcount or 0)
+    return len(result.scalars().all())
 
 
 async def get_by_id_unscoped(session: AsyncSession, config_id: uuid.UUID) -> JobSearchConfig | None:
