@@ -18,7 +18,9 @@ from backend.services.job_fetcher import JobFetchError
 run_fetch_and_parse = cast(Any, orch.run_fetch_and_parse)
 run_evaluation_for_user = cast(Any, orch.run_evaluation_for_user)
 run_research_stage = cast(Any, orch.run_research_stage)
-run_research_then_document_for_evaluation = cast(Any, orch.run_research_then_document_for_evaluation)
+run_research_then_document_for_evaluation = cast(
+    Any, orch.run_research_then_document_for_evaluation
+)
 run_regenerate_documents_for_evaluation = cast(Any, orch.run_regenerate_documents_for_evaluation)
 run_pipeline_for_single_job = cast(Any, orch.run_pipeline_for_single_job)
 
@@ -313,7 +315,9 @@ async def test_run_pipeline_for_single_job_key_branches() -> None:
             new=AsyncMock(return_value=(maybe_eval_id, Classification.MAYBE)),
         ),
         patch.object(orch, "run_research_stage", new=AsyncMock(return_value=True)),
-        patch.object(orch.evaluation_repository, "get_by_id", new=AsyncMock(return_value=maybe_row)),
+        patch.object(
+            orch.evaluation_repository, "get_by_id", new=AsyncMock(return_value=maybe_row)
+        ),
     ):
         maybe = await run_pipeline_for_single_job(posting_id, user_id)
     assert maybe["classification"] == Classification.MAYBE.value
