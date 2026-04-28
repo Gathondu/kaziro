@@ -97,6 +97,10 @@ jobs:
         run: uv run mypy .
         working-directory: backend
 
+      - name: Bootstrap Supabase auth primitives (CI)
+        run: uv run python tasks/bootstrap_ci_supabase_primitives.py
+        working-directory: backend
+
       - name: Run migrations
         run: uv run alembic upgrade head
         working-directory: backend
