@@ -4,7 +4,19 @@
 
 @layer base {
 	html {
-		@apply font-sans font-normal antialiased;
+		font-family:
+			'Plus Jakarta Sans',
+			ui-sans-serif,
+			system-ui,
+			-apple-system,
+			'Segoe UI',
+			Roboto,
+			'Helvetica Neue',
+			Arial,
+			sans-serif;
+		font-weight: 400;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 		/* Firefox: viewport bar stays recessive; nested panes use `.scroll-region`. */
 		scrollbar-width: thin;
 		scrollbar-color: color-mix(in srgb, currentColor 10%, transparent) transparent;
@@ -16,7 +28,8 @@
 	}
 
 	.form-control .label-text {
-		@apply mb-1 inline-block;
+		margin-bottom: 0.25rem;
+		display: inline-block;
 	}
 
 	/* Chromium / WebKit: no arrow buttons. */
