@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/index.css';
+@source './**/*.{html,js,svelte,ts}';
 
 @plugin 'daisyui' {
 	themes: false;
