@@ -5,11 +5,13 @@ from __future__ import annotations
 from typing import Final
 
 from fastapi import APIRouter, File, Response, UploadFile, status
+from fastapi.responses import RedirectResponse
 
 from backend.api.deps import CurrentUser, SessionDep
 from backend.api.exceptions import NotFoundError
 from backend.api.schemas.common import Envelope, envelope
 from backend.api.schemas.profile import (
+    CvDownloadResponse,
     CvUploadResponse,
     ProfileResponse,
     ProfileUpdateRequest,
@@ -18,10 +20,20 @@ from backend.api.schemas.profile import (
 from backend.db.repositories import profile_repository
 from backend.logging_config import get_logger
 from backend.services import cv_processor, user_lifecycle
+from backend.services import storage as storage_service
 
 log = get_logger(__name__)
 
 router: Final[APIRouter] = APIRouter(prefix="/profile", tags=["profile"])
+
+
+async def _signed_master_cv_url(session: SessionDep, current_user: CurrentUser) -> str:
+    profile = await profile_repository.get_by_user_id(session, current_user.id)
+    if profile is None:
+        raise NotFoundError("profile not found", code="profile_not_found")
+    if not profile.cv_storage_path:
+        raise NotFoundError("CV not found for this profile", code="cv_not_found")
+    return await storage_service.create_signed_url(profile.cv_storage_path)
 
 
 @router.get(
@@ -72,6 +84,31 @@ async def upsert_profile(
     )
     await session.commit()
     return envelope(to_response(profile))
+
+
+@router.get(
+    "/cv.pdf",
+    summary="Download the authenticated user's master CV PDF",
+)
+async def download_master_cv(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> RedirectResponse:
+    url = await _signed_master_cv_url(session, current_user)
+    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+
+
+@router.get(
+    "/cv-url",
+    response_model=Envelope[CvDownloadResponse],
+    summary="Get a signed URL for the authenticated user's master CV PDF",
+)
+async def get_master_cv_signed_url(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Envelope[CvDownloadResponse]:
+    url = await _signed_master_cv_url(session, current_user)
+    return envelope(CvDownloadResponse(signed_url=url))
 
 
 @router.post(

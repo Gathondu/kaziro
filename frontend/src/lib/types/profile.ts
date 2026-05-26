@@ -20,3 +20,7 @@ export interface CvUploadResult {
 	embedding_dims: number;
 	has_master_cv: boolean;
 }
+
+export interface CvDownloadResult {
+	signed_url: string;
+}

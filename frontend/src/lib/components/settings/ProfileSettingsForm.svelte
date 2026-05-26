@@ -3,6 +3,7 @@
 	import { get } from 'svelte/store';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
+	import MasterCvSettings from '$lib/components/settings/MasterCvSettings.svelte';
 	import { postDisableOwnAccount } from '$lib/api/profile';
 	import { signOutEverywhere } from '$lib/api/auth';
 	import { getPublicSupportEmail } from '$lib/env/public';
@@ -206,6 +207,7 @@
 			>{$save.isPending ? 'Saving…' : 'Save profile'}</Button
 		>
 	</form>
+	<MasterCvSettings />
 	<div class="border-base-300 mt-6 space-y-2 border-t pt-6">
 		<h3 class="text-error text-sm font-medium">Danger zone</h3>
 		<p class="text-base-content/70 text-sm">

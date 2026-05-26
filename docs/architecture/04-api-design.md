@@ -124,17 +124,20 @@ passwords.
 
 ### 3.2 Profile
 
-| Method | Path                  | Auth     | Description                              |
-| ------ | --------------------- | -------- | ---------------------------------------- |
-| GET    | `/profile`            | Required | Get current user profile                 |
-| PUT    | `/profile`            | Required | Update profile fields                    |
-| POST   | `/profile/upload-cv`  | Required | Upload CV file (PDF / DOCX) — multipart  |
+| Method | Path              | Auth     | Description                                  |
+| ------ | ----------------- | -------- | -------------------------------------------- |
+| GET    | `/profile`        | Required | Get current user profile                     |
+| PUT    | `/profile`        | Required | Update profile fields                        |
+| GET    | `/profile/cv-url` | Required | Get signed master CV PDF URL                 |
+| GET    | `/profile/cv.pdf` | Required | Redirect to signed master CV PDF URL         |
+| POST   | `/profile/cv`     | Required | Upload or replace master CV PDF — multipart  |
 
-`POST /profile/upload-cv` accepts `multipart/form-data` with a `file` field,
-stores the file in Supabase Storage under `cv/{user_id}/{uuid}.pdf`, and
-sets `user_profiles.cv_storage_path`. The endpoint also kicks off an
-async text-extraction Celery task that backfills `professional_summary` if
-empty.
+`POST /profile/cv` accepts `multipart/form-data` with a `file` field, stores
+the PDF in Supabase Storage at `users/{user_id}/cv/master.pdf`, extracts text,
+recomputes the profile embedding, and updates `user_profiles.cv_storage_path`
+and `user_profiles.master_cv_text`. `GET /profile/cv-url` returns that
+short-lived URL in the JSON envelope for app UI previews. `GET /profile/cv.pdf`
+returns a `302` redirect for direct downloads.
 
 ### 3.3 Job search configs
 

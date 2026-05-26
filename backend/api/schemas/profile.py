@@ -87,6 +87,14 @@ class CvUploadResponse(BaseModel):
     has_master_cv: bool = True
 
 
+class CvDownloadResponse(BaseModel):
+    """Response containing a short-lived signed master CV URL."""
+
+    signed_url: str = Field(
+        description="Short-lived signed URL to download the uploaded PDF.",
+    )
+
+
 def to_response(profile: _ProfileLike) -> ProfileResponse:
     """Adapter so the route stays one expression long."""
     has_master_cv = bool(getattr(profile, "master_cv_text", None))
@@ -109,6 +117,7 @@ def to_response(profile: _ProfileLike) -> ProfileResponse:
 
 
 __all__ = [
+    "CvDownloadResponse",
     "CvUploadResponse",
     "ProfileResponse",
     "ProfileUpdateRequest",
