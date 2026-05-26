@@ -11,6 +11,7 @@ import { API_LIST_DEFAULT_LIMIT } from '$lib/api/limits';
 import {
 	getJob,
 	getJobEvaluation,
+	importJobUrl,
 	listJobs,
 	regenerateJobDocuments,
 	triggerJobEvaluation,
@@ -108,6 +109,12 @@ export function useTriggerEvaluation() {
 		onSuccess: () => {
 			void qc.invalidateQueries({ queryKey: ['jobs'] });
 		}
+	});
+}
+
+export function useImportJobUrl() {
+	return createMutation<TriggerEvaluationBody, Error, string>({
+		mutationFn: (url: string) => importJobUrl({ url })
 	});
 }
 

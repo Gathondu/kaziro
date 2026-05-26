@@ -46,10 +46,10 @@ class RawJob(TimestampedBase):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    config_id: Mapped[uuid.UUID] = mapped_column(
+    config_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("job_search_configs.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
     source_api: Mapped[JobSource] = mapped_column(
         SAEnum(
@@ -82,7 +82,7 @@ class RawJob(TimestampedBase):
     last_error: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="raw_jobs")
-    config: Mapped[JobSearchConfig] = relationship(back_populates="raw_jobs")
+    config: Mapped[JobSearchConfig | None] = relationship(back_populates="raw_jobs")
     posting: Mapped[JobPosting | None] = relationship(
         back_populates="raw_job",
         uselist=False,

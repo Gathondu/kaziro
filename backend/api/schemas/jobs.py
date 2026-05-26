@@ -80,6 +80,22 @@ class RegenerateDocumentsBody(BaseModel):
     )
 
 
+class ImportJobUrlBody(BaseModel):
+    """Request body for importing a user-pasted job URL."""
+
+    url: str = Field(min_length=1, max_length=2000, description="Public job posting URL.")
+
+    @field_validator("url")
+    @classmethod
+    def _validate_url(cls, value: str) -> str:
+        from backend.services.job_url_import import normalize_job_url
+
+        try:
+            return normalize_job_url(value)
+        except ValueError as exc:
+            raise ValueError(str(exc)) from exc
+
+
 class TriggerEvaluationResponse(BaseModel):
     """Body for ``202 Accepted`` manual pipeline trigger."""
 
@@ -97,6 +113,7 @@ class TriggerEvaluationResponse(BaseModel):
 
 
 __all__ = [
+    "ImportJobUrlBody",
     "JobEvaluationApplicationDocTexts",
     "JobEvaluationResponse",
     "JobPostingResponse",

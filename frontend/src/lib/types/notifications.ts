@@ -5,6 +5,7 @@ export type NotificationMessage =
 	| { type: 'ping'; ts: number }
 	| { type: 'pong'; ts: number }
 	| { type: 'fetch_complete'; config_id: string; new_jobs: number }
+	| { type: 'job_import_failed'; url: string; reason: string }
 	| {
 			type: 'evaluation_complete';
 			job_posting_id: string;

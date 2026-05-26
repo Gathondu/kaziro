@@ -94,6 +94,9 @@ function dispatch(msg: NotificationMessage): void {
 		qc?.invalidateQueries({ queryKey: ['applications'] });
 		qc?.invalidateQueries({ queryKey: ['dashboard'] });
 	}
+	if (msg.type === 'job_import_failed') {
+		toast.error(msg.reason || 'Could not import that job URL.');
+	}
 	for (const h of handlers) {
 		try {
 			h(msg);

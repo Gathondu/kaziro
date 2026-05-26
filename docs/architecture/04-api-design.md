@@ -154,6 +154,7 @@ empty.
 | GET    | `/jobs/{id}/evaluation`             | Required | Get the user's evaluation for a job      |
 | GET    | `/jobs/{id}/cv.pdf`                 | Required | Redirect to signed CV PDF (when generated) |
 | GET    | `/jobs/{id}/cover-letter.pdf`       | Required | Redirect to signed cover letter PDF       |
+| POST   | `/jobs/import-url`                  | Required | Start immediate processing for a pasted job posting URL: scrape → parse → evaluation |
 | POST   | `/jobs/{id}/trigger-evaluation`     | Required | Manually re-trigger the evaluation pipeline |
 | POST   | `/jobs/{id}/regenerate-documents`   | Required | Regenerate when `application_docs` exists (`202`, same envelope as trigger-evaluation). Optional JSON body `{ "part": "cv" \| "cover_letter" }` regenerates only that side (skips research); omit `part` for full research + both documents. `404` if no doc row yet |
 | POST   | `/jobs/{id}/mark-not-interested`    | Required | Sets evaluation to `REJECT` with user rejection metadata, deletes tailored docs + application row, best-effort storage cleanup. `409` if the job is already an evaluator `REJECT` |
@@ -165,6 +166,16 @@ Nested `evaluation` objects on `GET /applications` omit full document
 text (`application_doc` is null there) to keep list payloads small.
 Evaluations may include `rejection_source: "user"` when the candidate
 dismissed the job (see `dimension_scores._kaziro` in the data model).
+
+`POST /jobs/import-url` accepts `{ "url": "https://..." }`, starts processing
+immediately in the API background task runner, and returns `202 Accepted` with
+`{ "task_id": "...", "duplicate": false }`. Only
+`http` and `https` URLs are accepted. The URL is normalised for dedupe by
+lowercasing scheme/host and stripping fragments while preserving path and
+query parameters. Imported URLs use the `manual_url` raw-job source, then
+continue through the same Parser, Evaluator, Research, and Document stages as
+provider-fetched jobs. The imported job appears in `GET /jobs` after the
+user-specific evaluation row exists.
 
 `GET /jobs` filter query params:
 
@@ -209,6 +220,7 @@ Inbound messages: none (server → client only). Outbound message shapes:
 { "type": "documents_ready",     "job_posting_id": "...", "job_evaluation_id": "...", "application_doc_id": "...", "quality_passed": true }
 { "type": "research_complete",   "job_posting_id": "..." }
 { "type": "fetch_complete",      "config_id": "...", "new_jobs": 4 }
+{ "type": "job_import_failed",   "url": "https://...", "reason": "Could not fetch the job page." }
 ```
 
 The WS hub subscribes to a Redis channel `user:{user_id}:notifications`

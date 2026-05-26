@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import subprocess
+import re
 from pathlib import Path
 from shutil import which
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+FRONTEND_ROOT = REPO_ROOT / "frontend"
 
 
 def _resolve_command(command: list[str]) -> list[str] | None:
@@ -14,15 +16,41 @@ def _resolve_command(command: list[str]) -> list[str] | None:
     executable = command[0]
     args = command[1:]
     if executable == "pnpm":
-        # On Windows, `which("pnpm")` often resolves to a shim that is not directly
-        # executable by CreateProcess; prefer the .cmd wrapper.
-        if which("pnpm.cmd"):
-            return ["pnpm.cmd", *args]
+        # On Windows, pnpm.CMD forwards `%*` unquoted, so paths containing
+        # parentheses (SvelteKit route groups like `(app)`) break in cmd.exe.
+        # Run pnpm's JS entrypoint through Node directly to preserve argv.
+        pnpm_cmd = which("pnpm.cmd")
+        if pnpm_cmd:
+            resolved = _resolve_pnpm_cmd(Path(pnpm_cmd), args)
+            if resolved is not None:
+                return resolved
         if which("corepack"):
             return ["corepack", "pnpm", *args]
     if which(executable):
         return command
     return None
+
+
+def _resolve_pnpm_cmd(pnpm_cmd: Path, args: list[str]) -> list[str] | None:
+    try:
+        body = pnpm_cmd.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return None
+    match = re.search(r'"%~dp0\\node\.exe"\s+"%~dp0\\([^"]+pnpm\.mjs)"', body)
+    if match is None:
+        return None
+    node_exe = pnpm_cmd.parent / "node.exe"
+    pnpm_mjs = (pnpm_cmd.parent / match.group(1)).resolve()
+    if not node_exe.exists() or not pnpm_mjs.exists():
+        return None
+    return [str(node_exe), str(pnpm_mjs), *args]
+
+
+def _node_tool(script: Path, *args: str) -> list[str]:
+    node = which("node")
+    if node is None:
+        return ["node", str(script), *args]
+    return [node, str(script), *args]
 
 
 def _run(command: list[str], cwd: Path | None = None) -> int:
@@ -121,8 +149,12 @@ def main() -> int:
     if frontend_prettier:
         if (
             _run(
-                ["pnpm", "exec", "prettier", "--check", *frontend_prettier],
-                cwd=REPO_ROOT / "frontend",
+                _node_tool(
+                    FRONTEND_ROOT / "node_modules" / "prettier" / "bin" / "prettier.cjs",
+                    "--check",
+                    *frontend_prettier,
+                ),
+                cwd=FRONTEND_ROOT,
             )
             != 0
         ):
@@ -137,7 +169,11 @@ def main() -> int:
     if frontend_eslint:
         if (
             _run(
-                ["pnpm", "exec", "eslint", *frontend_eslint], cwd=REPO_ROOT / "frontend"
+                _node_tool(
+                    FRONTEND_ROOT / "node_modules" / "eslint" / "bin" / "eslint.js",
+                    *frontend_eslint,
+                ),
+                cwd=FRONTEND_ROOT,
             )
             != 0
         ):

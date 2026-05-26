@@ -23,6 +23,20 @@ async def get_by_id(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
+async def get_by_source_external(
+    session: AsyncSession,
+    *,
+    source_api: JobSource,
+    external_id: str,
+) -> RawJob | None:
+    """Fetch a raw row by the global upstream dedupe key."""
+    stmt = select(RawJob).where(
+        RawJob.source_api == source_api,
+        RawJob.external_id == external_id,
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
 async def list_pending(session: AsyncSession, *, limit: int = 100) -> list[RawJob]:
     """Return up to ``limit`` ``PENDING`` rows for the parser worker."""
     stmt = (
@@ -60,7 +74,7 @@ async def insert_dedup(
     session: AsyncSession,
     *,
     user_id: uuid.UUID,
-    config_id: uuid.UUID,
+    config_id: uuid.UUID | None,
     source_api: JobSource,
     external_id: str,
     raw_payload: dict[str, Any],
@@ -115,6 +129,7 @@ async def mark_failed(session: AsyncSession, raw_job_id: uuid.UUID, *, error: st
 
 __all__ = [
     "get_by_id",
+    "get_by_source_external",
     "insert_dedup",
     "list_for_user",
     "list_pending",

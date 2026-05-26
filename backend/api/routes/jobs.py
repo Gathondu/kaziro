@@ -6,12 +6,13 @@ import uuid
 from datetime import date
 from typing import Final
 
-from fastapi import APIRouter, Body, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, status
 from fastapi.responses import RedirectResponse
 
 from backend.api.deps import CurrentUser, SessionDep
 from backend.api.schemas.common import Envelope, PageMeta, envelope
 from backend.api.schemas.jobs import (
+    ImportJobUrlBody,
     JobEvaluationApplicationDocTexts,
     JobEvaluationResponse,
     JobPostingResponse,
@@ -22,6 +23,7 @@ from backend.db.models.enums import Classification
 from backend.db.repositories import application_doc_repository, application_repository
 from backend.services import jobs_service
 from backend.services.job_evaluation_metadata import rejection_source_from_dimension_scores
+from backend.services.job_url_import import process_job_url_import_now
 
 router: Final[APIRouter] = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -55,6 +57,31 @@ async def list_jobs(
         [JobPostingResponse.model_validate(j) for j in items],
         meta=PageMeta(next_cursor=next_cursor, total=None),
     )
+
+
+@router.post(
+    "/import-url",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=Envelope[TriggerEvaluationResponse],
+)
+async def import_job_url(
+    request: Request,
+    current_user: CurrentUser,
+    body: ImportJobUrlBody,
+    background_tasks: BackgroundTasks,
+) -> Envelope[TriggerEvaluationResponse]:
+    rid = request.headers.get("x-request-id")
+
+    def _schedule(normalized_url: str, user_id: str) -> None:
+        background_tasks.add_task(process_job_url_import_now, normalized_url, user_id)
+
+    task_id, duplicate = await jobs_service.trigger_job_url_import(
+        current_user.id,
+        body.url,
+        request_id=rid,
+        schedule_immediate=_schedule,
+    )
+    return envelope(TriggerEvaluationResponse(task_id=task_id, duplicate=duplicate))
 
 
 @router.get("/{job_id}", response_model=Envelope[JobPostingResponse])

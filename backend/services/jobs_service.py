@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from datetime import UTC, date, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +26,7 @@ from backend.services.job_evaluation_metadata import (
 )
 from backend.services.notifications import get_redis
 from backend.tasks.pipeline import (
+    run_import_job_url_task,
     run_pipeline_for_single_job_task,
     run_regenerate_documents_for_evaluation_task,
 )
@@ -190,6 +192,58 @@ async def trigger_evaluation(
         raise
 
 
+async def trigger_job_url_import(
+    user_id: uuid.UUID,
+    url: str,
+    *,
+    request_id: str | None,
+    schedule_immediate: Callable[[str, str], None] | None = None,
+) -> tuple[str, bool]:
+    """Start a pasted job URL import. Returns (task_id, is_duplicate)."""
+    from backend.services.job_url_import import normalize_job_url, user_import_lock_key
+
+    _ = request_id
+    normalized = normalize_job_url(url)
+    key = user_import_lock_key(user_id, normalized)
+    redis = get_redis()
+    got_lock = await redis.set(key, _PENDING, nx=True, ex=_LOCK_TTL_SEC)
+    if not got_lock:
+        existing = await redis.get(key)
+        if existing in (None, _PENDING):
+            log.info("jobs.import_url.in_flight", user_id=str(user_id), lock_key=key)
+            return "", True
+        log.info(
+            "jobs.import_url.duplicate",
+            user_id=str(user_id),
+            lock_key=key,
+            task_id=existing,
+        )
+        return str(existing), True
+
+    try:
+        if schedule_immediate is not None:
+            task_id = f"job-import-{uuid.uuid4()}"
+            schedule_immediate(normalized, str(user_id))
+        else:
+            async_result = run_import_job_url_task.apply_async(
+                args=[normalized, str(user_id)],
+                headers={"request_id": request_id or ""},
+            )
+            task_id = str(async_result.id)
+        await redis.set(key, task_id, ex=_LOCK_TTL_SEC)
+        log.info(
+            "jobs.import_url.started",
+            user_id=str(user_id),
+            lock_key=key,
+            task_id=task_id,
+            immediate=schedule_immediate is not None,
+        )
+        return task_id, False
+    except Exception:
+        await redis.delete(key)
+        raise
+
+
 async def trigger_regenerate_documents(
     session: AsyncSession,
     user_id: uuid.UUID,
@@ -288,5 +342,6 @@ __all__ = [
     "mark_job_not_interested",
     "signed_url_for_job_posting_doc_pdf",
     "trigger_evaluation",
+    "trigger_job_url_import",
     "trigger_regenerate_documents",
 ]

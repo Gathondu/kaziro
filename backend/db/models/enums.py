@@ -21,6 +21,7 @@ class JobSource(StrEnum):
     """Upstream job-search provider."""
 
     RAPIDAPI = "rapidapi"
+    MANUAL_URL = "manual_url"
     LINKEDIN = "linkedin"
     INDEED = "indeed"
     GREENHOUSE = "greenhouse"

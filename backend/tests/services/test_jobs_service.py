@@ -179,6 +179,46 @@ async def test_trigger_evaluation_cleans_lock_when_enqueue_fails() -> None:
 
 
 @pytest.mark.asyncio
+async def test_trigger_job_url_import_duplicate_and_immediate_paths() -> None:
+    user_id = uuid.uuid4()
+    redis_dup = AsyncMock()
+    redis_dup.set = AsyncMock(return_value=False)
+    redis_dup.get = AsyncMock(return_value="import-task")
+    redis_dup.delete = AsyncMock()
+    with (
+        patch.object(jobs_service, "get_redis", return_value=redis_dup),
+        patch.object(jobs_service, "run_import_job_url_task", SimpleNamespace(apply_async=MagicMock())),
+    ):
+        task_id, duplicate = await jobs_service.trigger_job_url_import(
+            user_id, "https://jobs.example.com/1", request_id="req-1"
+        )
+    assert task_id == "import-task"
+    assert duplicate is True
+
+    redis_ok = AsyncMock()
+    redis_ok.set = AsyncMock(side_effect=[True, True])
+    redis_ok.delete = AsyncMock()
+    scheduled: list[tuple[str, str]] = []
+    with (
+        patch.object(jobs_service, "get_redis", return_value=redis_ok),
+        patch.object(
+            jobs_service,
+            "run_import_job_url_task",
+            SimpleNamespace(apply_async=MagicMock()),
+        ),
+    ):
+        task_id, duplicate = await jobs_service.trigger_job_url_import(
+            user_id,
+            "HTTPS://Jobs.Example.com/1#frag",
+            request_id="req-2",
+            schedule_immediate=lambda url, uid: scheduled.append((url, uid)),
+        )
+    assert task_id.startswith("job-import-")
+    assert duplicate is False
+    assert scheduled == [("https://jobs.example.com/1", str(user_id))]
+
+
+@pytest.mark.asyncio
 async def test_trigger_regenerate_documents_requires_existing_docs() -> None:
     session = AsyncMock()
     user_id = uuid.uuid4()

@@ -47,3 +47,7 @@ export interface TriggerEvaluationBody {
 	task_id: string;
 	duplicate: boolean;
 }
+
+export interface ImportJobUrlRequest {
+	url: string;
+}

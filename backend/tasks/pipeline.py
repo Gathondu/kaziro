@@ -227,6 +227,35 @@ def run_pipeline_for_single_job_task(
 
 
 @shared_task(
+    name="backend.tasks.run_import_job_url",
+    queue=QUEUE_DEFAULT,
+    bind=True,
+    **_RETRY_KWARGS,
+)
+def run_import_job_url_task(self: Any, url: str, user_id: str) -> dict[str, Any]:
+    """Import one pasted job URL and continue through the single-job pipeline."""
+    log.info(
+        "tasks.job_url_import_start",
+        user_id=user_id,
+        attempt=self.request.retries + 1,
+    )
+    from backend.services.job_url_import import (
+        JobUrlImportInProgress,
+        clear_user_import_lock,
+        import_job_url_for_user_with_failure_notification,
+    )
+
+    try:
+        result = run_sqlalchemy_async(
+            lambda: import_job_url_for_user_with_failure_notification(url, user_id)
+        )
+    except JobUrlImportInProgress:
+        raise
+    run_sqlalchemy_async(lambda: clear_user_import_lock(url, user_id))
+    return result
+
+
+@shared_task(
     name="backend.tasks.run_research_then_document_for_evaluation",
     queue=QUEUE_DEFAULT,
     bind=True,
@@ -340,6 +369,7 @@ __all__ = [
     "enqueue_active_pipelines",
     "run_document_for_evaluation",
     "run_evaluator_for_user",
+    "run_import_job_url_task",
     "run_parser_for_raw_job",
     "run_pipeline_for_config_task",
     "run_pipeline_for_single_job_task",

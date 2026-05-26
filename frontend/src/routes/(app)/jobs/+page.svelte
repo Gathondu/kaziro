@@ -4,6 +4,7 @@
 	import { get } from 'svelte/store';
 	import JobCard from '$lib/components/jobs/JobCard.svelte';
 	import JobFilters from '$lib/components/jobs/JobFilters.svelte';
+	import JobUrlImportForm from '$lib/components/jobs/JobUrlImportForm.svelte';
 	import { useJobsInfiniteFromUrl } from '$lib/hooks/useJobs';
 	import type { Classification } from '$lib/types/enums';
 
@@ -63,6 +64,8 @@
 </svelte:head>
 
 <div class="flex h-full min-h-0 flex-col overflow-hidden">
+	<JobUrlImportForm />
+
 	<div class="mb-4">
 		<JobFilters {classification} {keyword} {postedAfter} onChange={pushUrl} />
 	</div>

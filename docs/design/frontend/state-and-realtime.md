@@ -101,6 +101,7 @@ Message shapes:
 ```typescript
 type NotificationMessage =
   | { type: 'fetch_complete';      config_id: string;        new_jobs: number }
+  | { type: 'job_import_failed';   url: string;              reason: string }
   | { type: 'evaluation_complete'; job_posting_id: string;   classification: Classification; score: number }
   | { type: 'research_complete';   job_posting_id: string }
   | {

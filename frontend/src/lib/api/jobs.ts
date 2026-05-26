@@ -1,7 +1,12 @@
 import { apiFetch, apiFetchMeta, resolveAuthenticatedRedirect } from './client';
 import { clampListLimit, clampMinScore } from './limits';
 import type { Classification } from '$lib/types/enums';
-import type { JobEvaluation, JobPosting, TriggerEvaluationBody } from '$lib/types/jobs';
+import type {
+	ImportJobUrlRequest,
+	JobEvaluation,
+	JobPosting,
+	TriggerEvaluationBody
+} from '$lib/types/jobs';
 
 export interface ListJobsParams {
 	cursor?: string | null;
@@ -50,6 +55,14 @@ export function getJobEvaluation(jobId: string): Promise<JobEvaluation> {
 export function triggerJobEvaluation(jobId: string): Promise<TriggerEvaluationBody> {
 	return apiFetch<TriggerEvaluationBody>(`/api/v1/jobs/${jobId}/trigger-evaluation`, {
 		method: 'POST'
+	});
+}
+
+export function importJobUrl(body: ImportJobUrlRequest): Promise<TriggerEvaluationBody> {
+	return apiFetch<TriggerEvaluationBody>('/api/v1/jobs/import-url', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(body)
 	});
 }
 
