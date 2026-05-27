@@ -43,12 +43,16 @@ Building this in-house means:
 
 It returns clean markdown, handles JS rendering, and has a `/scrape`
 endpoint that fits the Research agent's need for one-page-at-a-time
-scraping with a structured response. The 30-day cache in
+scraping with a structured response. When job-board and ATS URLs obscure the
+company's own site, Firecrawl `/search` is also used to locate the official
+company website before scraping. The 30-day cache in
 `company_summaries` keeps spend predictable.
 
 ### Positive consequences
 
-- Research agent code is tiny — a single async HTTP call per URL.
+- Research agent code stays small — a search call only when the stored company
+  website is missing or looks like a job-board domain, then a single scrape per
+  selected URL.
 - No headless-browser ops to maintain.
 - Markdown output goes straight into LLM context (no HTML cleanup step).
 - Cached for 30 days per company, capping cost.

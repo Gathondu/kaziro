@@ -24,6 +24,7 @@ import json
 import time
 import uuid
 from typing import Any, Final, Protocol, cast
+from urllib.parse import urlsplit
 
 import httpx
 from langgraph.graph import END, StateGraph
@@ -51,6 +52,56 @@ AGENT_NAME: Final[str] = "research"
 DEFAULT_FIRECRAWL_BASE: Final[str] = "https://api.firecrawl.dev/v1"
 SCRAPE_MAX_CHARS: Final[int] = 8000
 BRIEF_INPUT_MAX_CHARS: Final[int] = 10_000
+SEARCH_RESULT_LIMIT: Final[int] = 5
+
+GENERIC_HOST_LABELS: Final[set[str]] = {"www", "jobs", "careers", "apply", "boards"}
+COMMON_SECOND_LEVEL_TLDS: Final[set[str]] = {"ac", "co", "com", "edu", "gov", "net", "org"}
+COMPANY_NAME_STOPWORDS: Final[set[str]] = {
+    "a",
+    "ag",
+    "and",
+    "as",
+    "bv",
+    "co",
+    "company",
+    "corp",
+    "corporation",
+    "gmbh",
+    "inc",
+    "incorporated",
+    "limited",
+    "llc",
+    "ltd",
+    "plc",
+    "pty",
+    "sa",
+    "the",
+}
+JOB_PLATFORM_DOMAINS: Final[set[str]] = {
+    "angel",
+    "applytojob",
+    "ashbyhq",
+    "bamboohr",
+    "boards",
+    "breezy",
+    "greenhouse",
+    "himalayas",
+    "icims",
+    "indeed",
+    "jobvite",
+    "lever",
+    "linkedin",
+    "myworkdayjobs",
+    "personio",
+    "recruitee",
+    "rippling",
+    "smartrecruiters",
+    "successfactors",
+    "teamtailor",
+    "wellfound",
+    "workable",
+    "workdayjobs",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +136,14 @@ class ResearchState(BaseModel):
     skipped: bool = False
 
 
+class CompanyWebsiteSearchResult(BaseModel):
+    """Firecrawl web search result used to resolve company websites."""
+
+    url: str
+    title: str = ""
+    description: str = ""
+
+
 # ---------------------------------------------------------------------------
 # Pluggable Firecrawl client
 # ---------------------------------------------------------------------------
@@ -92,6 +151,13 @@ class ResearchState(BaseModel):
 
 class FirecrawlClient(Protocol):
     async def scrape(self, url: str, *, max_chars: int = SCRAPE_MAX_CHARS) -> str: ...
+
+    async def search(
+        self,
+        query: str,
+        *,
+        limit: int = SEARCH_RESULT_LIMIT,
+    ) -> list[CompanyWebsiteSearchResult]: ...
 
 
 class _DefaultFirecrawlClient:
@@ -148,6 +214,46 @@ class _DefaultFirecrawlClient:
             content = str(payload[0].get("markdown", "") or "")
         bound.info("firecrawl.scrape_success", chars=len(content))
         return content[:max_chars]
+
+    async def search(
+        self,
+        query: str,
+        *,
+        limit: int = SEARCH_RESULT_LIMIT,
+    ) -> list[CompanyWebsiteSearchResult]:
+        bound = log.bind(query=query)
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    f"{self._base}/search",
+                    headers=self._headers,
+                    json={
+                        "query": query,
+                        "limit": limit,
+                        "ignoreInvalidURLs": True,
+                    },
+                )
+        except httpx.RequestError as exc:
+            external_api_calls_total.labels(service="firecrawl", status="network_error").inc()
+            bound.warning("firecrawl.search_network_error", error=str(exc))
+            return []
+
+        external_api_calls_total.labels(service="firecrawl", status=str(resp.status_code)).inc()
+        if resp.status_code >= 400:
+            bound.warning(
+                "firecrawl.search_failed",
+                status=resp.status_code,
+                body=resp.text[:200],
+            )
+            return []
+        try:
+            data = resp.json()
+        except ValueError:
+            bound.warning("firecrawl.search_invalid_json")
+            return []
+        results = _parse_search_results(data)
+        bound.info("firecrawl.search_success", results=len(results))
+        return results
 
 
 _firecrawl_client: FirecrawlClient | None = None
@@ -217,6 +323,124 @@ def _strip_json_fence(text: str) -> str:
     return payload.strip().rstrip("`").strip()
 
 
+def _parse_search_results(data: Any) -> list[CompanyWebsiteSearchResult]:
+    payload = data.get("data") if isinstance(data, dict) else None
+    items: list[Any] = []
+    if isinstance(payload, list):
+        items = payload
+    elif isinstance(payload, dict):
+        web_results = payload.get("web")
+        if isinstance(web_results, list):
+            items = web_results
+
+    results: list[CompanyWebsiteSearchResult] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        metadata = item.get("metadata")
+        metadata_url = metadata.get("sourceURL") if isinstance(metadata, dict) else None
+        url = str(item.get("url") or item.get("sourceURL") or metadata_url or "")
+        if not url:
+            continue
+        results.append(
+            CompanyWebsiteSearchResult(
+                url=url,
+                title=str(item.get("title") or ""),
+                description=str(item.get("description") or ""),
+            )
+        )
+    return results
+
+
+def _tokens_from_text(value: str) -> set[str]:
+    return set(_ordered_tokens_from_text(value))
+
+
+def _ordered_tokens_from_text(value: str) -> list[str]:
+    tokens: list[str] = []
+    current = []
+    for char in value.lower():
+        if char.isalnum():
+            current.append(char)
+            continue
+        if current:
+            token = "".join(current)
+            if token not in COMPANY_NAME_STOPWORDS:
+                tokens.append(token)
+            current = []
+    if current:
+        token = "".join(current)
+        if token not in COMPANY_NAME_STOPWORDS:
+            tokens.append(token)
+    return tokens
+
+
+def _domain_root(url: str) -> str | None:
+    parsed = urlsplit(url)
+    hostname = parsed.hostname
+    if hostname is None:
+        return None
+    labels = [label for label in hostname.lower().split(".") if label]
+    labels = [label for label in labels if label not in GENERIC_HOST_LABELS]
+    if not labels:
+        return None
+    if len(labels) >= 3 and len(labels[-1]) == 2 and labels[-2] in COMMON_SECOND_LEVEL_TLDS:
+        return labels[-3]
+    if len(labels) >= 2:
+        return labels[-2]
+    return labels[0]
+
+
+def _domain_matches_company_name(url: str, company_name: str) -> bool:
+    root = _domain_root(url)
+    if root is None or root in JOB_PLATFORM_DOMAINS:
+        return False
+
+    company_tokens = _ordered_tokens_from_text(company_name)
+    if not company_tokens:
+        return False
+
+    company_token_set = set(company_tokens)
+    root_tokens = _tokens_from_text(root)
+    if company_token_set & root_tokens:
+        return True
+
+    compact_name = "".join(company_tokens)
+    compact_root = "".join(_ordered_tokens_from_text(root)) or root
+    return compact_name in compact_root or compact_root in compact_name
+
+
+def _build_company_search_query(company_name: str) -> str:
+    return f'"{company_name}" official website'
+
+
+async def _resolve_company_website(
+    client: FirecrawlClient,
+    *,
+    company_name: str,
+    existing_url: str | None,
+) -> str | None:
+    bound = log.bind(company=company_name, node="resolve_company_website")
+    if existing_url and _domain_matches_company_name(existing_url, company_name):
+        bound.info("research.company_website_verified", url=existing_url)
+        return existing_url
+
+    if existing_url:
+        bound.info("research.company_website_rejected", url=existing_url)
+    else:
+        bound.info("research.company_website_missing")
+
+    query = _build_company_search_query(company_name)
+    results = await client.search(query, limit=SEARCH_RESULT_LIMIT)
+    for result in results:
+        if _domain_matches_company_name(result.url, company_name):
+            bound.info("research.company_website_discovered", url=result.url)
+            return result.url
+
+    bound.warning("research.company_website_not_found", results=len(results))
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Nodes
 # ---------------------------------------------------------------------------
@@ -273,8 +497,13 @@ async def scrape_node(state: ResearchState) -> ResearchState:
     bound.info("research.scrape_start")
 
     client = get_firecrawl_client()
+    company_website = await _resolve_company_website(
+        client,
+        company_name=state.company_name,
+        existing_url=state.company_website,
+    )
     coroutines: list[Any] = []
-    coroutines.append(client.scrape(state.company_website) if state.company_website else _empty())
+    coroutines.append(client.scrape(company_website) if company_website else _empty())
     coroutines.append(client.scrape(state.application_url) if state.application_url else _empty())
 
     raw_results = await asyncio.gather(*coroutines, return_exceptions=True)
@@ -288,6 +517,7 @@ async def scrape_node(state: ResearchState) -> ResearchState:
         update={
             "website_content": website_content,
             "job_page_content": job_page_content,
+            "company_website": company_website,
         }
     )
 

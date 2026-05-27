@@ -24,7 +24,12 @@ from backend.agents.parser_agent import (
     embed_node,
     set_embedder_for_tests,
 )
-from backend.agents.research_agent import ResearchState, _build_brief_prompt
+from backend.agents.research_agent import (
+    ResearchState,
+    _build_brief_prompt,
+    _domain_matches_company_name,
+    _parse_search_results,
+)
 from backend.config import Settings
 from backend.db.models import EMBEDDING_DIM
 from backend.db.models.user_profile import EMBEDDING_DIM as PROFILE_EMBEDDING_DIM
@@ -150,6 +155,44 @@ def test_research_prompt_requires_source_grounded_not_available_json() -> None:
     _assert_json_contract(prompt)
     assert "Not available" in prompt
     assert "=== BEGIN SCRAPED_CONTENT ===" in prompt
+
+
+def test_research_company_domain_match_rejects_job_board_hosts() -> None:
+    assert _domain_matches_company_name("https://contoso.com/careers", "Contoso") is True
+    assert _domain_matches_company_name("https://www.openai.com", "Open AI") is True
+    assert (
+        _domain_matches_company_name("https://boards.greenhouse.io/contoso/jobs/1", "Contoso")
+        is False
+    )
+    assert (
+        _domain_matches_company_name("https://himalayas.app/companies/contoso", "Contoso") is False
+    )
+
+
+def test_research_parse_search_results_accepts_v1_and_v2_shapes() -> None:
+    v1 = {
+        "data": [
+            {
+                "title": "Contoso",
+                "description": "Official site",
+                "url": "https://contoso.com",
+            }
+        ]
+    }
+    v2 = {
+        "data": {
+            "web": [
+                {
+                    "title": "Fabrikam",
+                    "description": "Official site",
+                    "url": "https://fabrikam.com",
+                }
+            ]
+        }
+    }
+
+    assert _parse_search_results(v1)[0].url == "https://contoso.com"
+    assert _parse_search_results(v2)[0].url == "https://fabrikam.com"
 
 
 def test_document_prompts_prevent_fabrication_and_define_output() -> None:

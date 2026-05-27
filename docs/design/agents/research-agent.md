@@ -27,7 +27,7 @@ truncated raw scraped content.
 | Framework          | LangGraph (4-node graph with cache short-circuit)      |
 | LLM                | `settings.LLM_MODEL_RESEARCH` (default `nvidia/nemotron-3-super-120b-a12b:free`) |
 | Temperature        | 0.3                                                    |
-| Scraping           | Firecrawl Cloud API (`POST /v1/scrape`)                |
+| Scraping           | Firecrawl Cloud API (`POST /v1/scrape`, fallback `POST /v1/search`) |
 | Cache TTL          | 30 days                                                |
 
 ## State
@@ -78,9 +78,19 @@ flowchart LR
 
 ### `scrape_node`
 
-Two parallel Firecrawl scrapes — company website (if known) and the job
-posting page — via `asyncio.gather`. Each call is wrapped in a try/except so
-a failure on one URL doesn't stop the other.
+First resolves a trustworthy company website:
+
+- If `job_postings.company_website` is present, the agent checks whether the
+  company name matches the URL's domain root and rejects known job-board /
+  application-hosting domains such as Greenhouse, Himalayas, Lever, Ashby, and
+  Workday.
+- If the stored website is missing or looks like a job-board URL, the agent
+  runs Firecrawl web search for `"<company>" official website` and picks the
+  first result whose domain matches the company name.
+
+Then two parallel Firecrawl scrapes run — resolved company website (if found)
+and the job posting page — via `asyncio.gather`. Each call is wrapped in a
+try/except so a failure on one URL doesn't stop the other.
 
 ```python
 async def firecrawl_scrape(url: str, max_chars: int = 8000) -> str:
@@ -131,7 +141,8 @@ optionally `MAYBE`) jobs only.
 | --------------------------------------- | -------------------------------------------------------------------------- |
 | Cache hit (≤ 30 days)                   | Short-circuits at `check_cache_node`; no DB write; `skipped = True`        |
 | `JobPosting` missing                    | `error = "Job posting not found"`; terminates                              |
-| `company_website` missing               | Scrapes only the application URL                                           |
+| `company_website` missing               | Firecrawl web search attempts to discover the official website             |
+| `company_website` is a job-board URL     | Rejects it, searches for the official company website, then scrapes that   |
 | Both Firecrawl scrapes fail             | Logged WARNING; brief generated from empty input ("Not available" everywhere) |
 | Brief generation LLM error              | `error_end`; no row persisted                                              |
 | Firecrawl 429 / 5xx                     | Caught in `firecrawl_scrape`; returns empty string                         |

@@ -137,7 +137,7 @@ The full audit trail (all three passes' outputs) is persisted to
 ```
 check_cache ──fresh?──→ END
      ↓
-   scrape (parallel: company website + job page) → generate_brief → persist → END
+   resolve_company_site → scrape (parallel: company website + job page) → generate_brief → persist → END
 ```
 
 - **Scheduled / batch pipeline**: research and documents run only for
@@ -149,6 +149,10 @@ check_cache ──fresh?──→ END
   and is younger than 30 days, the agent short-circuits.
 - **Fan-in**: the parallel scrape uses `asyncio.gather` so the slowest URL
   bounds total latency.
+- **Company site resolution**: stored `company_website` values are trusted only
+  when the company name matches the URL domain and the domain is not a known
+  job-board / ATS host. Missing or rejected values trigger a Firecrawl web
+  search for the official company website before scraping.
 - Output: `mission`, `values`, `culture`, `tech_stack`, `team_size_approx`,
   `recent_news`, `ai_summary`, plus `raw_scraped_content` truncated to 50 KB.
 
