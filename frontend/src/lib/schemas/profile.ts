@@ -40,6 +40,7 @@ export const profileSettingsSchema = z.object({
 	professional_summary: z.string().max(4000).optional().or(z.literal('')),
 	skillsText: z.string().optional(),
 	domain: z.string().max(100, 'Domain must be at most 100 characters').optional().or(z.literal('')),
+	experience_years: z.coerce.number().int().min(0).max(60).optional().nullable(),
 	values_statement: z.string().max(2000).optional().or(z.literal('')),
 	linkedin_url: z
 		.string()

@@ -9,6 +9,10 @@
 	import { getPublicSupportEmail } from '$lib/env/public';
 	import { useProfile, useUpsertProfile } from '$lib/hooks/useProfile';
 	import { profileSettingsSchema } from '$lib/schemas/profile';
+	import {
+		EXPERIENCE_YEARS_MAX,
+		sanitizeExperienceYearsInput
+	} from '$lib/utils/experience-years-input.utils';
 	import { omitFieldErrors } from '$lib/utils/form-errors.utils';
 
 	const profile = useProfile();
@@ -35,6 +39,7 @@
 	let professional_summary = $state('');
 	let skillsText = $state('');
 	let domain = $state('');
+	let experienceYearsInput = $state('');
 	let values_statement = $state('');
 	let linkedin_url = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
@@ -60,6 +65,10 @@
 		professional_summary = p.professional_summary ?? '';
 		skillsText = (p.skills ?? []).join(', ');
 		domain = p.domain ?? '';
+		experienceYearsInput =
+			p.experience_years === null || p.experience_years === undefined
+				? ''
+				: String(Math.min(EXPERIENCE_YEARS_MAX, Math.max(0, p.experience_years)));
 		values_statement = p.values_statement ?? '';
 		linkedin_url = p.linkedin_url ?? '';
 	});
@@ -72,6 +81,7 @@
 			professional_summary,
 			skillsText,
 			domain,
+			experience_years: experienceYearsInput.trim() === '' ? null : experienceYearsInput,
 			values_statement,
 			linkedin_url
 		});
@@ -90,16 +100,27 @@
 			: [];
 		await get(save).mutateAsync({
 			full_name: parsed.data.full_name,
-			professional_summary: parsed.data.professional_summary || undefined,
+			professional_summary: parsed.data.professional_summary?.trim()
+				? parsed.data.professional_summary
+				: null,
 			skills,
-			domain: parsed.data.domain || undefined,
-			values_statement: parsed.data.values_statement || undefined,
-			linkedin_url: parsed.data.linkedin_url || undefined
+			domain: parsed.data.domain?.trim() ? parsed.data.domain : null,
+			experience_years: parsed.data.experience_years ?? null,
+			values_statement: parsed.data.values_statement?.trim() ? parsed.data.values_statement : null,
+			linkedin_url: parsed.data.linkedin_url?.trim() ? parsed.data.linkedin_url : null
 		});
 	}
 
 	function clearField(key: string): void {
 		fieldErrors = omitFieldErrors(fieldErrors, key);
+	}
+
+	function onExperienceInput(e: Event): void {
+		const el = e.currentTarget as HTMLInputElement;
+		const next = sanitizeExperienceYearsInput(el.value);
+		experienceYearsInput = next;
+		if (el.value !== next) el.value = next;
+		clearField('experience_years');
 	}
 
 	function openDeleteModal(): void {
@@ -180,6 +201,24 @@
 				oninput={() => clearField('domain')}
 			/>
 			{#if fieldErrors.domain}<span class="text-error text-xs">{fieldErrors.domain}</span>{/if}
+		</label>
+		<label class="block space-y-1.5">
+			<span class="text-sm font-medium">Years of experience</span>
+			<input
+				class="bg-base-200 text-base-content placeholder:text-base-content/45 block w-full rounded-xl border px-3 py-2.5 transition-colors focus:ring-2 focus:outline-none {fieldErrors.experience_years
+					? 'border-error focus:ring-error/35'
+					: 'border-base-300 focus:border-primary focus:ring-primary/25'}"
+				type="text"
+				inputmode="numeric"
+				pattern="[0-9]*"
+				autocomplete="off"
+				maxlength="2"
+				value={experienceYearsInput}
+				oninput={onExperienceInput}
+			/>
+			{#if fieldErrors.experience_years}
+				<span class="text-error text-xs">{fieldErrors.experience_years}</span>
+			{/if}
 		</label>
 		<label class="block space-y-1.5">
 			<span class="text-sm font-medium">Values</span>
