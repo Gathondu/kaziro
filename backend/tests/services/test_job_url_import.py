@@ -98,7 +98,9 @@ async def test_import_in_progress_raises_for_task_retry() -> None:
     redis.set = AsyncMock(return_value=False)
     with (
         patch.object(job_url_import, "get_redis", return_value=redis),
-        patch.object(job_url_import, "_wait_for_existing_posting", new=AsyncMock(return_value=None)),
+        patch.object(
+            job_url_import, "_wait_for_existing_posting", new=AsyncMock(return_value=None)
+        ),
         pytest.raises(job_url_import.JobUrlImportInProgress),
     ):
         await job_url_import._create_posting_from_url(

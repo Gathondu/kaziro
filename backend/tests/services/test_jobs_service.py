@@ -187,7 +187,9 @@ async def test_trigger_job_url_import_duplicate_and_immediate_paths() -> None:
     redis_dup.delete = AsyncMock()
     with (
         patch.object(jobs_service, "get_redis", return_value=redis_dup),
-        patch.object(jobs_service, "run_import_job_url_task", SimpleNamespace(apply_async=MagicMock())),
+        patch.object(
+            jobs_service, "run_import_job_url_task", SimpleNamespace(apply_async=MagicMock())
+        ),
     ):
         task_id, duplicate = await jobs_service.trigger_job_url_import(
             user_id, "https://jobs.example.com/1", request_id="req-1"
