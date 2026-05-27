@@ -247,19 +247,18 @@ declared in `__table_args__`. Critical indexes:
 | Table              | Index                                                     | Purpose                                |
 | ------------------ | --------------------------------------------------------- | -------------------------------------- |
 | `job_postings`     | `UNIQUE (external_job_id)`                                | Deduplication                          |
-| `job_postings`     | `ivfflat (description_embedding vector_cosine_ops) WITH (lists = 100)` | pgvector ANN semantic search    |
 | `job_evaluations`  | `(user_id, final_classification)`                         | Dashboard filtering                    |
 | `job_evaluations`  | `UNIQUE (user_id, job_posting_id)`                        | One evaluation per pair                |
-| `user_profiles`    | `ivfflat (profile_embedding vector_cosine_ops) WITH (lists = 100)` | pgvector profile-similarity search |
 | `applications`     | `(user_id, status)`                                       | Application tracker queries            |
 | `raw_jobs`         | `(user_id, parse_status)`                                 | Worker queue polling                   |
 | `application_events` | `(application_id, event_date DESC)`                     | Timeline render order                  |
 
-**pgvector index gotcha**: IVFFlat indexes must be created
-**after the table is populated** with at least a few thousand rows for the
-clustering to be meaningful. They live in a **separate Alembic migration**
-issued after the seed/load step. All `CREATE INDEX` statements in migrations
-use `IF NOT EXISTS`.
+**pgvector index gotcha**: the current embedding model emits 2048-dimensional
+vectors. pgvector ANN indexes for the `vector` type cannot index dimensions
+above 2000, so semantic search currently uses exact cosine-distance scans over
+rows with embeddings. If query volume grows enough to need ANN indexing, use a
+deliberate half-precision expression index or reduced-dimension embedding
+strategy and keep the repository query casts aligned with that index.
 
 ## 5. Row-Level Security (RLS)
 

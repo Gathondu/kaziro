@@ -8,11 +8,16 @@ The default embedding model is now NVIDIA Llama Nemotron Embed VL 1B v2,
 which emits 2048-dimensional vectors. Existing 1536-dimensional cached
 vectors cannot be safely cast to 2048 dimensions, so this migration clears
 cached embeddings and lets the application regenerate them.
+
+pgvector's ANN indexes for the ``vector`` type are capped below 2048
+dimensions, so this migration drops the old IVFFlat indexes and leaves
+semantic search on exact cosine-distance scans until we introduce an
+explicit halfvec or reduced-dimension indexing strategy.
 """
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from alembic import op
 
@@ -35,7 +40,7 @@ def _drop_vector_indexes() -> None:
         op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_user_profiles_profile_embedding_ivfflat")
 
 
-def _create_vector_indexes() -> None:
+def _create_1536_vector_indexes() -> None:
     with op.get_context().autocommit_block():
         op.execute(
             "CREATE INDEX CONCURRENTLY IF NOT EXISTS "
@@ -66,7 +71,9 @@ def upgrade() -> None:
         "ALTER COLUMN description_embedding TYPE vector(2048) "
         "USING NULL::vector(2048)"
     )
-    _create_vector_indexes()
+    # Do not recreate ANN indexes for vector(2048): pgvector rejects IVFFlat
+    # indexes above 2000 dimensions, and query-time halfvec indexing needs a
+    # deliberate expression-index/query-cast design.
 
 
 def downgrade() -> None:
@@ -83,4 +90,4 @@ def downgrade() -> None:
         "ALTER COLUMN description_embedding TYPE vector(1536) "
         "USING NULL::vector(1536)"
     )
-    _create_vector_indexes()
+    _create_1536_vector_indexes()

@@ -56,9 +56,12 @@ auth-integration for free.
 ### Negative consequences
 
 - pgvector throughput tops out before dedicated vector DBs (Pinecone, Qdrant)
-  at very large scale. Acceptable for MVP and likely up to 10M vectors with
-  HNSW; revisit if we exceed that.
-- Index build time is non-trivial for HNSW on large tables — needs care
+  at very large scale.
+- The current 2048-dimensional embedding model exceeds pgvector's ANN index
+  limit for the `vector` type, so MVP semantic search uses exact scans until
+  we adopt half-precision expression indexes, reduced dimensions, or a
+  dedicated vector store.
+- Index build time is non-trivial for ANN indexes on large tables — needs care
   during migrations.
 
 ## Pros and cons of the options
