@@ -9,6 +9,10 @@ from backend.agents.document_agent import (
     _build_cover_letter_prompt,
     _build_cv_tailor_prompt,
     _build_quality_check_prompt,
+    _invoke_text,
+)
+from backend.agents.document_agent import (
+    set_llm_for_tests as set_document_llm_for_tests,
 )
 from backend.agents.evaluator_agent import (
     DimensionScores,
@@ -213,6 +217,32 @@ def test_document_prompts_prevent_fabrication_and_define_output() -> None:
     assert "Plain text only" in cv_prompt
     assert "Plain text only" in cover_prompt
     _assert_json_contract(qc_prompt)
+
+
+@pytest.mark.asyncio
+async def test_document_invoke_retries_openrouter_provider_timeout() -> None:
+    class _ProviderTimeout(Exception):
+        body = '{"error":{"message":"Provider returned error","code":524}}'
+
+    class _LLM:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        async def ainvoke(self, prompt: str) -> object:
+            self.calls += 1
+            if self.calls == 1:
+                raise _ProviderTimeout("Response validation failed: Provider returned error")
+            return "Generated document text"
+
+    llm = _LLM()
+    try:
+        set_document_llm_for_tests(llm)
+        text = await _invoke_text("prompt")
+    finally:
+        set_document_llm_for_tests(None)
+
+    assert text == "Generated document text"
+    assert llm.calls == 2
 
 
 def test_missing_profile_fields_render_not_provided_in_full_context() -> None:

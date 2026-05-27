@@ -18,6 +18,7 @@ Tests inject fakes via ``set_llm_for_tests`` and ``set_pdf_renderer_for_tests``.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 import uuid
@@ -36,7 +37,11 @@ from backend.db.repositories import (
     profile_repository,
 )
 from backend.db.session import async_session_factory
-from backend.llm.openrouter import build_chat_model
+from backend.llm.openrouter import (
+    build_chat_model,
+    is_retryable_provider_error,
+    provider_error_code,
+)
 from backend.logging_config import get_logger
 from backend.metrics import (
     agent_duration_seconds,
@@ -135,6 +140,7 @@ class _PdfRendererAdapter:
 
 _llm: _Invokable | None = None
 _pdf_renderer: PdfRendererProtocol | None = None
+OPENROUTER_RETRY_INITIAL_DELAY_SECONDS: Final[float] = 0.25
 
 
 def _build_default_llm() -> _Invokable:
@@ -179,12 +185,30 @@ def set_pdf_renderer_for_tests(renderer: PdfRendererProtocol | None) -> None:
 
 
 async def _invoke_text(prompt: str) -> str:
-    try:
-        response = await get_llm().ainvoke(prompt)
-        external_api_calls_total.labels(service="openrouter", status="200").inc()
-    except Exception:
-        external_api_calls_total.labels(service="openrouter", status="error").inc()
-        raise
+    settings = get_settings()
+    max_attempts = max(1, settings.OPENROUTER_MAX_RETRIES + 1)
+    response: Any = ""
+    for attempt in range(max_attempts):
+        try:
+            response = await get_llm().ainvoke(prompt)
+            external_api_calls_total.labels(service="openrouter", status="200").inc()
+            break
+        except Exception as exc:
+            provider_code = provider_error_code(exc)
+            status = f"provider_{provider_code}" if provider_code is not None else "error"
+            external_api_calls_total.labels(service="openrouter", status=status).inc()
+            if attempt >= max_attempts or not is_retryable_provider_error(exc):
+                raise
+            delay = OPENROUTER_RETRY_INITIAL_DELAY_SECONDS * float(2 ** (attempt - 1))
+            log.warning(
+                "document.openrouter_retryable_error",
+                attempt=attempt,
+                max_attempts=max_attempts,
+                retry_delay_seconds=delay,
+                provider_code=provider_code,
+                error=str(exc)[:500],
+            )
+            await asyncio.sleep(delay)
     raw = getattr(response, "content", response)
     return raw.strip() if isinstance(raw, str) else str(raw).strip()
 
