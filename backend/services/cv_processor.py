@@ -8,7 +8,7 @@ The HTTP layer streams the upload into bytes and hands them off to
 3. Uploads the original PDF to Supabase Storage at the user's
    canonical path (``users/<uid>/cv/master.pdf``).
 4. Embeds the extracted text and patches ``user_profiles`` with the
-   storage path, raw text, and 1536-dim embedding.
+   storage path, raw text, and a pgvector-compatible embedding.
 
 Heavy work (PDF parse, embedding HTTP call, Supabase upload) runs in
 the default threadpool so the FastAPI worker stays responsive.
@@ -27,6 +27,7 @@ from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.exceptions import ApiError
+from backend.db.models import EMBEDDING_DIM
 from backend.db.repositories import profile_repository
 from backend.logging_config import get_logger
 from backend.services import storage as storage_service
@@ -39,7 +40,6 @@ log = get_logger(__name__)
 
 MAX_PDF_BYTES: Final[int] = 10 * 1024 * 1024  # 10 MB
 MIN_EXTRACTED_CHARS: Final[int] = 50  # guard against blank scans
-MAX_STORED_CV_CHARS: Final[int] = 200_000  # ~ 50k tokens
 PDF_MAGIC: Final[bytes] = b"%PDF-"
 
 # Browsers may send ``application/octet-stream`` for file inputs; anything
@@ -141,9 +141,6 @@ async def process_cv_upload(
             "Word/Google Docs rather than scanning a paper copy.",
             code="cv_text_extraction_failed",
         )
-    if len(text) > MAX_STORED_CV_CHARS:
-        text = text[:MAX_STORED_CV_CHARS]
-
     profile = await profile_repository.get_by_user_id(session, user_id)
     if profile is None:
         raise CvUploadError(
@@ -161,6 +158,10 @@ async def process_cv_upload(
 
     try:
         embedding = await get_embedder().aembed_query(text)
+        if len(embedding) != EMBEDDING_DIM:
+            raise ValueError(
+                f"embedding dimension mismatch: got {len(embedding)}, expected {EMBEDDING_DIM}"
+            )
     except Exception:
         bound.exception("cv.embedding_failed")
         raise CvUploadError(
@@ -268,7 +269,6 @@ def _normalise(text: str) -> str:
 
 __all__ = [
     "MAX_PDF_BYTES",
-    "MAX_STORED_CV_CHARS",
     "MIN_EXTRACTED_CHARS",
     "CvUploadError",
     "ProcessedCv",

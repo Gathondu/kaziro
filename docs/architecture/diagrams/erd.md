@@ -41,7 +41,7 @@ erDiagram
     text values_statement
     text cv_storage_path
     text linkedin_url
-    vector profile_embedding "1536"
+    vector profile_embedding "2048"
   }
 
   job_search_configs {
@@ -84,7 +84,7 @@ erDiagram
     text[] requirements
     text application_url
     date posted_date
-    vector description_embedding "1536"
+    vector description_embedding "2048"
     timestamptz parsed_at
   }
 

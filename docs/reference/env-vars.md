@@ -78,19 +78,20 @@ Conventions:
 
 ## OpenRouter / LLM
 
-| Variable                     | Required | Default                         | Scope           | Description                                                                 |
-| ---------------------------- | -------- | ------------------------------- | --------------- | --------------------------------------------------------------------------- |
-| `OPENROUTER_API_KEY`         | Yes      | —                               | backend, worker | [OpenRouter](https://openrouter.ai/) API key.                               |
-| `OPENROUTER_API_BASE`        | No       | `https://openrouter.ai/api/v1`  | backend, worker | Override API base (self-hosted or non-default endpoint).                    |
-| `OPENROUTER_APP_URL`         | No       | —                               | backend, worker | `HTTP-Referer` for OpenRouter attribution (recommended in production).      |
-| `OPENROUTER_APP_TITLE`       | No       | —                               | backend, worker | `X-Title` for OpenRouter attribution.                                       |
-| `OPENROUTER_TIMEOUT_SECONDS` | No       | `60`                            | backend, worker | Per-request timeout (seconds; converted for the OpenRouter client).         |
-| `OPENROUTER_MAX_RETRIES`     | No       | `3`                             | backend, worker | Retries on 5xx / rate-limit.                                                |
-| `LLM_MODEL_PARSER`           | No       | `openai/gpt-4o-mini`            | worker          | Parser chat model ([OpenRouter model id](https://openrouter.ai/models)).    |
-| `LLM_MODEL_EVALUATOR`        | No       | `openai/gpt-4o`                 | worker          | Evaluator (all 3 passes).                                                   |
-| `LLM_MODEL_RESEARCH`         | No       | `openai/gpt-4o`                 | worker          | Research brief generation.                                                  |
-| `LLM_MODEL_DOCUMENT`         | No       | `openai/gpt-4o`                 | worker          | Document agent.                                                             |
-| `LLM_EMBEDDING_MODEL`        | No       | `openai/text-embedding-3-small` | worker          | Embedding model for `job_postings.embedding` (OpenAI-compat on OpenRouter). |
+| Variable                     | Required | Default                                      | Scope           | Description                                                                 |
+| ---------------------------- | -------- | -------------------------------------------- | --------------- | --------------------------------------------------------------------------- |
+| `OPENROUTER_API_KEY`         | Yes      | —                                            | backend, worker | [OpenRouter](https://openrouter.ai/) API key.                               |
+| `OPENROUTER_API_BASE`        | No       | `https://openrouter.ai/api/v1`               | backend, worker | Override API base (self-hosted or non-default endpoint).                    |
+| `OPENROUTER_APP_URL`         | No       | —                                            | backend, worker | `HTTP-Referer` for OpenRouter attribution (recommended in production).      |
+| `OPENROUTER_APP_TITLE`       | No       | —                                            | backend, worker | `X-Title` for OpenRouter attribution.                                       |
+| `OPENROUTER_TIMEOUT_SECONDS` | No       | `60`                                         | backend, worker | Per-request timeout (seconds; converted for the OpenRouter client).         |
+| `OPENROUTER_MAX_RETRIES`     | No       | `3`                                          | backend, worker | Retries on 5xx / rate-limit.                                                |
+| `LLM_MODEL_PARSER`           | No       | `nvidia/nemotron-3-super-120b-a12b:free`     | worker          | Parser chat model ([OpenRouter model id](https://openrouter.ai/models)).    |
+| `LLM_MODEL_EVALUATOR`        | No       | `nvidia/nemotron-3-super-120b-a12b:free`     | worker          | Evaluator (all 3 passes).                                                   |
+| `LLM_MODEL_RESEARCH`         | No       | `nvidia/nemotron-3-super-120b-a12b:free`     | worker          | Research brief generation.                                                  |
+| `LLM_MODEL_DOCUMENT`         | No       | `nvidia/nemotron-3-super-120b-a12b:free`     | worker          | Document agent.                                                             |
+| `LLM_EMBEDDING_MODEL`        | No       | `nvidia/llama-nemotron-embed-vl-1b-v2:free` | worker          | Embedding model for `job_postings.description_embedding` and `user_profiles.profile_embedding`. |
+| `LLM_EMBEDDING_DIM`          | No       | `2048`                                       | worker          | Embedding vector dimension; must match pgvector columns and migrations.     |
 
 ## External integrations
 

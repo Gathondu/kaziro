@@ -25,7 +25,7 @@ truncated raw scraped content.
 | Aspect             | Value                                                  |
 | ------------------ | ------------------------------------------------------ |
 | Framework          | LangGraph (4-node graph with cache short-circuit)      |
-| LLM                | `settings.LLM_MODEL_RESEARCH` (default `openai/gpt-4o`) |
+| LLM                | `settings.LLM_MODEL_RESEARCH` (default `nvidia/nemotron-3-super-120b-a12b:free`) |
 | Temperature        | 0.3                                                    |
 | Scraping           | Firecrawl Cloud API (`POST /v1/scrape`)                |
 | Cache TTL          | 30 days                                                |
@@ -92,7 +92,7 @@ brief generator is capped at 10 000 characters.
 
 ### `generate_brief_node`
 
-Single `gpt-4o` call with a structured-output prompt. Output JSON:
+Single `LLM_MODEL_RESEARCH` call with a structured-output prompt. Output JSON:
 
 ```json
 {

@@ -74,8 +74,10 @@ CREATE POLICY "users write own applications"
   Supabase Storage objects are encrypted by the storage provider.
 - **Encryption in transit**: TLS 1.2+ everywhere — between browser and
   API, between API and DB, between API and external services.
-- **Minimal data in prompts**: agents construct LLM prompts from the
-  smallest profile slice required (no email, no full address, no DOB).
+- **Prompt data boundaries**: evaluator and document prompts include the
+  full user-owned profile and parsed master CV so open-source models have
+  enough context. Agents still exclude unrelated account data such as email,
+  full address, and DOB, and external scraped/job-page content remains capped.
 - **Storage access**: Supabase Storage buckets are **private by default**.
   Files are accessed via short-lived signed URLs (TTL: 1 hour), generated on
   demand by the API for the owning user only.

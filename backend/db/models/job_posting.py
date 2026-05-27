@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from backend.db.models.job_evaluation import JobEvaluation
     from backend.db.models.raw_job import RawJob
 
-EMBEDDING_DIM: int = 1536
+EMBEDDING_DIM: int = 2048
 
 
 class JobPosting(TimestampedBase):

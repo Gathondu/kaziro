@@ -1,7 +1,7 @@
 # Document Agent
 
 **Status**: Active
-**Last updated**: 2026-04-22
+**Last updated**: 2026-05-27
 **Source**: Section 3.5 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
 **Code**: [`backend/agents/document_agent.py`](../../../backend/agents/document_agent.py)
 **Pipeline position**: Stage 4 (final stage; gated by Research success)
@@ -18,7 +18,7 @@ paths are persisted to `application_docs`.
 | Aspect          | Value                                                  |
 | --------------- | ------------------------------------------------------ |
 | Framework       | LangGraph (5 functional nodes + error sink)            |
-| LLM             | `settings.LLM_MODEL_DOCUMENT` (default `openai/gpt-4o`) |
+| LLM             | `settings.LLM_MODEL_DOCUMENT` (default `nvidia/nemotron-3-super-120b-a12b:free`) |
 | Temperature     | 0.4 (more creative for cover letter copy)              |
 | PDF renderer    | `backend/services/pdf_renderer.render_pdf` (WeasyPrint or similar) |
 | Storage         | Supabase Storage bucket `documents/{user_id}/...`       |
@@ -33,8 +33,9 @@ class DocumentState(BaseModel):
     # Loaded
     job_title, job_description, job_requirements
     company_name, company_mission, company_values, company_culture, company_summary
-    user_full_name, user_skills, user_experience_years, user_summary, user_values
-    raw_cv_text                       # Extracted from uploaded PDF, max 6 000 chars
+    user_full_name, user_skills, user_experience_years, user_domain, user_summary
+    user_values, user_linkedin_url
+    raw_cv_text                       # Full parsed master CV text from user_profiles
 
     # Generated
     tailored_cv_text: str
@@ -70,13 +71,14 @@ flowchart LR
 
 Joins:
 - `job_evaluations` → `job_postings` for job context.
-- `user_profiles` for skills, summary, values, full name.
+- `user_profiles` for full name, skills, experience years, domain, summary,
+  values, LinkedIn URL, and full parsed master CV text.
 - Most recent `company_summaries` for the same `job_posting_id`.
-- `raw_cv_text` from Supabase Storage via `services/storage.download_text`,
-  capped at 6 000 characters.
 
-If CV download fails, the node logs a WARNING and proceeds — the CV
-tailor falls back to `user_skills` + `user_summary`.
+Prompts always receive one explicit user-owned context block with
+`USER_PROFILE` and `MASTER_CV` sections. Missing fields render as
+`Not provided`; the agent does not substitute a smaller skills/summary
+fallback. External job text remains capped before prompt use.
 
 ### `cv_tailor_node`
 
@@ -160,7 +162,7 @@ persisted (or skipped because of cache).
 | Scenario                          | Behaviour                                                          |
 | --------------------------------- | ------------------------------------------------------------------ |
 | Evaluation/job/profile missing    | `error_end`, no doc row written                                    |
-| Raw CV download fails             | Logged WARNING; CV tailor uses skills + summary fallback           |
+| Master CV missing                 | `MASTER_CV` renders as `Not provided`; full profile context remains |
 | `cv_tailor` LLM error             | `error_end`, no row written                                        |
 | `cover_letter` LLM error          | `error_end`, no row written                                        |
 | Quality check LLM error           | Non-fatal; `quality_passed = True`, note explains QC error         |
@@ -172,7 +174,6 @@ persisted (or skipped because of cache).
 | Event                              | Fields                              |
 | ---------------------------------- | ----------------------------------- |
 | `document_agent.load_start`        | `job_evaluation_id`                 |
-| `document_agent.cv_load_failed`    | `error`                             |
 | `document_agent.cv_tailor_start`   | `job_title`                         |
 | `document_agent.cv_tailored`       | `chars`                             |
 | `document_agent.cv_tailor_failed`  | `error`                             |
@@ -188,7 +189,7 @@ persisted (or skipped because of cache).
 
 ## Testing
 
-- Unit tests for each node with mocked LLM (`gpt-4o` cassettes via VCR).
+- Unit tests for each node with mocked LLM (`LLM_MODEL_DOCUMENT` cassettes via VCR).
 - Integration test for `run_document_agent` against fixture profiles
   spanning multiple domains.
 - "No fabrication" assertion: regex check that no skills appearing in

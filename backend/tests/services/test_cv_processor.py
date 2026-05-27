@@ -6,6 +6,7 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from backend.db.models import EMBEDDING_DIM
 from backend.services import cv_processor
 from fastapi import status
 
@@ -45,7 +46,7 @@ async def test_process_cv_upload_happy_path(
 
     class _Emb:
         async def aembed_query(self, text: str) -> list[float]:
-            return [0.02] * 1536
+            return [0.02] * EMBEDDING_DIM
 
     cv_processor.set_embedder_for_tests(_Emb())
 
@@ -58,8 +59,56 @@ async def test_process_cv_upload_happy_path(
         payload=pdf,
     )
     assert result.text_chars >= cv_processor.MIN_EXTRACTED_CHARS
-    assert result.embedding_dims == 1536
+    assert result.embedding_dims == EMBEDDING_DIM
     assert result.signed_url.startswith("https://")
+
+
+@pytest.mark.asyncio
+async def test_process_cv_upload_persists_full_extracted_text(
+    monkeypatch: pytest.MonkeyPatch, _reset_cv_embedder: None
+) -> None:
+    uid = uuid.uuid4()
+    sentinel = "FULL_CV_SENTINEL_AFTER_OLD_200000_BOUNDARY"
+    extracted_text = ("x" * 201_000) + sentinel
+    update_master_cv = AsyncMock()
+
+    monkeypatch.setattr(
+        "backend.services.cv_processor._extract_text",
+        lambda _payload: extracted_text,
+    )
+    monkeypatch.setattr(
+        "backend.services.cv_processor.profile_repository",
+        MagicMock(
+            get_by_user_id=AsyncMock(return_value=MagicMock(id=uuid.uuid4(), user_id=uid)),
+            update_master_cv=update_master_cv,
+            update_embedding=AsyncMock(),
+        ),
+    )
+    monkeypatch.setattr(
+        "backend.services.cv_processor.storage_service",
+        MagicMock(
+            upload_bytes=AsyncMock(return_value="path"),
+            create_signed_url=AsyncMock(return_value="https://signed.example/cv"),
+        ),
+    )
+
+    class _Emb:
+        async def aembed_query(self, text: str) -> list[float]:
+            assert text.endswith(sentinel)
+            return [0.02] * EMBEDDING_DIM
+
+    cv_processor.set_embedder_for_tests(_Emb())
+
+    result = await cv_processor.process_cv_upload(
+        MagicMock(),
+        user_id=uid,
+        filename="cv.pdf",
+        content_type="application/pdf",
+        payload=b"%PDF-1.4\n",
+    )
+
+    assert result.text_chars == len(extracted_text)
+    assert update_master_cv.await_args.kwargs["extracted_text"].endswith(sentinel)
 
 
 @pytest.mark.asyncio

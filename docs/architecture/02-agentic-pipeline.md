@@ -22,7 +22,9 @@ LangGraph is the agentic orchestration framework. It provides:
   OpenAI-compatible `/v1/embeddings` endpoint.
 
 Alternatives considered (CrewAI, raw vendor SDKs) and the rationale are in
-[ADR-0001](../decisions/ADR-0001-agentic-framework-langgraph.md).
+[ADR-0001](../decisions/ADR-0001-agentic-framework-langgraph.md). The
+default OpenRouter model family is recorded in
+[ADR-0011](../decisions/ADR-0011-default-open-models-nemotron.md).
 
 ## 2. Pipeline overview
 
@@ -31,13 +33,13 @@ flowchart TD
   scheduler["APScheduler / Celery beat<br/>cron per user config"]
   fetch["Job Fetch Service<br/>(RapidAPI client)"]
   rawT[("raw_jobs")]
-  parser["Parser Agent<br/>openai/gpt-4o-mini"]
+  parser["Parser Agent<br/>nvidia/nemotron-3-super"]
   postingsT[("job_postings<br/>+ pgvector")]
-  evaluator["Evaluator Agent<br/>3-pass (openai/gpt-4o)"]
+  evaluator["Evaluator Agent<br/>3-pass (nvidia/nemotron-3-super)"]
   evalT[("job_evaluations")]
-  research["Research Agent<br/>Firecrawl + openai/gpt-4o"]
+  research["Research Agent<br/>Firecrawl + nvidia/nemotron-3-super"]
   companyT[("company_summaries")]
-  document["Document Agent<br/>openai/gpt-4o"]
+  document["Document Agent<br/>nvidia/nemotron-3-super"]
   docsT[("application_docs")]
   ws["WebSocket notifier"]
 
@@ -77,7 +79,7 @@ Detailed sequence is in
 ### Stage 1 — Parser Agent
 
 **Type**: LangGraph 3-node agent with a retry loop on the parse step.
-**Model**: `settings.LLM_MODEL_PARSER` (default `openai/gpt-4o-mini`).
+**Model**: `settings.LLM_MODEL_PARSER` (default `nvidia/nemotron-3-super-120b-a12b:free`).
 **Code**: [`backend/agents/parser_agent.py`](../../backend/agents/parser_agent.py).
 **Detailed spec**: [`design/agents/parser-agent.md`](../design/agents/parser-agent.md).
 
@@ -90,13 +92,13 @@ parse → (route_after_parse) → embed → persist → END
 | Node      | Responsibility                                                              |
 | --------- | --------------------------------------------------------------------------- |
 | `parse`   | LLM (structured output, `temperature=0`) → `JobPostingSchema`               |
-| `embed`   | Generate embedding (default `openai/text-embedding-3-small`, 1536-dim) of `title + company + description` |
+| `embed`   | Generate embedding (default `nvidia/llama-nemotron-embed-vl-1b-v2:free`, 2048-dim) of `title + company + description` |
 | `persist` | Insert `JobPosting`; mark `RawJob.parse_status = PARSED` (or `FAILED` after 3 retries) |
 
 ### Stage 2 — Evaluator Agent (3-pass)
 
 **Type**: LangGraph multi-node stateful graph.
-**Model**: `settings.LLM_MODEL_EVALUATOR` (default `openai/gpt-4o`).
+**Model**: `settings.LLM_MODEL_EVALUATOR` (default `nvidia/nemotron-3-super-120b-a12b:free`).
 **Code**: [`backend/agents/evaluator_agent.py`](../../backend/agents/evaluator_agent.py).
 **Detailed spec**: [`design/agents/evaluator-agent.md`](../design/agents/evaluator-agent.md).
 **Why 3 passes**: see [ADR-0006](../decisions/ADR-0006-evaluator-three-pass.md).
@@ -107,11 +109,11 @@ load_data → pass1_draft → pass2_critic → pass3_judge → persist → END
                 error_end       error_end   error_end
 ```
 
-| Pass | Role             | Input                                | Output                                                      |
-| ---- | ---------------- | ------------------------------------ | ----------------------------------------------------------- |
-| 1    | Draft Evaluator  | `job_posting + user_profile`         | `pass1_scores` (skills/seniority/domain/comp 0–10) + `pass1_notes` |
-| 2    | Critic Agent     | `pass1_scores + job + profile`       | `pass2_critique` + `pass2_revised_scores`                   |
-| 3    | Final Judge      | `pass1 + pass2 + job + profile`      | `final_classification` + `final_feedback` + `overall_score` |
+| Pass | Role             | Input                                           | Output                                                      |
+| ---- | ---------------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| 1    | Draft Evaluator  | `job_posting + full user profile + master CV`   | `pass1_scores` (skills/seniority/domain/comp 0–10) + `pass1_notes` |
+| 2    | Critic Agent     | `pass1_scores + job + full profile + master CV` | `pass2_critique` + `pass2_revised_scores`                   |
+| 3    | Final Judge      | `pass1 + pass2 + job + full profile + master CV`| `final_classification` + `final_feedback` + `overall_score` |
 
 `final_classification` is one of `GOOD_FIT | MAYBE | REJECT`. Score thresholds:
 
@@ -127,7 +129,7 @@ The full audit trail (all three passes' outputs) is persisted to
 ### Stage 3 — Research Agent
 
 **Type**: LangGraph agent with tool use.
-**Model**: `settings.LLM_MODEL_RESEARCH` (default `openai/gpt-4o`).
+**Model**: `settings.LLM_MODEL_RESEARCH` (default `nvidia/nemotron-3-super-120b-a12b:free`).
 **Tools**: Firecrawl scrape (`POST /v1/scrape`).
 **Code**: [`backend/agents/research_agent.py`](../../backend/agents/research_agent.py).
 **Detailed spec**: [`design/agents/research-agent.md`](../design/agents/research-agent.md).
@@ -153,7 +155,7 @@ check_cache ──fresh?──→ END
 ### Stage 4 — Document Agent
 
 **Type**: LangGraph multi-node agent.
-**Model**: `settings.LLM_MODEL_DOCUMENT` (default `openai/gpt-4o`, `temperature=0.4`).
+**Model**: `settings.LLM_MODEL_DOCUMENT` (default `nvidia/nemotron-3-super-120b-a12b:free`, `temperature=0.4`).
 **Code**: [`backend/agents/document_agent.py`](../../backend/agents/document_agent.py).
 **Detailed spec**: [`design/agents/document-agent.md`](../design/agents/document-agent.md).
 
@@ -163,7 +165,7 @@ load_context → cv_tailor → cover_letter → quality_check → render_persist
 
 | Node              | Responsibility                                                                        |
 | ----------------- | ------------------------------------------------------------------------------------- |
-| `load_context`    | Pull job + company brief + user profile + raw CV text from Supabase Storage           |
+| `load_context`    | Pull job + company brief + full user profile + master CV text                         |
 | `cv_tailor`       | Reorder & rewrite CV bullets — **never fabricates** experience                         |
 | `cover_letter`    | 3–4 paragraph personalised cover letter referencing company values                    |
 | `quality_check`   | Validates both docs for hallucinations and consistency; non-blocking                  |
@@ -253,7 +255,7 @@ This payload is logged at INFO and exposed to the admin pipeline dashboard
 | Evaluator pass-2 critic error          | **Non-fatal** — falls back to pass-1 scores, critique = "Critic failed: …"             |
 | Firecrawl scrape failure               | Non-fatal — empty content, brief generated from whatever was scraped                   |
 | `company_website` missing              | Scrapes only the application URL                                                       |
-| Doc-agent CV missing                   | Falls back to `user_skills` + `user_summary` for the CV draft                          |
+| Doc-agent CV missing                   | `MASTER_CV` renders as `Not provided`; full profile context remains in prompts         |
 | PDF render failure                     | Non-fatal — text persisted, PDF paths empty; user can re-render from UI                |
 | WebSocket publish failure              | Logged at WARNING; pipeline continues                                                  |
 

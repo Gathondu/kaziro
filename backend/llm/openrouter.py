@@ -42,6 +42,11 @@ def build_chat_model(
 def build_embeddings(settings: Settings | None = None) -> OpenAIEmbeddings:
     """Embeddings via OpenRouter's OpenAI-compatible ``POST /v1/embeddings``."""
     s = settings or get_settings()
+    if s.LLM_EMBEDDING_DIM != EMBEDDING_DIM:
+        raise ValueError(
+            "LLM_EMBEDDING_DIM must match pgvector EMBEDDING_DIM "
+            f"({s.LLM_EMBEDDING_DIM} != {EMBEDDING_DIM})"
+        )
     base = (
         str(s.OPENROUTER_API_BASE).rstrip("/")
         if s.OPENROUTER_API_BASE is not None
@@ -53,6 +58,6 @@ def build_embeddings(settings: Settings | None = None) -> OpenAIEmbeddings:
         "openai_api_base": base,
         "encoding_format": "float",
         "check_embedding_ctx_length": False,
-        "dimensions": EMBEDDING_DIM,
+        "dimensions": s.LLM_EMBEDDING_DIM,
     }
     return OpenAIEmbeddings(**kwargs)

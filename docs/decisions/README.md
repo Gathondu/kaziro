@@ -21,6 +21,7 @@ weighed, what alternatives were considered, and what consequences accepted.
 | [ADR-0008](ADR-0008-email-sending-mvp-draft-only.md)   | Accepted | MVP generates documents only — no automatic email sending        |
 | [ADR-0009](ADR-0009-monorepo-layout.md)                | Accepted | Flat monorepo layout: `backend/`, `frontend/`, `docs/` at root   |
 | [ADR-0010](ADR-0010-agents-md-hierarchy.md)            | Accepted | Layered AGENTS.md hierarchy across the monorepo                  |
+| [ADR-0011](ADR-0011-default-open-models-nemotron.md)   | Accepted | Use Nemotron as the default OpenRouter model family              |
 
 ## Adding a new ADR
 

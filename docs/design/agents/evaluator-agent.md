@@ -1,7 +1,7 @@
 # Evaluator Agent (3-Pass)
 
 **Status**: Active
-**Last updated**: 2026-04-22
+**Last updated**: 2026-05-27
 **Source**: Sections 3.3 and 11.6 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
 **Code**: [`backend/agents/evaluator_agent.py`](../../../backend/agents/evaluator_agent.py)
 **Pipeline position**: Stage 2 (after Parser, gates Research/Document)
@@ -19,7 +19,7 @@ user-facing feedback.
 | Aspect       | Value                                                  |
 | ------------ | ------------------------------------------------------ |
 | Framework    | LangGraph (5 functional nodes + error sink)            |
-| LLM          | `settings.LLM_MODEL_EVALUATOR` (default `openai/gpt-4o`) |
+| LLM          | `settings.LLM_MODEL_EVALUATOR` (default `nvidia/nemotron-3-super-120b-a12b:free`) |
 | Temperature  | 0.2 (deterministic but not robotic)                    |
 
 ## State
@@ -35,11 +35,14 @@ class EvaluatorState(BaseModel):
     job_requirements: list[str]
     job_salary_min: int | None
     job_salary_max: int | None
+    user_full_name: str
     user_skills: list[str]
     user_experience_years: int | None
     user_domain: str | None
     user_values: str | None
     user_summary: str | None
+    user_linkedin_url: str | None
+    raw_cv_text: str
 
     # Pass outputs
     pass1_scores: DimensionScores | None
@@ -99,6 +102,10 @@ flowchart LR
 
 Joins the `job_posting` and `user_profile` rows into the state. Required:
 both must exist or the agent terminates with `error="Job or profile not found"`.
+All three evaluator passes receive one explicit user-owned context block with
+`USER_PROFILE` and `MASTER_CV` sections. Missing user fields render as
+`Not provided`; the evaluator does not switch to a summary-only profile prompt.
+External job text remains capped before prompt use.
 
 ### Pass 1 — Draft Evaluator (`pass1_draft_node`)
 
@@ -135,7 +142,8 @@ to pass-1 scores with `pass2_critique = "Critic failed: …"`.
 
 ### Pass 3 — Final Judge (`pass3_judge_node`)
 
-Synthesises both prior passes plus the candidate profile and produces:
+Synthesises both prior passes plus the full candidate profile and master CV,
+then produces:
 
 - `final_classification` ∈ `GOOD_FIT | MAYBE | REJECT`
 - `overall_score` (weighted 0–10)

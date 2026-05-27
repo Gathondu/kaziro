@@ -92,7 +92,7 @@ The columns below are in **addition** to the base fields above.
 | `values_statement`     | TEXT           | NULL     | User-described values & hobbies                |
 | `cv_storage_path`      | TEXT           | NULL     | Supabase Storage path to uploaded CV           |
 | `linkedin_url`         | TEXT           | NULL     |                                                |
-| `profile_embedding`    | VECTOR(1536)   | NULL     | Embedding of full profile for similarity search |
+| `profile_embedding`    | VECTOR(2048)   | NULL     | Embedding of full profile for similarity search |
 
 ### 3.3 `job_search_configs`
 
@@ -151,7 +151,7 @@ class ParseStatus(str, enum.Enum):
 | `requirements`          | TEXT[]           | NULL     | Parsed requirement bullets               |
 | `application_url`       | TEXT             | NOT NULL |                                          |
 | `posted_date`           | DATE             | NULL     |                                          |
-| `description_embedding` | VECTOR(1536)     | NULL     | For semantic search                      |
+| `description_embedding` | VECTOR(2048)     | NULL     | For semantic search                      |
 | `parsed_at`             | TIMESTAMPTZ      | NOT NULL |                                          |
 
 ### 3.6 `job_evaluations`
@@ -205,7 +205,7 @@ The ``dimension_scores`` JSONB may include a reserved object ``_kaziro`` with
 | `cover_letter_text`      | TEXT                  | NOT NULL | Editable plain-text cover letter         |
 | `cv_pdf_path`            | TEXT                  | NULL     | Supabase Storage path                    |
 | `cover_letter_pdf_path`  | TEXT                  | NULL     |                                          |
-| `generation_model`       | TEXT                  | NOT NULL | Model used (e.g., `gpt-4o`)              |
+| `generation_model`       | TEXT                  | NOT NULL | Model used (e.g., `LLM_MODEL_DOCUMENT`)  |
 | `quality_passed`         | BOOLEAN               | NOT NULL | From quality-check node                  |
 | `quality_notes`          | TEXT                  | NULL     | Issues flagged by quality check          |
 | `last_edited_at`         | TIMESTAMPTZ           | NOT NULL |                                          |

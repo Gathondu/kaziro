@@ -49,10 +49,10 @@ See [ADR-0009](../decisions/ADR-0009-monorepo-layout.md) for why this layout.
 | API Gateway      | FastAPI + Uvicorn                       | Auth, routing, request validation, WebSocket events             | HTTP/WS → services          |
 | Scheduler        | APScheduler + Celery beat               | Trigger per-user job fetches on cron schedule                   | Celery task queue           |
 | Message Broker   | Redis                                   | Celery task queue, pub/sub for real-time UI updates             | Celery + FastAPI            |
-| Parser Agent     | LangGraph + OpenRouter (`openai/gpt-4o-mini`) | Normalise raw API responses into DB schema; embed description   | DB write                    |
-| Evaluator Agent  | LangGraph + OpenRouter (`openai/gpt-4o`)      | 3-pass fit evaluation per user profile (draft/critic/judge)     | DB read/write               |
+| Parser Agent     | LangGraph + OpenRouter (`nvidia/nemotron-3-super-120b-a12b:free`) | Normalise raw API responses into DB schema; embed description   | DB write                    |
+| Evaluator Agent  | LangGraph + OpenRouter (`nvidia/nemotron-3-super-120b-a12b:free`) | 3-pass fit evaluation per user profile (draft/critic/judge)     | DB read/write               |
 | Research Agent   | LangGraph + Firecrawl + OpenRouter            | Scrape company site; generate company brief                     | Firecrawl API + DB          |
-| Document Agent   | LangGraph + OpenRouter (`openai/gpt-4o`)      | Generate tailored CV and cover letter; PDF render               | DB read/write + Storage     |
+| Document Agent   | LangGraph + OpenRouter (`nvidia/nemotron-3-super-120b-a12b:free`) | Generate tailored CV and cover letter; PDF render               | DB read/write + Storage     |
 | Database         | PostgreSQL + pgvector                   | All persistent data; vector embeddings for semantic search      | SQL via SQLAlchemy 2.0      |
 | Auth             | Supabase Auth                           | JWT-based multi-tenant authentication (RS256)                   | API → Supabase              |
 | File Storage     | Supabase Storage                        | CV PDFs, cover letters, profile docs                            | S3-compatible API           |

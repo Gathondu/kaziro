@@ -139,11 +139,17 @@ class Settings(BaseSettings):
     )
     OPENROUTER_TIMEOUT_SECONDS: int = 60
     OPENROUTER_MAX_RETRIES: int = 3
-    LLM_MODEL_PARSER: str = "openai/gpt-4o-mini"
-    LLM_MODEL_EVALUATOR: str = "openai/gpt-4o"
-    LLM_MODEL_RESEARCH: str = "openai/gpt-4o"
-    LLM_MODEL_DOCUMENT: str = "openai/gpt-4o"
-    LLM_EMBEDDING_MODEL: str = "openai/text-embedding-3-small"
+    LLM_MODEL_PARSER: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    LLM_MODEL_EVALUATOR: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    LLM_MODEL_RESEARCH: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    LLM_MODEL_DOCUMENT: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    LLM_EMBEDDING_MODEL: str = "nvidia/llama-nemotron-embed-vl-1b-v2:free"
+    LLM_EMBEDDING_DIM: int = Field(
+        default=2048,
+        ge=1,
+        le=4096,
+        description="Embedding vector dimension; must match pgvector columns.",
+    )
 
     # -- External integrations --------------------------------------------
     RAPIDAPI_KEY: SecretStr = Field(..., description="RapidAPI job-search key.")

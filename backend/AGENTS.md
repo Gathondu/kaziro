@@ -164,7 +164,7 @@ Read the rule itself for full detail.
 - ❌ DB queries in agents (load via repository in a `load_data` node).
 - ❌ Sync DB calls in async paths.
 - ❌ Mixing requests-level and task-level sessions.
-- ❌ Hardcoded model strings — always `settings.LLM_MODEL_*` /
-  `settings.LLM_EMBEDDING_MODEL`.
+- ❌ Hardcoded model strings — always `settings.LLM_MODEL_*`,
+  `settings.LLM_EMBEDDING_MODEL`, and `settings.LLM_EMBEDDING_DIM`.
 - ❌ Logging sensitive content (CV bodies, email contents, API keys).
 - ❌ `# type: ignore` to silence mypy. Fix the type properly.

@@ -38,9 +38,9 @@ sequenceDiagram
   loop for each new job_posting
     Cel->>Eval: run_evaluator_agent(job_posting_id, user_id)
     Eval->>DB: load job + profile
-    Eval->>Eval: pass1 draft (gpt-4o)
-    Eval->>Eval: pass2 critic (gpt-4o)
-    Eval->>Eval: pass3 judge (gpt-4o)
+    Eval->>Eval: pass1 draft (LLM_MODEL_EVALUATOR)
+    Eval->>Eval: pass2 critic (LLM_MODEL_EVALUATOR)
+    Eval->>Eval: pass3 judge (LLM_MODEL_EVALUATOR)
     Eval->>DB: insert job_evaluations
     Eval-->>Cel: classification + score
     Cel->>WS: publish evaluation_complete
@@ -53,16 +53,16 @@ sequenceDiagram
       alt cache miss
         Res->>Res: scrape company website (Firecrawl)
         Res->>Res: scrape job page (Firecrawl)
-        Res->>Res: generate brief (gpt-4o)
+        Res->>Res: generate brief (LLM_MODEL_RESEARCH)
         Res->>DB: insert company_summaries
       end
 
       Res-->>Cel: done
       Cel->>Doc: run_document_agent(evaluation_id, user_id)
-      Doc->>DB: load job + company brief + profile + raw CV
-      Doc->>Doc: cv_tailor (gpt-4o)
-      Doc->>Doc: cover_letter (gpt-4o)
-      Doc->>Doc: quality_check (gpt-4o)
+      Doc->>DB: load job + company brief + full profile + master CV
+      Doc->>Doc: cv_tailor (LLM_MODEL_DOCUMENT)
+      Doc->>Doc: cover_letter (LLM_MODEL_DOCUMENT)
+      Doc->>Doc: quality_check (LLM_MODEL_DOCUMENT)
       Doc->>Doc: render PDFs
       Doc->>DB: insert application_docs
       Doc-->>Cel: done
@@ -79,10 +79,10 @@ sequenceDiagram
 | Stage             | Typical p50 latency       | Bounded by                              |
 | ----------------- | ------------------------- | --------------------------------------- |
 | Fetch (one user)  | 2 – 5 s                   | RapidAPI response                       |
-| Parse (one job)   | 3 – 8 s                   | OpenRouter `openai/gpt-4o-mini` call    |
-| Evaluate (one job × one user) | 25 – 60 s     | 3 sequential gpt-4o calls               |
-| Research (one job)| 10 – 30 s (cache miss)    | 2 parallel Firecrawl scrapes + gpt-4o   |
-| Document          | 30 – 60 s                 | 2 generative gpt-4o calls + quality check |
+| Parse (one job)   | 3 – 8 s                   | OpenRouter `LLM_MODEL_PARSER` call      |
+| Evaluate (one job × one user) | 25 – 60 s     | 3 sequential `LLM_MODEL_EVALUATOR` calls |
+| Research (one job)| 10 – 30 s (cache miss)    | 2 parallel Firecrawl scrapes + `LLM_MODEL_RESEARCH` |
+| Document          | 30 – 60 s                 | 2 generative `LLM_MODEL_DOCUMENT` calls + quality check |
 | **Full pipeline per job** | **~70 – 160 s**   | Dominated by evaluator + document       |
 
 The orchestrator runs evaluator stage with `asyncio.Semaphore(3)` to cap LLM

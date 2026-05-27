@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 import pytest
 
 from backend.db.models.enums import JobSource
+from backend.db.models.job_posting import EMBEDDING_DIM
 from backend.db.repositories import (
     job_config_repository,
     job_posting_repository,
@@ -28,7 +29,7 @@ def _basis(dim: int, index: int) -> list[float]:
 async def test_search_similar_prefers_nearest_embedding(
     db_session: object,
 ) -> None:
-    dim = 1536
+    dim = EMBEDDING_DIM
     uid = uuid.uuid4()
     await user_repository.upsert_from_supabase(
         db_session, user_id=uid, email=f"{uid.hex[:10]}@vec.invalid"

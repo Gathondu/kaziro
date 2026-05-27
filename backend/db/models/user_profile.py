@@ -20,7 +20,7 @@ from backend.db.base import TimestampedBase
 if TYPE_CHECKING:
     from backend.db.models.user import User
 
-EMBEDDING_DIM: int = 1536
+EMBEDDING_DIM: int = 2048
 
 
 class UserProfile(TimestampedBase):

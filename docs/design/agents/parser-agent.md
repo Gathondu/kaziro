@@ -9,15 +9,15 @@
 ## Purpose
 
 Normalises raw RapidAPI job payloads into the structured `JobPosting` table
-format and generates a 1536-dim text embedding for semantic search.
+format and generates a 2048-dim text embedding for semantic search.
 
 ## Framework & model
 
 | Aspect             | Value                                                     |
 | ------------------ | --------------------------------------------------------- |
 | Framework          | LangGraph (3-node graph with retry loop)                  |
-| LLM                | `settings.LLM_MODEL_PARSER` (default `openai/gpt-4o-mini`) |
-| Embedding model    | `text-embedding-3-small` (1536-dim)                       |
+| LLM                | `settings.LLM_MODEL_PARSER` (default `nvidia/nemotron-3-super-120b-a12b:free`) |
+| Embedding model    | `nvidia/llama-nemotron-embed-vl-1b-v2:free` (2048-dim)    |
 | Temperature        | 0 (deterministic structured extraction)                   |
 | Structured output  | `with_structured_output(JobPostingSchema)`                |
 
@@ -66,8 +66,8 @@ flowchart LR
 
 | Node          | Responsibility                                                                                  |
 | ------------- | ----------------------------------------------------------------------------------------------- |
-| `parse_node`  | Send `raw_payload` to `gpt-4o-mini` with structured output → `JobPostingSchema`                 |
-| `embed_node`  | Generate `text-embedding-3-small` of `f"{title}\n{company_name}\n{description}"`                |
+| `parse_node`  | Send `raw_payload` to `LLM_MODEL_PARSER` with structured output → `JobPostingSchema`             |
+| `embed_node`  | Generate a 2048-dim embedding of `f"{title}\n{company_name}\n{description}"`                    |
 | `persist_node`| Insert `JobPosting` row; set `RawJob.parse_status = PARSED` (or `FAILED` if exhausted)          |
 
 ## Routing logic — `route_after_parse`

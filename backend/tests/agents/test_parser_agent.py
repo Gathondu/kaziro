@@ -12,6 +12,7 @@ from backend.agents.parser_agent import (
     set_embedder_for_tests,
     set_llm_for_tests,
 )
+from backend.db.models import EMBEDDING_DIM
 from backend.db.models.enums import ParseStatus
 from backend.db.models.job_posting import JobPosting
 from backend.db.models.raw_job import RawJob
@@ -62,7 +63,7 @@ async def test_parser_happy_path_persists_posting(
 
     class _FakeEmbedder:
         async def aembed_query(self, text: str) -> list[float]:
-            return [0.01] * 1536
+            return [0.01] * EMBEDDING_DIM
 
     set_llm_for_tests(_FakeLLM())
     set_embedder_for_tests(_FakeEmbedder())
@@ -80,7 +81,7 @@ async def test_parser_happy_path_persists_posting(
     assert result.error is None
     assert result.job_posting_id is not None
     assert result.embedding is not None
-    assert len(result.embedding) == 1536
+    assert len(result.embedding) == EMBEDDING_DIM
 
     async with async_session_factory() as session:
         raw = await session.get(RawJob, raw_id)
@@ -122,7 +123,7 @@ async def test_parser_retries_then_succeeds(test_user_id: uuid.UUID) -> None:
 
     class _E:
         async def aembed_query(self, text: str) -> list[float]:
-            return [0.0] * 1536
+            return [0.0] * EMBEDDING_DIM
 
     set_embedder_for_tests(_E())
 
