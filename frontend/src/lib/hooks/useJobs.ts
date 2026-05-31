@@ -113,9 +113,11 @@ export function useTriggerEvaluation() {
 }
 
 export function useImportJobUrl() {
-	return createMutation<TriggerEvaluationBody, Error, string>({
-		mutationFn: (url: string) => importJobUrl({ url })
-	});
+	return createMutation<TriggerEvaluationBody, Error, { url: string; company_url?: string | null }>(
+		{
+			mutationFn: ({ url, company_url }) => importJobUrl({ url, company_url })
+		}
+	);
 }
 
 export type RegenerateJobDocumentsInput = {

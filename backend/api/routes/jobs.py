@@ -22,7 +22,9 @@ from backend.api.schemas.jobs import (
 from backend.db.models.enums import Classification
 from backend.db.repositories import application_doc_repository, application_repository
 from backend.services import jobs_service
-from backend.services.job_evaluation_metadata import rejection_source_from_dimension_scores
+from backend.services.job_evaluation_metadata import (
+    rejection_source_from_dimension_scores,
+)
 from backend.services.job_url_import import process_job_url_import_now
 
 router: Final[APIRouter] = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -72,12 +74,13 @@ async def import_job_url(
 ) -> Envelope[TriggerEvaluationResponse]:
     rid = request.headers.get("x-request-id")
 
-    def _schedule(normalized_url: str, user_id: str) -> None:
-        background_tasks.add_task(process_job_url_import_now, normalized_url, user_id)
+    def _schedule(normalized_url: str, user_id: str, company_url: str | None) -> None:
+        background_tasks.add_task(process_job_url_import_now, normalized_url, user_id, company_url)
 
     task_id, duplicate = await jobs_service.trigger_job_url_import(
         current_user.id,
         body.url,
+        company_url=body.company_url,
         request_id=rid,
         schedule_immediate=_schedule,
     )

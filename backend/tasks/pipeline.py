@@ -232,7 +232,9 @@ def run_pipeline_for_single_job_task(
     bind=True,
     **_RETRY_KWARGS,
 )
-def run_import_job_url_task(self: Any, url: str, user_id: str) -> dict[str, Any]:
+def run_import_job_url_task(
+    self: Any, url: str, user_id: str, company_url: str | None = None
+) -> dict[str, Any]:
     """Import one pasted job URL and continue through the single-job pipeline."""
     log.info(
         "tasks.job_url_import_start",
@@ -247,7 +249,7 @@ def run_import_job_url_task(self: Any, url: str, user_id: str) -> dict[str, Any]
 
     try:
         result = run_sqlalchemy_async(
-            lambda: import_job_url_for_user_with_failure_notification(url, user_id)
+            lambda: import_job_url_for_user_with_failure_notification(url, user_id, company_url)
         )
     except JobUrlImportInProgress:
         raise

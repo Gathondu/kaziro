@@ -50,4 +50,5 @@ export interface TriggerEvaluationBody {
 
 export interface ImportJobUrlRequest {
 	url: string;
+	company_url?: string | null;
 }

@@ -108,6 +108,7 @@ async def test_import_in_progress_raises_for_task_retry() -> None:
             "manual_url:abc",
             "00000000-0000-4000-8000-000000000001",
             SimpleNamespace(info=lambda *args, **kwargs: None),
+            "https://company.example.com",
         )
 
 

@@ -200,7 +200,7 @@ async def test_trigger_job_url_import_duplicate_and_immediate_paths() -> None:
     redis_ok = AsyncMock()
     redis_ok.set = AsyncMock(side_effect=[True, True])
     redis_ok.delete = AsyncMock()
-    scheduled: list[tuple[str, str]] = []
+    scheduled: list[tuple[str, str, str | None]] = []
     with (
         patch.object(jobs_service, "get_redis", return_value=redis_ok),
         patch.object(
@@ -212,12 +212,17 @@ async def test_trigger_job_url_import_duplicate_and_immediate_paths() -> None:
         task_id, duplicate = await jobs_service.trigger_job_url_import(
             user_id,
             "HTTPS://Jobs.Example.com/1#frag",
+            company_url="https://company.example.com",
             request_id="req-2",
-            schedule_immediate=lambda url, uid: scheduled.append((url, uid)),
+            schedule_immediate=lambda url, uid, company_url: scheduled.append(
+                (url, uid, company_url)
+            ),
         )
     assert task_id.startswith("job-import-")
     assert duplicate is False
-    assert scheduled == [("https://jobs.example.com/1", str(user_id))]
+    assert scheduled == [
+        ("https://jobs.example.com/1", str(user_id), "https://company.example.com")
+    ]
 
 
 @pytest.mark.asyncio

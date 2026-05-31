@@ -130,16 +130,21 @@ async def clear_user_import_lock(raw_url: str, user_id: str) -> None:
     await get_redis().delete(user_import_lock_key(user_id, normalized))
 
 
-async def import_job_url_for_user(raw_url: str, user_id: str) -> dict[str, Any]:
+async def import_job_url_for_user(
+    raw_url: str, user_id: str, company_url: str | None = None
+) -> dict[str, Any]:
     """Scrape, parse, and run the single-job pipeline for a pasted job URL."""
     normalized = normalize_job_url(raw_url)
+    company_normalized_url = normalize_job_url(company_url) if company_url else None
     external_id = manual_url_external_id(normalized)
     url_hash = manual_url_hash(normalized)
     bound = log.bind(user_id=user_id, url_hash=url_hash)
 
     posting_id = await _posting_id_for_external_id(external_id)
     if posting_id is None:
-        posting_id = await _create_posting_from_url(normalized, external_id, user_id, bound)
+        posting_id = await _create_posting_from_url(
+            normalized, external_id, user_id, bound, company_normalized_url
+        )
 
     result = await run_pipeline_for_single_job(posting_id, user_id)
     return {"url": normalized, "job_posting_id": posting_id, **result}
@@ -148,12 +153,14 @@ async def import_job_url_for_user(raw_url: str, user_id: str) -> dict[str, Any]:
 async def import_job_url_for_user_with_failure_notification(
     raw_url: str,
     user_id: str,
+    company_url: str | None = None,
 ) -> dict[str, Any]:
     """Import wrapper used by Celery so user-visible failures become toasts."""
     normalized = raw_url.strip()
+    normalized_company_url = company_url.strip() if company_url else None
     try:
         normalized = normalize_job_url(raw_url)
-        return await import_job_url_for_user(normalized, user_id)
+        return await import_job_url_for_user(normalized, user_id, normalized_company_url)
     except JobUrlImportInProgress:
         raise
     except Exception as exc:
@@ -165,12 +172,17 @@ async def import_job_url_for_user_with_failure_notification(
         return {"url": normalized, "error": reason}
 
 
-async def process_job_url_import_now(raw_url: str, user_id: str) -> dict[str, Any]:
+async def process_job_url_import_now(
+    raw_url: str, user_id: str, company_url: str | None = None
+) -> dict[str, Any]:
     """Run the URL import immediately from an API background task."""
     normalized = raw_url.strip()
+    normalized_company_url = company_url.strip() if company_url else None
     try:
         normalized = normalize_job_url(raw_url)
-        return await import_job_url_for_user_with_failure_notification(normalized, user_id)
+        return await import_job_url_for_user_with_failure_notification(
+            normalized, user_id, normalized_company_url
+        )
     except JobUrlImportInProgress:
         reason = "That job URL is already being imported. Please try again shortly."
         await notify_user(
@@ -195,6 +207,7 @@ async def _create_posting_from_url(
     external_id: str,
     user_id: str,
     bound: Any,
+    company_url: str | None,
 ) -> str:
     key = f"job_import:url:{manual_url_hash(normalized_url)}"
     redis = get_redis()
@@ -213,6 +226,7 @@ async def _create_posting_from_url(
             user_id=uuid.UUID(user_id),
             external_id=external_id,
             normalized_url=normalized_url,
+            company_url=company_url,
             scraped_markdown=markdown,
         )
         parsed = await run_parser_agent(raw_job_id, await _raw_payload(raw_job_id))
@@ -241,6 +255,7 @@ async def _insert_or_get_raw_job(
     user_id: uuid.UUID,
     external_id: str,
     normalized_url: str,
+    company_url: str | None = None,
     scraped_markdown: str,
 ) -> str:
     fetched_at = datetime.now(UTC)
@@ -249,6 +264,7 @@ async def _insert_or_get_raw_job(
         "external_id": external_id,
         "source_url": normalized_url,
         "application_url": normalized_url,
+        "company_url": company_url or normalized_url,
         "scraped_markdown": scraped_markdown,
         "fetched_at": fetched_at.isoformat(),
     }

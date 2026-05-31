@@ -38,7 +38,7 @@ describe('JobUrlImportForm', () => {
 		});
 		await fireEvent.submit(screen.getByRole('form', { name: 'Import a job from URL' }));
 
-		expect(mutateAsync).toHaveBeenCalledWith('https://jobs.example.com/role');
+		expect(mutateAsync).toHaveBeenCalledWith(['https://jobs.example.com/role', null]);
 		const { toast } = await import('$lib/stores/toast');
 		expect(toast.info).toHaveBeenCalledWith('Job processing started.');
 	});

@@ -196,14 +196,16 @@ async def trigger_job_url_import(
     user_id: uuid.UUID,
     url: str,
     *,
+    company_url: str | None = None,
     request_id: str | None,
-    schedule_immediate: Callable[[str, str], None] | None = None,
+    schedule_immediate: Callable[[str, str, str | None], None] | None = None,
 ) -> tuple[str, bool]:
     """Start a pasted job URL import. Returns (task_id, is_duplicate)."""
     from backend.services.job_url_import import normalize_job_url, user_import_lock_key
 
     _ = request_id
     normalized = normalize_job_url(url)
+    normalized_company_url = company_url.strip() if company_url else None
     key = user_import_lock_key(user_id, normalized)
     redis = get_redis()
     got_lock = await redis.set(key, _PENDING, nx=True, ex=_LOCK_TTL_SEC)
@@ -223,10 +225,10 @@ async def trigger_job_url_import(
     try:
         if schedule_immediate is not None:
             task_id = f"job-import-{uuid.uuid4()}"
-            schedule_immediate(normalized, str(user_id))
+            schedule_immediate(normalized, str(user_id), normalized_company_url)
         else:
             async_result = run_import_job_url_task.apply_async(
-                args=[normalized, str(user_id)],
+                args=[normalized, str(user_id), normalized_company_url],
                 headers={"request_id": request_id or ""},
             )
             task_id = str(async_result.id)

@@ -6,6 +6,7 @@
 	import { toast } from '$lib/stores/toast';
 
 	let url = $state('');
+	let companyUrl = $state('');
 	let fieldError = $state('');
 	const mutation = useImportJobUrl();
 
@@ -28,9 +29,10 @@
 		fieldError = validate(url);
 		if (fieldError) return;
 		try {
-			await get(mutation).mutateAsync(url.trim());
+			await get(mutation).mutateAsync({ url: url.trim(), company_url: companyUrl?.trim() || null });
 			toast.info('Job processing started.');
 			url = '';
+			companyUrl = '';
 		} catch (error) {
 			fieldError = error instanceof ApiError ? error.message : 'Could not start that job import.';
 		}
@@ -50,6 +52,17 @@
 				type="url"
 				placeholder="https://company.example/jobs/role"
 				bind:value={url}
+				aria-invalid={fieldError ? 'true' : 'false'}
+				aria-describedby={fieldError ? 'job-url-import-error' : undefined}
+			/>
+		</label>
+		<label class="block min-w-0 flex-1 space-y-1.5">
+			<span class="text-sm font-medium">Company URL</span>
+			<input
+				class="input input-bordered w-full rounded-lg"
+				type="url"
+				placeholder="Leave empty if applying directly from the company website"
+				bind:value={companyUrl}
 				aria-invalid={fieldError ? 'true' : 'false'}
 				aria-describedby={fieldError ? 'job-url-import-error' : undefined}
 			/>

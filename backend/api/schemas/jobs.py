@@ -84,8 +84,12 @@ class ImportJobUrlBody(BaseModel):
     """Request body for importing a user-pasted job URL."""
 
     url: str = Field(min_length=1, max_length=2000, description="Public job posting URL.")
+    company_url: str | None = Field(
+        default=None,
+        description="Optional company website URL to help with scraping/parsing (e.g. for Glassdoor).",
+    )
 
-    @field_validator("url")
+    @field_validator("url", "company_url", mode="before")
     @classmethod
     def _validate_url(cls, value: str) -> str:
         from backend.services.job_url_import import normalize_job_url
