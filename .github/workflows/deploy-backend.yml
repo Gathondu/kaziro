@@ -23,6 +23,7 @@ jobs:
   deploy:
     name: Deploy Kaziro backend
     runs-on: ubuntu-latest
+    environment: production
     env:
       APP_DIR: ${{ secrets.SERVER_APP_DIR || '/opt/kaziro' }}
       CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL || '' }}
@@ -85,7 +86,10 @@ jobs:
         env:
           BACKEND_ENV_PRODUCTION: ${{ secrets.BACKEND_ENV_PRODUCTION }}
         run: |
-          test -n "$BACKEND_ENV_PRODUCTION"
+          if [ -z "$BACKEND_ENV_PRODUCTION" ]; then
+            echo "::error::Missing GitHub Actions secret BACKEND_ENV_PRODUCTION. Add it under repository Settings -> Secrets and variables -> Actions, or expose it to this workflow from the selected GitHub Environment."
+            exit 1
+          fi
           printf '%s\n' "$BACKEND_ENV_PRODUCTION" > backend.env.production
           chmod 600 backend.env.production
 
