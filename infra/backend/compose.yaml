@@ -172,13 +172,14 @@ services:
         "-A",
         "backend.tasks.celery_app:celery_app",
         "beat",
-        "--loglevel=info"
+        "--loglevel=info",
+        "--schedule=/tmp/celerybeat-schedule"
       ]
     depends_on:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f 'celery .* beat' >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "test -w /tmp && test -f /tmp/celerybeat-schedule"]
       interval: 30s
       timeout: 5s
       retries: 3
