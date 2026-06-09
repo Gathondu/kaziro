@@ -11,7 +11,7 @@ Kaziro uses a split production deployment:
 
 | Service | Production target |
 | --- | --- |
-| FastAPI backend | Docker Compose on `https://167.233.100.112` |
+| FastAPI backend | Docker Compose on `:8001`, proxied by the server edge Caddy |
 | Redis broker/cache/pubsub | Docker Compose on the same server |
 | Celery workers | Docker Compose on the same server |
 | Celery beat | Docker Compose on the same server |
@@ -59,8 +59,8 @@ Deployment sequence:
 4. Install Docker Engine and the Compose plugin if missing.
 5. Stage files under `/opt/kaziro`.
 6. Run `infra/backend/deploy.sh` on the server.
-7. Provision or renew the Let's Encrypt IP certificate.
-8. Start or update Redis, FastAPI, workers, beat, Caddy, and certbot.
+7. Start or update Redis, FastAPI, workers, and beat.
+8. Remove old Kaziro Caddy/certbot orphan containers if they exist.
 
 Required GitHub secrets:
 
@@ -77,7 +77,6 @@ Optional GitHub secrets:
 | `SERVER_HOST` | `167.233.100.112` |
 | `SERVER_PORT` | `22` |
 | `SERVER_APP_DIR` | `/opt/kaziro` |
-| `CERTBOT_EMAIL` | unset |
 | `SERVER_PASSWORD` | unset, only for password SSH or sudo |
 | `SERVER_SSH_PASSPHRASE` | unset |
 
@@ -90,10 +89,7 @@ Production server files live under `/opt/kaziro`:
 ├── backend/
 ├── compose.yaml
 ├── .env.production
-├── Caddyfile.http
-├── Caddyfile.https
-├── deploy.sh
-└── renew-cert.sh
+└── deploy.sh
 ```
 
 `infra/backend/compose.yaml` defines:
@@ -105,13 +101,24 @@ Production server files live under `/opt/kaziro`:
 - `worker-evaluator`
 - `worker-research-doc`
 - `beat`
-- `caddy`
-- `certbot`
 
-`deploy.sh` validates required env vars, starts Redis/backend/Caddy, runs
-Alembic migrations, provisions the IP certificate if needed, then starts the
-complete compose stack. Caddy terminates HTTPS on `167.233.100.112` and reverse
-proxies both REST and WebSocket traffic to FastAPI.
+`deploy.sh` validates required env vars, starts Redis/backend, runs Alembic
+migrations, then starts the complete compose stack. The backend binds to
+`:8001` by default so the existing server edge Caddy can proxy to it
+without competing for ports `80` and `443`.
+
+Because `gathondu` already owns the public IP listener, the edge Caddy config
+must route Kaziro either by domain or by path. For bare-IP routing, add a path
+route to the Caddy instance that already listens on `80`/`443`:
+
+```caddyfile
+handle_path /kaziro-api/* {
+    reverse_proxy 167.233.100.112:8001
+}
+```
+
+With that route, Kaziro's public API base is
+`https://167.233.100.112/kaziro-api`.
 
 ## 5. Frontend Deploy
 
@@ -129,8 +136,8 @@ Vercel project settings:
 Production Vercel env vars:
 
 ```env
-PUBLIC_API_URL=https://167.233.100.112
-PUBLIC_WS_URL=wss://167.233.100.112/api/v1/ws/notifications
+PUBLIC_API_URL=https://167.233.100.112/kaziro-api
+PUBLIC_WS_URL=wss://167.233.100.112/kaziro-api/api/v1/ws/notifications
 PUBLIC_SUPABASE_URL=<supabase url>
 PUBLIC_SUPABASE_ANON_KEY=<supabase anon key>
 ```
@@ -150,10 +157,10 @@ production Vercel origin. Add any stable preview domains used for QA.
 
 Deployment is healthy when:
 
-- `https://167.233.100.112/health` returns `200`.
-- `https://167.233.100.112/health/ready` reports ready.
+- `https://167.233.100.112/kaziro-api/health` returns `200`.
+- `https://167.233.100.112/kaziro-api/health/ready` reports ready.
 - `docker compose --env-file .env.production ps` shows Redis, backend, all
-  workers, beat, Caddy, and certbot healthy or running.
-- Vercel frontend loads and calls `https://167.233.100.112`.
+  workers, and beat healthy or running.
+- Vercel frontend loads and calls `https://167.233.100.112/kaziro-api`.
 - WebSocket notifications connect through
-  `wss://167.233.100.112/api/v1/ws/notifications`.
+  `wss://167.233.100.112/kaziro-api/api/v1/ws/notifications`.

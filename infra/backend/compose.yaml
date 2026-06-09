@@ -19,6 +19,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
+    ports:
+      - "${BACKEND_HOST:-0.0.0.0}:${BACKEND_HOST_PORT:-8001}:8000"
     depends_on:
       redis:
         condition: service_healthy
@@ -182,34 +184,5 @@ services:
       retries: 3
       start_period: 30s
 
-  caddy:
-    container_name: kaziro-caddy
-    image: caddy:2.9-alpine
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_started
-    environment:
-      SERVER_IP: ${SERVER_IP:-167.233.100.112}
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - certbot-webroot:/var/www/certbot
-      - letsencrypt:/etc/letsencrypt:ro
-      - caddy-data:/data
-      - caddy-config:/config
-
-  certbot:
-    image: certbot/certbot:v5.6.0
-    volumes:
-      - certbot-webroot:/var/www/certbot
-      - letsencrypt:/etc/letsencrypt
-
 volumes:
-  caddy-config:
-  caddy-data:
-  certbot-webroot:
-  letsencrypt:
   redis-data:

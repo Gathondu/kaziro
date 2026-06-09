@@ -11,11 +11,11 @@ old Terraform-managed AWS stack.
 
 Do not destroy AWS resources until all of these are true:
 
-- `https://167.233.100.112/health` returns `200`.
-- `https://167.233.100.112/health/ready` reports ready.
-- The Vercel production frontend is live and calls `https://167.233.100.112`.
+- `https://167.233.100.112/kaziro-api/health` returns `200`.
+- `https://167.233.100.112/kaziro-api/health/ready` reports ready.
+- The Vercel production frontend is live and calls `https://167.233.100.112/kaziro-api`.
 - WebSocket notifications connect through
-  `wss://167.233.100.112/api/v1/ws/notifications`.
+  `wss://167.233.100.112/kaziro-api/api/v1/ws/notifications`.
 - Supabase project details are confirmed external to AWS and must not be
   deleted.
 
