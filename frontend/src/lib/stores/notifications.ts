@@ -65,7 +65,7 @@ function wsUrl(token: string): string {
 		u.protocol = 'ws:';
 	}
 	if (!explicitWsBase) {
-		u.pathname = '/api/v1/ws/notifications';
+		u.pathname = `${u.pathname.replace(/\/$/, '')}/api/v1/ws/notifications`;
 	}
 	u.search = '';
 	u.searchParams.set('token', token);
