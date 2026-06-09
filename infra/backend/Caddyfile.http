@@ -1,0 +1,14 @@
+{
+	auto_https off
+}
+
+:80 {
+	root * /var/www/certbot
+	handle /.well-known/acme-challenge/* {
+		file_server
+	}
+
+	handle {
+		reverse_proxy backend:8000
+	}
+}

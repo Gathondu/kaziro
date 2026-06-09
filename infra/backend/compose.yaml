@@ -1,0 +1,215 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  worker-default:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    command:
+      [
+        "celery",
+        "-A",
+        "backend.tasks.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=2",
+        "-Q",
+        "default,maintenance",
+        "-n",
+        "worker-default@%h",
+        "--prefetch-multiplier=1"
+      ]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping -t 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  worker-parser:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    command:
+      [
+        "celery",
+        "-A",
+        "backend.tasks.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=4",
+        "-Q",
+        "parser",
+        "-n",
+        "worker-parser@%h",
+        "--prefetch-multiplier=1"
+      ]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping -t 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  worker-evaluator:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    command:
+      [
+        "celery",
+        "-A",
+        "backend.tasks.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=2",
+        "-Q",
+        "evaluator",
+        "-n",
+        "worker-evaluator@%h",
+        "--prefetch-multiplier=1"
+      ]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping -t 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  worker-research-doc:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    command:
+      [
+        "celery",
+        "-A",
+        "backend.tasks.celery_app:celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=2",
+        "-Q",
+        "research,document",
+        "-n",
+        "worker-research-doc@%h",
+        "--prefetch-multiplier=1"
+      ]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A backend.tasks.celery_app:celery_app inspect ping -t 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    command:
+      [
+        "celery",
+        "-A",
+        "backend.tasks.celery_app:celery_app",
+        "beat",
+        "--loglevel=info"
+      ]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'celery .* beat' >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  caddy:
+    container_name: kaziro-caddy
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      SERVER_IP: ${SERVER_IP:-167.233.100.112}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - certbot-webroot:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  certbot:
+    image: certbot/certbot:v5.6.0
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+
+volumes:
+  caddy-config:
+  caddy-data:
+  certbot-webroot:
+  letsencrypt:
+  redis-data:

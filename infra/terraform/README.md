@@ -1,12 +1,20 @@
-# Kaziro AWS Terraform
+# Kaziro AWS Terraform (legacy teardown only)
 
-This Terraform stack deploys Kaziro to AWS using:
+Kaziro no longer deploys to AWS. This Terraform stack is retained temporarily
+only to destroy legacy Kaziro AWS resources. The active deployment is the
+server/Vercel split documented in `docs/architecture/08-deployment.md`.
+
+The legacy stack created:
 
 - Frontend static hosting: S3 + CloudFront
 - Backend API: App Runner, fronted by API Gateway HTTP API
 - Async workers: ECS Fargate (worker + beat services)
 - Queue/cache: ElastiCache Valkey
 - Secrets: AWS Secrets Manager
+
+Before removing this directory, follow
+`docs/architecture/09-aws-deployment-runbook.md` and confirm both staging and
+production AWS environments plus bootstrap state have been destroyed.
 
 ## Layout
 

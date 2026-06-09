@@ -1,90 +1,107 @@
-# AWS Deployment Runbook (Terraform + GitHub Actions)
+# AWS Teardown Runbook
 
-**Status**: Active  
-**Last updated**: 2026-04-27  
-**Source**: AWS deployment implementation for `infra/terraform` and `.github/workflows/deploy-aws.yml`  
-**Related ADRs**: [ADR-0003](../decisions/ADR-0003-auth-supabase.md), [ADR-0004](../decisions/ADR-0004-task-queue-celery-redis.md), [ADR-0007](../decisions/ADR-0007-frontend-sveltekit.md)
+**Status**: Active until AWS teardown is complete  
+**Last updated**: 2026-06-09  
+**Scope**: Destroy legacy Kaziro AWS resources after the server and Vercel deployment is verified.
 
-## 1. Scope
+Kaziro no longer deploys to AWS. This runbook exists only to safely remove the
+old Terraform-managed AWS stack.
 
-This runbook defines the active AWS deployment path without custom domains:
+## 1. Hard Gates
 
-- `develop` branch auto-deploys to `staging`
-- `main` branch auto-deploys to `production`
-- Frontend is hosted from S3 behind CloudFront (AWS URL)
-- Backend is App Runner behind API Gateway (AWS URL)
-- Celery worker and beat run as separate ECS Fargate services
-- Valkey is managed via ElastiCache
-- Postgres/Auth remain on Supabase
+Do not destroy AWS resources until all of these are true:
 
-## 2. Required GitHub Secrets per Environment
+- `https://167.233.100.112/health` returns `200`.
+- `https://167.233.100.112/health/ready` reports ready.
+- The Vercel production frontend is live and calls `https://167.233.100.112`.
+- WebSocket notifications connect through
+  `wss://167.233.100.112/api/v1/ws/notifications`.
+- Supabase project details are confirmed external to AWS and must not be
+  deleted.
 
-Configure these in GitHub Environment secrets for both `staging` and `production`:
+## 2. Inventory Current State
 
-| Secret name | Purpose |
-| --- | --- |
-| `AWS_ACCESS_KEY_ID` | IAM user access key for deployment |
-| `AWS_SECRET_ACCESS_KEY` | IAM user secret for deployment |
-| `PUBLIC_SUPABASE_URL` | Frontend public Supabase URL |
-| `PUBLIC_SUPABASE_ANON_KEY` | Frontend public Supabase anon key |
+Run from a local machine with AWS and Terraform credentials:
 
-Backend runtime configuration is read from AWS Secrets Manager secrets that must already exist:
+```bash
+mkdir -p ../kaziro-aws-teardown-audit
 
-- `kaziro/staging/backend/runtime-env-json`
-- `kaziro/production/backend/runtime-env-json`
+cd infra/terraform/environments/staging
+terraform init
+terraform state list > ../../../../../kaziro-aws-teardown-audit/staging-state.txt
+terraform plan -destroy -out=staging-destroy.tfplan
 
-These JSON secrets must include app-required backend env values (DB, Supabase service key, API keys, CORS origins, etc). Redis URL is injected by Terraform at runtime via task/service environment variable.
+cd ../production
+terraform init
+terraform state list > ../../../../../kaziro-aws-teardown-audit/production-state.txt
+terraform plan -destroy -out=production-destroy.tfplan
+```
 
-## 3. Terraform Apply Inputs
+Keep the audit files outside the repo so they are not committed.
 
-From CI, Terraform receives:
+## 3. Destroy Application Environments
 
-- `TF_VAR_image_tag` from `GITHUB_SHA`
+Destroy staging first, then production:
 
-The environment stacks are:
+```bash
+cd infra/terraform/environments/staging
+terraform destroy
 
-- `infra/terraform/environments/staging`
-- `infra/terraform/environments/production`
+cd ../production
+terraform destroy
+```
 
-## 4. Runtime Process Commands
+If destroy is blocked:
 
-- API (App Runner):  
-  `uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000`
-- Worker (ECS Fargate):  
-  `uv run celery -A backend.tasks.celery_app:celery_app worker --loglevel=INFO -Q default,parser,evaluator,research,document,maintenance`
-- Beat (ECS Fargate):  
-  `uv run celery -A backend.tasks.celery_app:celery_app beat --loglevel=INFO`
+- Empty versioned S3 buckets created for frontend hosting.
+- Delete images from Kaziro ECR repositories.
+- Wait for CloudFront distributions, App Runner services, API Gateway APIs, and
+  ElastiCache resources to finish deleting.
+- Re-run `terraform destroy`.
 
-## 5. Rollout Sequence
+Resource families expected from the old stack:
 
-1. Ensure `infra/terraform/bootstrap` state resources exist.
-2. Push to `develop`.
-3. Pipeline builds and pushes backend image to ECR.
-4. Terraform applies staging stack with the new image tag.
-5. Frontend builds with staging API URL and uploads to staging S3 bucket.
-6. CloudFront invalidation is triggered.
-7. Smoke checks verify API and frontend endpoints.
-8. Promote by merging to `main` to repeat flow for production.
+- ECR repositories and lifecycle policies
+- App Runner service and VPC connector
+- API Gateway HTTP and WebSocket APIs
+- Lambda realtime handlers
+- ECS cluster, services, task definitions, and task roles
+- CloudWatch log groups
+- IAM roles and inline/attached policies
+- ElastiCache Valkey replication groups and subnet groups
+- VPC, subnets, route tables, NAT gateway, EIP, and security groups
+- S3 frontend buckets, policies, and CloudFront distributions
+- DynamoDB WebSocket connection tables
+- Secrets Manager references or owned runtime secrets
 
-## 6. Validation Gates
+## 4. Destroy Bootstrap State
 
-Deployment is considered successful only if all checks pass:
+After both environments are gone and no Terraform state is needed:
 
-- App Runner service healthy (`/health` responds)
-- API Gateway URL reachable
-- ECS worker desired tasks are running
-- ECS beat desired tasks are running
-- Valkey reachable from API and Celery tasks (no Redis connection failures in logs)
-- Frontend URL returns `200` through CloudFront
-- Backend logs show successful Supabase connection/auth operations
+```bash
+cd infra/terraform/bootstrap
+terraform destroy
+```
 
-## 7. Rollback
+This removes the legacy state bucket and lock table:
 
-If deploy regresses:
+- `kaziro-terraform-state`
+- `kaziro-terraform-locks`
 
-1. Re-run workflow from the last known-good commit.
-2. This re-pushes older backend image tag and reapplies Terraform references.
-3. Frontend artifacts are re-synced and CloudFront invalidated.
-4. Re-run smoke checks.
+If the state bucket still contains versions, empty all versions and delete
+markers before retrying.
 
-For infra-only breakage, run `terraform apply` from the previous commit in the affected environment directory.
+## 5. Final AWS Sweep
+
+Search the AWS account and region for names or tags containing:
+
+- `kaziro`
+- `kaziro-staging`
+- `kaziro-production`
+
+Confirm no Kaziro App Runner, ECS, ECR, API Gateway, Lambda, CloudFront, S3,
+ElastiCache, DynamoDB, VPC, NAT gateway, EIP, CloudWatch log group, Secrets
+Manager secret, or IAM role/policy resources remain.
+
+After verification, delete AWS-only GitHub secrets such as
+`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.

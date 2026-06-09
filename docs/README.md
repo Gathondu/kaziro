@@ -20,7 +20,7 @@ conventions described here.
 | Add logging, metrics, or alerts                            | [`architecture/06-observability.md`](architecture/06-observability.md)                 |
 | Touch auth, RLS, secrets, or user data                     | [`architecture/07-security.md`](architecture/07-security.md)                           |
 | Deploy the app or change infrastructure                    | [`architecture/08-deployment.md`](architecture/08-deployment.md)                       |
-| Run AWS Terraform + GitHub Actions deployment flow         | [`architecture/09-aws-deployment-runbook.md`](architecture/09-aws-deployment-runbook.md) |
+| Tear down the legacy AWS stack                             | [`architecture/09-aws-deployment-runbook.md`](architecture/09-aws-deployment-runbook.md) |
 | Implement or modify a specific agent                       | [`design/agents/`](design/agents/)                                                     |
 | Build a frontend page or component                         | [`design/frontend/`](design/frontend/)                                                 |
 | Write or run tests                                         | [`design/testing-strategy.md`](design/testing-strategy.md)                             |

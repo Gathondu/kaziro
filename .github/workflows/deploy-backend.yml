@@ -1,0 +1,186 @@
+name: Deploy backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "infra/backend/**"
+      - "docs/architecture/08-deployment.md"
+      - "docs/architecture/09-aws-deployment-runbook.md"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Kaziro backend
+    runs-on: ubuntu-latest
+    env:
+      APP_DIR: ${{ secrets.SERVER_APP_DIR || '/opt/kaziro' }}
+      CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL || '' }}
+      SERVER_HOST: ${{ secrets.SERVER_HOST || '167.233.100.112' }}
+      SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT || '22' }}
+      SERVER_SSH_PASSPHRASE: ${{ secrets.SERVER_SSH_PASSPHRASE }}
+      SERVER_SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+      SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install SSH password tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Prepare SSH private key
+        if: ${{ env.SERVER_SSH_PRIVATE_KEY != '' }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SERVER_SSH_PRIVATE_KEY" > ~/.ssh/kaziro_deploy_key
+          chmod 600 ~/.ssh/kaziro_deploy_key
+          if [ -n "$SERVER_SSH_PASSPHRASE" ]; then
+            eval "$(ssh-agent -a "$RUNNER_TEMP/kaziro-ssh-agent.sock" -s)"
+            printf 'SSH_AUTH_SOCK=%s\n' "$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+            printf 'SSH_AGENT_PID=%s\n' "$SSH_AGENT_PID" >> "$GITHUB_ENV"
+            askpass_file="$(mktemp)"
+            printf '#!/bin/sh\nprintf %%s "$SERVER_SSH_PASSPHRASE"\n' > "$askpass_file"
+            chmod 700 "$askpass_file"
+            export SSH_ASKPASS="$askpass_file"
+            export SSH_ASKPASS_REQUIRE=force
+            DISPLAY=:0 ssh-add ~/.ssh/kaziro_deploy_key
+            rm -f "$askpass_file"
+            ssh-add -L > ~/.ssh/kaziro_deploy_key.pub
+          else
+            ssh-keygen -y -f ~/.ssh/kaziro_deploy_key > ~/.ssh/kaziro_deploy_key.pub
+          fi
+          ssh-keygen -lf ~/.ssh/kaziro_deploy_key.pub
+
+      - name: Build backend deploy package
+        run: |
+          tar \
+            --exclude='backend/.env' \
+            --exclude='backend/.env.*' \
+            --exclude='backend/.venv' \
+            --exclude='backend/__pycache__' \
+            --exclude='backend/.pytest_cache' \
+            --exclude='backend/.ruff_cache' \
+            --exclude='backend/.mypy_cache' \
+            --exclude='backend/coverage.xml' \
+            --exclude='*.pyc' \
+            -czf deploy-package.tar.gz \
+            backend \
+            infra/backend
+
+      - name: Write backend production env
+        env:
+          BACKEND_ENV_PRODUCTION: ${{ secrets.BACKEND_ENV_PRODUCTION }}
+        run: |
+          test -n "$BACKEND_ENV_PRODUCTION"
+          printf '%s\n' "$BACKEND_ENV_PRODUCTION" > backend.env.production
+          chmod 600 backend.env.production
+
+      - name: Upload deployment files
+        run: |
+          if [ -f ~/.ssh/kaziro_deploy_key ]; then
+            scp \
+              -i ~/.ssh/kaziro_deploy_key \
+              -P "$SERVER_PORT" \
+              -o BatchMode=yes \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=accept-new \
+              deploy-package.tar.gz \
+              backend.env.production \
+              "$SERVER_USERNAME@$SERVER_HOST:/tmp/"
+          else
+            test -n "$SERVER_PASSWORD"
+            SSHPASS="$SERVER_PASSWORD" sshpass -e scp \
+              -P "$SERVER_PORT" \
+              -o StrictHostKeyChecking=accept-new \
+              deploy-package.tar.gz \
+              backend.env.production \
+              "$SERVER_USERNAME@$SERVER_HOST:/tmp/"
+          fi
+
+      - name: Deploy on server
+        run: |
+          if [ -f ~/.ssh/kaziro_deploy_key ]; then
+            ssh_command=(ssh -i ~/.ssh/kaziro_deploy_key)
+          else
+            test -n "$SERVER_PASSWORD"
+            ssh_command=(sshpass -e ssh)
+            export SSHPASS="$SERVER_PASSWORD"
+          fi
+
+          "${ssh_command[@]}" \
+            -p "$SERVER_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=accept-new \
+            "$SERVER_USERNAME@$SERVER_HOST" \
+            "APP_DIR='$APP_DIR' SERVER_IP='$SERVER_HOST' CERTBOT_EMAIL='$CERTBOT_EMAIL' SERVER_PASSWORD='$SERVER_PASSWORD' sh -s" <<'REMOTE'
+          set -eu
+
+          as_root() {
+            if [ "$(id -u)" -eq 0 ]; then
+              "$@"
+            else
+              printf '%s\n' "$SERVER_PASSWORD" | sudo -S "$@"
+            fi
+          }
+
+          run_root_shell() {
+            if [ "$(id -u)" -eq 0 ]; then
+              sh -c "$1"
+            else
+              printf '%s\n' "$SERVER_PASSWORD" | sudo -S sh -c "$1"
+            fi
+          }
+
+          as_root apt-get update
+          as_root apt-get install -y ca-certificates curl gnupg tar
+
+          if ! command -v docker >/dev/null 2>&1; then
+            as_root install -m 0755 -d /etc/apt/keyrings
+            as_root curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+            as_root chmod a+r /etc/apt/keyrings/docker.asc
+            run_root_shell '. /etc/os-release && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" > /etc/apt/sources.list.d/docker.list'
+            as_root apt-get update
+            as_root apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          fi
+
+          rm -rf /tmp/kaziro-deploy
+          mkdir -p /tmp/kaziro-deploy
+          tar -xzf /tmp/deploy-package.tar.gz -C /tmp/kaziro-deploy
+
+          as_root mkdir -p "$APP_DIR"
+          as_root rm -rf "$APP_DIR/backend"
+          as_root mkdir -p "$APP_DIR/backend"
+          as_root cp -a /tmp/kaziro-deploy/backend/. "$APP_DIR/backend/"
+          as_root cp /tmp/kaziro-deploy/infra/backend/compose.yaml "$APP_DIR/compose.yaml"
+          as_root cp /tmp/kaziro-deploy/infra/backend/Caddyfile.http "$APP_DIR/Caddyfile.http"
+          as_root cp /tmp/kaziro-deploy/infra/backend/Caddyfile.https "$APP_DIR/Caddyfile.https"
+          as_root cp /tmp/kaziro-deploy/infra/backend/deploy.sh "$APP_DIR/deploy.sh"
+          as_root cp /tmp/kaziro-deploy/infra/backend/renew-cert.sh "$APP_DIR/renew-cert.sh"
+          as_root cp /tmp/kaziro-deploy/infra/backend/env.production.example "$APP_DIR/env.production.example"
+          as_root cp /tmp/backend.env.production "$APP_DIR/.env.production"
+          as_root chmod 600 "$APP_DIR/.env.production"
+          as_root chmod +x "$APP_DIR/deploy.sh" "$APP_DIR/renew-cert.sh"
+
+          run_root_shell "cd '$APP_DIR' && APP_DIR='$APP_DIR' SERVER_IP='$SERVER_IP' CERTBOT_EMAIL='$CERTBOT_EMAIL' ./deploy.sh"
+
+          printf '0 */12 * * * root APP_DIR=%s SERVER_IP=%s %s/renew-cert.sh >> /var/log/kaziro-certbot-renew.log 2>&1\n' "$APP_DIR" "$SERVER_IP" "$APP_DIR" > /tmp/kaziro-certbot-renew
+          as_root cp /tmp/kaziro-certbot-renew /etc/cron.d/kaziro-certbot-renew
+          as_root chmod 644 /etc/cron.d/kaziro-certbot-renew
+
+          rm -rf /tmp/kaziro-deploy /tmp/deploy-package.tar.gz /tmp/backend.env.production /tmp/kaziro-certbot-renew
+          REMOTE

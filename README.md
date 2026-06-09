@@ -15,7 +15,7 @@ generates a tailored CV + cover letter for every good fit.
 - **Backend**: Python 3.12 · FastAPI · LangGraph · OpenRouter · Celery · Redis
 - **Database**: PostgreSQL 16 + pgvector (via Supabase)
 - **Frontend**: SvelteKit · Svelte 5 (runes) · TailwindCSS · DaisyUI · TanStack Query
-- **Infra**: Docker · Kubernetes · Vercel · GitHub Actions · ArgoCD
+- **Infra**: Docker Compose · Caddy · Vercel · GitHub Actions
 
 Full architecture: [`docs/architecture/01-system-overview.md`](docs/architecture/01-system-overview.md).
 
@@ -28,7 +28,7 @@ kaziro/
 ├── backend/           ← FastAPI + LangGraph + Celery
 ├── frontend/          ← SvelteKit
 ├── docs/              ← architecture, design, decisions, reference
-├── infra/             ← (future) docker-compose, k8s, monitoring
+├── infra/             ← server deploy files and local docker helpers
 └── .cursor/rules/     ← detailed coding rules
 ```
 
