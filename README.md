@@ -17,6 +17,11 @@ generates a tailored CV + cover letter for every good fit.
 - **Frontend**: SvelteKit · Svelte 5 (runes) · TailwindCSS · DaisyUI · TanStack Query
 - **Infra**: Docker Compose · Caddy · Vercel · GitHub Actions
 
+Parallel migration scaffold:
+
+- **Next backend**: Django · Django Ninja · Celery · Redis
+- **Next frontend**: Next.js App Router · React · TypeScript · TailwindCSS · DaisyUI
+
 Full architecture: [`docs/architecture/01-system-overview.md`](docs/architecture/01-system-overview.md).
 
 ## Repo layout
@@ -26,7 +31,9 @@ kaziro/
 ├── AGENTS.md          ← read this first
 ├── README.md          ← you are here
 ├── backend/           ← FastAPI + LangGraph + Celery
+├── backend-django/    ← parallel Django Ninja migration scaffold
 ├── frontend/          ← SvelteKit
+├── frontend-next/     ← parallel Next.js migration scaffold
 ├── docs/              ← architecture, design, decisions, reference
 ├── infra/             ← server deploy files and local docker helpers
 └── .cursor/rules/     ← detailed coding rules
@@ -78,6 +85,32 @@ uv run celery -A celery_app beat --loglevel=INFO
 ```
 
 API now serves at <http://localhost:8000> · OpenAPI at `/docs`.
+
+### Parallel migration scaffold
+
+The Django Ninja + Next.js stack is available beside the current app and is
+not used by production yet.
+
+```bash
+make install-next-stack
+make check-django
+make test-django
+make lint-frontend-next
+make build-frontend-next
+```
+
+Run the new stack locally:
+
+```bash
+make dev-django          # http://localhost:8001
+make dev-frontend-next   # http://localhost:3000
+```
+
+Or with Docker alongside the current Postgres/Redis services:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.migration.yml up --build django-api frontend-next
+```
 
 ### 4. Frontend
 

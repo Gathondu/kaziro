@@ -30,6 +30,12 @@ Conventions:
 | `API_HOST`     | No       | `0.0.0.0`     | backend         | Bind address.                                                                   |
 | `API_PORT`     | No       | `8000`        | backend         | HTTP port.                                                                      |
 | `CORS_ORIGINS` | Yes      | —             | backend         | Comma-separated browser origins; must list **at least one** (empty fails boot). |
+| `DJANGO_DEBUG` | No       | `true`        | backend-django  | Debug mode for the parallel Django scaffold.                                    |
+| `DJANGO_ALLOWED_HOSTS` | No | `localhost,127.0.0.1,0.0.0.0` | backend-django | Comma-separated Django `ALLOWED_HOSTS`.                     |
+| `DJANGO_CORS_ORIGINS` | No | `http://localhost:3000,http://127.0.0.1:3000` | backend-django | Browser origins allowed by the Django scaffold.       |
+| `DJANGO_DATABASE_URL` | No | `sqlite:///backend-django/db.sqlite3` | backend-django | Django database URL; overrides the current FastAPI `DATABASE_URL` when set. |
+| `DJANGO_JWT_ISSUER` | No | `kaziro`      | backend-django  | Placeholder issuer for future Django-owned JWT auth.                            |
+| `DJANGO_JWT_AUDIENCE` | No | `kaziro-web` | backend-django  | Placeholder audience for future Django-owned JWT auth.                          |
 
 ## Database (Supabase / Postgres)
 
@@ -140,6 +146,16 @@ Frontend env vars are exposed to the browser only when prefixed with
 | `PUBLIC_SENTRY_DSN`        | No       | —             | Browser Sentry DSN.                                      |
 | `PUBLIC_APP_ENV`           | No       | `development` | Surfaces in error reports + dev-tooling.                 |
 | `PUBLIC_SITE_URL`          | No       | —             | Canonical public site origin (no trailing slash) for SEO on `/` (`canonical`, `og:url`). When unset on the static marketing page, canonical and `og:url` tags are omitted. |
+
+## Frontend Next (`frontend-next/.env`)
+
+Next.js exposes browser variables only when prefixed with `NEXT_PUBLIC_`.
+
+| Variable              | Required | Default       | Description                                           |
+| --------------------- | -------- | ------------- | ----------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | Yes      | `http://localhost:8001` | Django Ninja REST origin only; no `/api/v1` suffix. |
+| `NEXT_PUBLIC_WS_URL`  | Yes      | `ws://localhost:8001/ws` | Future Django WebSocket URL.                       |
+| `NEXT_PUBLIC_APP_ENV` | No       | `development` | Surfaces environment in the React scaffold.          |
 
 ## Local dev only
 

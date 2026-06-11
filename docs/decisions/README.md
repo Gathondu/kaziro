@@ -22,6 +22,7 @@ weighed, what alternatives were considered, and what consequences accepted.
 | [ADR-0009](ADR-0009-monorepo-layout.md)                | Accepted | Flat monorepo layout: `backend/`, `frontend/`, `docs/` at root   |
 | [ADR-0010](ADR-0010-agents-md-hierarchy.md)            | Accepted | Layered AGENTS.md hierarchy across the monorepo                  |
 | [ADR-0011](ADR-0011-default-open-models-nemotron.md)   | Accepted | Use Nemotron as the default OpenRouter model family              |
+| [ADR-0012](ADR-0012-parallel-django-ninja-nextjs-migration.md) | Accepted | Parallel migration to Django Ninja and Next.js TypeScript        |
 
 ## Adding a new ADR
 

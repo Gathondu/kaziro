@@ -33,20 +33,26 @@ monorepo contains:
 ```
 kaziro/
 ├── backend/   # Python: FastAPI + LangGraph + Celery + SQLAlchemy
+├── backend-django/ # Parallel migration: Django + Django Ninja + Celery
 ├── frontend/  # SvelteKit + Tailwind + DaisyUI + TanStack Query
+├── frontend-next/ # Parallel migration: Next.js + React + TypeScript + DaisyUI
 ├── docs/      # Architecture, design, decisions, reference
 ├── infra/     # Docker, k8s, monitoring (created in Phase 5)
 └── (root)     # Shared config: docker-compose, .env.example, Makefile
 ```
 
 See [ADR-0009](../decisions/ADR-0009-monorepo-layout.md) for why this layout.
+See [ADR-0012](../decisions/ADR-0012-parallel-django-ninja-nextjs-migration.md)
+for the parallel Django Ninja + Next.js migration scaffold.
 
 ## 3. Component overview
 
 | Component        | Technology                              | Responsibility                                                  | Interfaces                  |
 | ---------------- | --------------------------------------- | --------------------------------------------------------------- | --------------------------- |
 | Svelte SPA       | SvelteKit + TailwindCSS                 | User dashboard, settings, doc editor, application tracker       | REST API via HTTPS, WS      |
+| Next.js scaffold | Next.js + React + DaisyUI               | Parallel migration target for the user-facing frontend          | REST API via HTTPS, WS      |
 | API Gateway      | FastAPI + Uvicorn                       | Auth, routing, request validation, WebSocket events             | HTTP/WS → services          |
+| Django API scaffold | Django Ninja                         | Parallel migration target for `/api/v1`                         | HTTP/WS → services          |
 | Scheduler        | APScheduler + Celery beat               | Trigger per-user job fetches on cron schedule                   | Celery task queue           |
 | Message Broker   | Redis                                   | Celery task queue, pub/sub for real-time UI updates             | Celery + FastAPI            |
 | Parser Agent     | LangGraph + OpenRouter (`nvidia/nemotron-3-super-120b-a12b:free`) | Normalise raw API responses into DB schema; embed description   | DB write                    |

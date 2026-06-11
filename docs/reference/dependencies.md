@@ -57,6 +57,30 @@ Versioning policy:
 | `bleach`             | `>=6.1`   | HTML sanitisation for user-supplied rich text.            |
 | `pypdf`              | `>=5.0`   | Read user-uploaded CV PDFs.                               |
 
+## Backend Django — runtime
+
+| Package              | Version | Purpose                                                    |
+| -------------------- | ------- | ---------------------------------------------------------- |
+| `django`             | `>=5.2,<6.0` | Parallel backend framework and ORM.                    |
+| `django-ninja`       | `>=1.4,<2.0` | Typed `/api/v1` API layer.                             |
+| `django-cors-headers` | `>=4.7,<5.0` | CORS handling for the Next.js scaffold.              |
+| `dj-database-url`    | `>=3.0,<4.0` | Env-driven database configuration.                     |
+| `pyjwt[crypto]`      | `>=2.10,<3.0` | Future Django-owned JWT auth.                         |
+| `celery[redis]`      | `>=5.4,<6.0` | Task queue reused by the Django migration backend.     |
+| `redis`              | `>=5.0,<6.0` | Broker/cache/pubsub client.                            |
+| `psycopg[binary]`    | `>=3.2,<4.0` | PostgreSQL driver.                                     |
+| `langgraph`          | `>=0.2` | Agentic graph framework retained from the current backend.  |
+
+## Backend Django — dev / test
+
+| Package        | Version | Purpose                                      |
+| -------------- | ------- | -------------------------------------------- |
+| `pytest`       | `>=8.3` | Test runner.                                 |
+| `pytest-django` | `>=4.11` | Django test integration.                  |
+| `ruff`         | `>=0.7` | Linter + formatter.                          |
+| `mypy`         | `>=1.13` | Static type-checker.                        |
+| `django-stubs` | `>=5.2` | Django typing support.                      |
+
 ## Backend — dev / test
 
 | Package                 | Version | Purpose                                                |
@@ -96,6 +120,21 @@ Versioning policy:
 | `lucide-svelte`         | `^0.453` | Icon set.                                             |
 | `date-fns`              | `^4.1`  | Date formatting.                                       |
 | `@sentry/sveltekit`     | `^8.34` | Browser + SSR error reporting.                         |
+
+## Frontend Next — runtime
+
+| Package                 | Version | Purpose                                                |
+| ----------------------- | ------- | ------------------------------------------------------ |
+| `next`                  | `16.2.9` | React framework with App Router.                       |
+| `react`                 | `19.2.4` | UI runtime.                                            |
+| `react-dom`             | `19.2.4` | React DOM renderer.                                    |
+| `tailwindcss`           | `^4`    | Utility-first CSS.                                     |
+| `daisyui`               | `^5.5`  | Tailwind component library.                            |
+| `@tanstack/react-query` | `^5.90` | Server-state management.                               |
+| `zustand`               | `^5.0`  | Small cross-route UI state.                            |
+| `zod`                   | `^4.3`  | Form and payload validation.                           |
+| `lucide-react`          | `^0.555` | Icon set.                                             |
+| `typescript`            | `^5`    | Static types.                                          |
 
 ## Frontend — dev / test
 

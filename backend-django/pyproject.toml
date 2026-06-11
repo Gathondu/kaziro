@@ -1,0 +1,61 @@
+[project]
+name = "kaziro-backend-django"
+version = "0.1.0"
+description = "Parallel Kaziro backend scaffold built with Django, Django Ninja, Celery, and LangGraph."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Proprietary" }
+authors = [{ name = "Kaziro" }]
+
+dependencies = [
+    "celery[redis]>=5.6,<6.0",
+    "django>=6.0,<7.0",
+    "django-cors-headers>=4.9.0,<5.0",
+    "django-ninja>=1.6.2,<2.0",
+    "dj-database-url>=3.0,<4.0",
+    "langgraph>=0.2",
+    "psycopg[binary]>=3.2,<4.0",
+    "pyjwt[crypto]>=2.10,<3.0",
+    "redis>=6.0,<6.5",
+    "pydantic-settings>=2.14.1",
+]
+
+[dependency-groups]
+dev = [
+    "django-stubs>=6.0",
+    "mypy>=2.1.0",
+    "pytest>=9.0.3",
+    "pytest-django>=4.12",
+    "ruff>=0.15.16",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["*/migrations/*.py", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "TID", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["mypy_django_plugin.main"]
+exclude = "(?x)(^|[\\\\/])(tests|migrations)([\\\\/]|$)|(^|[\\\\/])\\.venv([\\\\/]|$)"
+
+[tool.django-stubs]
+django_settings_module = "config.settings"

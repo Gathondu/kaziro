@@ -1,0 +1,114 @@
+# Optional overlay for the parallel Django Ninja + Next.js migration stack.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.migration.yml up --build django-api frontend-next
+#
+# The default `docker compose up` path is intentionally unchanged.
+
+services:
+  django-api:
+    build:
+      context: .
+      dockerfile: backend-django/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: development
+      DJANGO_DEBUG: "true"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,django-api
+      DJANGO_CORS_ORIGINS: http://localhost:3000,http://frontend-next:3000
+      DJANGO_DATABASE_URL: postgresql://kaziro:kaziro@postgres:5432/kaziro
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  django-worker:
+    build:
+      context: .
+      dockerfile: backend-django/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: development
+      DJANGO_DATABASE_URL: postgresql://kaziro:kaziro@postgres:5432/kaziro
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    command:
+      [
+        "uv",
+        "run",
+        "celery",
+        "-A",
+        "config.celery:celery_app",
+        "worker",
+        "--loglevel=info",
+        "-Q",
+        "default,parser,evaluator,research,document,maintenance"
+      ]
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  django-beat:
+    build:
+      context: .
+      dockerfile: backend-django/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_ENV: development
+      DJANGO_DATABASE_URL: postgresql://kaziro:kaziro@postgres:5432/kaziro
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    command:
+      [
+        "uv",
+        "run",
+        "celery",
+        "-A",
+        "config.celery:celery_app",
+        "beat",
+        "--loglevel=info",
+        "--schedule=/tmp/celerybeat-schedule"
+      ]
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend-next:
+    build:
+      context: .
+      dockerfile: frontend-next/Dockerfile
+      target: dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+      NEXT_PUBLIC_WS_URL: ws://localhost:8001/ws
+    ports:
+      - "3000:3000"
+    depends_on:
+      django-api:
+        condition: service_started

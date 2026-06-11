@@ -32,8 +32,12 @@ kaziro/
 │       ├── research_agent.py
 │       ├── document_agent.py
 │       └── pipeline_orchestrator.py
+├── backend-django/            ← Parallel Django Ninja migration backend
+│   └── AGENTS.md              ← Django migration rules
 ├── frontend/                  ← SvelteKit + Svelte 5 + Tailwind
 │   └── AGENTS.md              ← frontend-wide rules
+├── frontend-next/             ← Parallel Next.js + React migration frontend
+│   └── AGENTS.md              ← Next.js migration rules
 ├── docs/                      ← architecture, design, decisions, reference
 │   ├── README.md
 │   ├── architecture/
@@ -48,8 +52,7 @@ ADR for this layout: [`docs/decisions/ADR-0009-monorepo-layout.md`](docs/decisio
 
 ## Workspace AGENTS.md files
 
-Edit a file? Read the **nearest** AGENTS.md as authoritative — it
-inherits the rules above it.
+Edit a file? When editing files under backend/, use backend/AGENTS.md; when editing files under backend/agents/, use backend/agents/AGENTS.md; when editing files under frontend/, use frontend/AGENTS.md; otherwise use AGENTS.md at the repo root. Apply the nearest AGENTS.md plus all ancestor AGENTS.md files above it in the hierarchy, and do not ignore .cursor/rules/ when they are more specific.
 
 | Editing files in…             | Read this AGENTS.md                                                      |
 | ----------------------------- | ------------------------------------------------------------------------ |
@@ -57,8 +60,12 @@ inherits the rules above it.
 | `backend/**`                  | [`backend/AGENTS.md`](backend/AGENTS.md)                                 |
 | `backend/agents/**`           | [`backend/agents/AGENTS.md`](backend/agents/AGENTS.md)                   |
 | `frontend/**`                 | [`frontend/AGENTS.md`](frontend/AGENTS.md)                               |
+| `backend-django/**`           | [`backend-django/AGENTS.md`](backend-django/AGENTS.md)                   |
+| `frontend-next/**`            | [`frontend-next/AGENTS.md`](frontend-next/AGENTS.md)                     |
 
 ADR for this hierarchy: [`docs/decisions/ADR-0010-agents-md-hierarchy.md`](docs/decisions/ADR-0010-agents-md-hierarchy.md).
+
+For changes that affect more than one workspace (for example backend + frontend, or docs + infra), read the root AGENTS.md plus every affected workspace AGENTS.md and apply the most specific rule in each affected area. Do not assume one workspace file is sufficient for a cross-workspace change.
 
 ## Where to run what
 
@@ -73,9 +80,12 @@ ADR for this hierarchy: [`docs/decisions/ADR-0010-agents-md-hierarchy.md`](docs/
 | Run frontend unit tests                       | `frontend/`      | `pnpm test`                                              |
 | Run E2E (Playwright) tests                    | repo root        | `pnpm e2e`                                               |
 | Boot the whole stack locally                  | repo root        | `docker compose up`                                      |
+| Start the Django Ninja scaffold               | `backend-django/` | `uv run python manage.py runserver 0.0.0.0:8001`        |
+| Start the Next.js scaffold                    | `frontend-next/` | `pnpm dev`                                               |
 
-If `infra/` and root `Makefile` are present they expose convenience
-targets — see [`docs/architecture/08-deployment.md`](docs/architecture/08-deployment.md).
+If the repo contains both infra/ and a root Makefile, use the Makefile targets documented in docs/architecture/08-deployment.md for local stack commands. If either is missing, do not invent Makefile targets; use the explicit commands listed in the table above instead.
+
+If a listed command fails because a prerequisite is missing (for example uv, pnpm, docker, PostgreSQL, Redis, or a local service), stop and report the missing prerequisite instead of guessing an alternate command or modifying the environment.
 
 ## Cardinal rules (apply everywhere)
 
@@ -100,16 +110,18 @@ targets — see [`docs/architecture/08-deployment.md`](docs/architecture/08-depl
 
 Start with the doc that matches your task:
 
-- New here? Read in order: [`docs/architecture/01-system-overview.md`](docs/architecture/01-system-overview.md)
-  → [`docs/architecture/02-agentic-pipeline.md`](docs/architecture/02-agentic-pipeline.md)
-  → [`docs/architecture/03-data-model.md`](docs/architecture/03-data-model.md).
-- Building an agent? [`docs/design/agents/`](docs/design/agents/) +
-  [`backend/agents/AGENTS.md`](backend/agents/AGENTS.md).
-- Building an API endpoint?
-  [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md).
-- Building a UI? [`docs/architecture/05-frontend-architecture.md`](docs/architecture/05-frontend-architecture.md)
-  + [`docs/design/frontend/`](docs/design/frontend/).
-- Adding a metric / log / alert? [`docs/architecture/06-observability.md`](docs/architecture/06-observability.md).
+| Task area | Primary docs |
+| --- | --- |
+| architecture/setup | `docs/architecture/01-system-overview.md`, `docs/architecture/02-agentic-pipeline.md` |
+| API | `docs/architecture/04-api-design.md` |
+| UI | `docs/architecture/05-frontend-architecture.md`, `docs/design/frontend/` |
+| agents | `docs/design/agents/`, `backend/agents/AGENTS.md` |
+| observability | `docs/architecture/06-observability.md` |
+| security review | `docs/architecture/07-security.md` |
+| deployment | `docs/architecture/08-deployment.md` |
+| docs/decisions/reference | `docs/decisions/`, `docs/reference/glossary.md`, `docs/reference/env-vars.md` |
+| cross-area changes | read all relevant primary docs and then the nearest AGENTS.md |
+
 - Security review? [`docs/architecture/07-security.md`](docs/architecture/07-security.md).
 - Deploying? [`docs/architecture/08-deployment.md`](docs/architecture/08-deployment.md).
 - Why was X chosen? [`docs/decisions/`](docs/decisions/).

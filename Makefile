@@ -14,6 +14,8 @@ ALEMBIC  := $(UV) run alembic
 
 BACKEND_DIR  := backend
 FRONTEND_DIR := frontend
+BACKEND_DJANGO_DIR := backend-django
+FRONTEND_NEXT_DIR := frontend-next
 
 .DEFAULT_GOAL := help
 
@@ -57,6 +59,14 @@ dev-backend: ## Run the FastAPI app with autoreload on the host.
 .PHONY: dev-frontend
 dev-frontend: ## Run the Vite dev server on the host.
 	cd $(FRONTEND_DIR) && $(PNPM) dev
+
+.PHONY: dev-django
+dev-django: ## Run the parallel Django Ninja API on the host.
+	cd $(BACKEND_DJANGO_DIR) && $(UV) run python manage.py runserver 0.0.0.0:8001
+
+.PHONY: dev-frontend-next
+dev-frontend-next: ## Run the parallel Next.js dev server on the host.
+	cd $(FRONTEND_NEXT_DIR) && $(PNPM) dev
 
 .PHONY: dev-worker
 dev-worker: ## Run a single Celery worker on the host listening to all queues.
@@ -115,6 +125,23 @@ lint-frontend: ## Frontend: prettier --check + eslint + svelte-check.
 	cd $(FRONTEND_DIR) && $(PNPM) lint
 	cd $(FRONTEND_DIR) && $(PNPM) check
 
+.PHONY: check-django
+check-django: ## Parallel Django backend: framework checks.
+	cd $(BACKEND_DJANGO_DIR) && $(UV) run python manage.py check
+
+.PHONY: test-django
+test-django: ## Parallel Django backend: scaffold tests.
+	cd $(BACKEND_DJANGO_DIR) && $(UV) run python manage.py test
+
+.PHONY: lint-frontend-next
+lint-frontend-next: ## Parallel Next.js frontend: ESLint and TypeScript.
+	cd $(FRONTEND_NEXT_DIR) && $(PNPM) lint
+	cd $(FRONTEND_NEXT_DIR) && $(PNPM) typecheck
+
+.PHONY: build-frontend-next
+build-frontend-next: ## Parallel Next.js frontend: production build.
+	cd $(FRONTEND_NEXT_DIR) && $(PNPM) build
+
 .PHONY: format
 format: format-backend format-frontend ## Auto-format every workspace.
 
@@ -165,8 +192,16 @@ clean: ## Remove caches, build artefacts, and coverage reports.
 	find $(BACKEND_DIR) -type d -name __pycache__ -prune -exec rm -rf {} +
 	rm -rf $(FRONTEND_DIR)/.svelte-kit $(FRONTEND_DIR)/.vercel $(FRONTEND_DIR)/build $(FRONTEND_DIR)/dist
 	rm -rf $(FRONTEND_DIR)/coverage $(FRONTEND_DIR)/playwright-report $(FRONTEND_DIR)/test-results
+	rm -rf $(BACKEND_DJANGO_DIR)/.pytest_cache $(BACKEND_DJANGO_DIR)/.ruff_cache $(BACKEND_DJANGO_DIR)/.mypy_cache
+	rm -rf $(BACKEND_DJANGO_DIR)/db.sqlite3
+	rm -rf $(FRONTEND_NEXT_DIR)/.next $(FRONTEND_NEXT_DIR)/.vercel $(FRONTEND_NEXT_DIR)/coverage
 
 .PHONY: install
 install: ## Install backend (uv) and frontend (pnpm) dependencies.
 	cd $(BACKEND_DIR) && $(UV) sync
 	cd $(FRONTEND_DIR) && $(PNPM) install
+
+.PHONY: install-next-stack
+install-next-stack: ## Install the parallel Django + Next.js scaffold dependencies.
+	cd $(BACKEND_DJANGO_DIR) && $(UV) sync
+	cd $(FRONTEND_NEXT_DIR) && $(PNPM) install

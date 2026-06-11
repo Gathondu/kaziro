@@ -1,9 +1,9 @@
 # Deployment
 
 **Status**: Active  
-**Last updated**: 2026-06-09  
-**Related ADRs**: [ADR-0003](../decisions/ADR-0003-auth-supabase.md), [ADR-0004](../decisions/ADR-0004-task-queue-celery-redis.md), [ADR-0007](../decisions/ADR-0007-frontend-sveltekit.md)  
-**Code**: `infra/backend/`, `backend/Dockerfile`, `frontend/`, `.github/workflows/`
+**Last updated**: 2026-06-11
+**Related ADRs**: [ADR-0003](../decisions/ADR-0003-auth-supabase.md), [ADR-0004](../decisions/ADR-0004-task-queue-celery-redis.md), [ADR-0007](../decisions/ADR-0007-frontend-sveltekit.md), [ADR-0012](../decisions/ADR-0012-parallel-django-ninja-nextjs-migration.md)
+**Code**: `infra/backend/`, `backend/Dockerfile`, `frontend/`, `backend-django/`, `frontend-next/`, `.github/workflows/`
 
 ## 1. Active Hosting Model
 
@@ -21,6 +21,9 @@ Kaziro uses a split production deployment:
 AWS is no longer an active deploy target. The old Terraform stack is retained
 only long enough to destroy existing Kaziro AWS resources; see
 [`09-aws-deployment-runbook.md`](09-aws-deployment-runbook.md).
+
+The Django Ninja + Next.js stack is a parallel migration scaffold only. It is
+not part of production deployment until a later cutover milestone.
 
 ## 2. Local Development
 
@@ -43,6 +46,25 @@ Useful local commands:
 | `make test` | Run backend and frontend tests |
 | `make lint` | Run backend and frontend lint/type checks |
 | `make e2e` | Run Playwright tests against a running stack |
+| `make dev-django` | Run the parallel Django Ninja scaffold on `:8001` |
+| `make dev-frontend-next` | Run the parallel Next.js scaffold on `:3000` |
+
+### 2.1 Parallel migration stack
+
+The migration scaffold is intentionally opt-in. The default
+`docker compose up` path still runs the current FastAPI/SvelteKit stack.
+
+To run the Django Ninja + Next.js scaffold beside Postgres and Redis:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.migration.yml up --build django-api frontend-next
+```
+
+The overlay adds:
+
+- `django-api` on `:8001`.
+- `django-worker` and `django-beat` with the existing Celery queue names.
+- `frontend-next` on `:3000`.
 
 ## 3. Backend Server Deploy
 
@@ -104,8 +126,8 @@ Production server files live under `/opt/kaziro`:
 
 `deploy.sh` validates required env vars, starts Redis/backend, runs Alembic
 migrations, then starts the complete compose stack. The backend binds to
-`:8001` by default so the existing server edge Caddy can proxy to it
-without competing for ports `80` and `443`.
+`:8001` by default so the existing server edge Caddy can proxy to it without
+competing for ports `80` and `443`.
 
 Because `gathondu` already owns the public IP listener, the edge Caddy config
 must route Kaziro either by domain or by path. For bare-IP routing, add a path

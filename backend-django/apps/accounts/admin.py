@@ -1,0 +1,13 @@
+from __future__ import annotations
+
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from apps.accounts.models import User
+
+
+@admin.register(User)
+class KaziroUserAdmin(UserAdmin):
+    list_display = ("id", "username", "email", "is_active", "subscription_tier")
+    search_fields = ("id", "username", "email")
+    readonly_fields = ("id",)

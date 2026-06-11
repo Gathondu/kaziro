@@ -45,6 +45,7 @@ backend/test-reports/
 # ----- Node / Vite / SvelteKit ----------------------------------------------
 node_modules/
 .pnpm-store/
+.next/
 .svelte-kit/
 .vercel/
 build-frontend/
@@ -83,6 +84,7 @@ docker-compose.local.yml
 *.pdf-debug
 *.profile
 prof/
+db.sqlite3
 
 # ----- Celery logs ------------------------------------------------------------
 celerybeat-schedule.*
