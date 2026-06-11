@@ -55,6 +55,18 @@ class Settings(BaseSettings):
 
     # -- Application -------------------------------------------------------
     APP_ENV: AppEnv = AppEnv.DEVELOPMENT
+    APP_NAME: str = Field(
+        default="Kaziro API",
+        description="The user-friendly name of this application.",
+    )
+    APP_VERSION: str = Field(
+        default="1.0.0",
+        description="The current version of this application, ideally following semver.",
+    )
+    API_NAMESPACE: str = Field(
+        default="api-v1",
+        description="The root namespace for all API endpoints, used by Django Ninja.",
+    )
     SECRET_KEY: SecretStr = Field(
         default=...,
         validation_alias=AliasChoices("DJANGO_SECRET_KEY", "SECRET_KEY"),

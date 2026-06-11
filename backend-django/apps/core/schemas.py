@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from ninja import Schema
 from pydantic import Field
@@ -13,7 +13,7 @@ class ErrorBody(Schema):
     message: str
 
 
-class Envelope(Schema, Generic[T]):
+class Envelope[T](Schema):
     data: T | None = None
     meta: dict[str, Any] | None = None
     error: ErrorBody | None = None
@@ -26,5 +26,5 @@ class MetaPayload(Schema):
     migration_phase: str = "parallel-scaffold"
 
 
-def envelope(data: T, meta: dict[str, Any] | None = None) -> dict[str, Any]:
+def envelope[T](data: T, meta: dict[str, Any] | None = None) -> dict[str, T | Any]:
     return {"data": data, "meta": meta, "error": None}

@@ -5,11 +5,11 @@ from django.db.utils import DatabaseError
 from django.http import JsonResponse
 
 
-def health(_request):
+def health(_request) -> JsonResponse:
     return JsonResponse({"data": {"status": "ok"}, "meta": None, "error": None})
 
 
-def readiness(_request):
+def readiness(_request) -> JsonResponse:
     try:
         connections["default"].cursor().execute("SELECT 1")
     except DatabaseError:
