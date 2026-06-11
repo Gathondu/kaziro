@@ -91,9 +91,13 @@ class ImportJobUrlBody(BaseModel):
 
     @field_validator("url", "company_url", mode="before")
     @classmethod
-    def _validate_url(cls, value: str) -> str:
+    def _validate_url(cls, value: object) -> object:
         from backend.services.job_url_import import normalize_job_url
 
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("Enter a valid http or https URL.")
         try:
             return normalize_job_url(value)
         except ValueError as exc:

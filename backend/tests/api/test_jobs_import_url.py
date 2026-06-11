@@ -50,6 +50,23 @@ def test_import_url_queues_task(client: TestClient) -> None:
     assert trigger.await_args.kwargs["schedule_immediate"] is not None
 
 
+def test_import_url_accepts_empty_company_url(client: TestClient) -> None:
+    with patch(
+        "backend.services.jobs_service.trigger_job_url_import",
+        new=AsyncMock(return_value=("task-1", False)),
+    ) as trigger:
+        response = client.post(
+            "/api/v1/jobs/import-url",
+            json={"url": "https://jobs.example.com/role", "company_url": None},
+        )
+
+    assert response.status_code == 202
+    assert response.json()["data"] == {"task_id": "task-1", "duplicate": False}
+    trigger.assert_awaited_once()
+    assert trigger.await_args.args[1] == "https://jobs.example.com/role"
+    assert trigger.await_args.kwargs["company_url"] is None
+
+
 def test_import_url_rejects_non_http_url(client: TestClient) -> None:
     response = client.post("/api/v1/jobs/import-url", json={"url": "ftp://example.com/job"})
 
