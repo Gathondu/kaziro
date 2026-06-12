@@ -62,7 +62,7 @@ dev-frontend: ## Run the Vite dev server on the host.
 
 .PHONY: dev-django
 dev-django: ## Run the parallel Django Ninja API on the host.
-	cd $(BACKEND_DJANGO_DIR) && $(UV) run python manage.py runserver 0.0.0.0:8001
+	cd $(BACKEND_DJANGO_DIR) && $(UV) run python manage.py runserver 0.0.0.0:8000
 
 .PHONY: dev-frontend-next
 dev-frontend-next: ## Run the parallel Next.js dev server on the host.
