@@ -71,7 +71,7 @@ async def _enqueue_notification(user: User, config: JobSearchConfig) -> str:
         "fetch_queued",
         "First job search queued",
         "Kaziro will notify you when matching roles are ready.",
-        {"type": "fetch_queued", "config_id": config.id},
+        {"type": "fetch_queued", "config_id": str(config.id)},
     )
     try:
         return str(object=await create_notification_task.delay(*args).id)
@@ -82,7 +82,7 @@ async def _enqueue_notification(user: User, config: JobSearchConfig) -> str:
             event_type=args[1],
             title=args[2],
             body=args[3],
-            payload=args[4],
+            payload=args[4], # type: ignore
         )
         return str(notification.id)
 

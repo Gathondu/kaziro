@@ -19,7 +19,7 @@ class SignupPayload(Schema):
 
 
 class LoginPayload(Schema):
-    identifier: EmailStr | str = Field(min_length=3, max_length=20)
+    identifier: EmailStr | str = Field(min_length=3, max_length=255)
     password: SecretStr = Field(min_length=1, max_length=128)
 
 

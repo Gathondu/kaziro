@@ -328,7 +328,7 @@ settings: Settings = get_settings()
 
 
 def _django_setting_exports(source: Settings) -> dict[str, Any]:
-    exports = {name: getattr(source, name) for name in source.model_fields if name.isupper()}
+    exports = {name: getattr(source, name) for name in source.__class__.model_fields if name.isupper()}
     exports["SECRET_KEY"] = source.SECRET_KEY.get_secret_value()
     exports["APP_ENV"] = source.APP_ENV.value
     exports["DATABASES"] = source.databases
