@@ -40,7 +40,9 @@ venv/
 coverage.xml
 htmlcov/
 test-reports/
+test-results/
 backend/test-reports/
+frontend-next/test-results/
 
 # ----- Node / Vite / SvelteKit ----------------------------------------------
 node_modules/
@@ -99,3 +101,6 @@ celerybeat-schedule.*.db-lock-wal
 
 # ----- Local planning (optional per clone) -----------------------------------
 PLAN.md
+
+
+#

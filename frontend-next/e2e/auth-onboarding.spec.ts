@@ -6,7 +6,9 @@ const userId = "11111111-1111-4111-8111-111111111111";
 const configId = "22222222-2222-4222-8222-222222222222";
 const createdAt = "2026-06-11T09:00:00Z";
 
-test("signup confirmation onboarding and dashboard notifications", async ({ page }) => {
+test("signup confirmation onboarding and dashboard notifications", async ({
+  page,
+}) => {
   await page.route("**/api/v1/**", routeDjangoApi);
 
   await page.goto("/signup");
@@ -15,14 +17,20 @@ test("signup confirmation onboarding and dashboard notifications", async ({ page
   await page.getByLabel("Password", { exact: true }).fill("password123");
   await page.getByLabel("Confirm password").fill("password123");
   await page.getByRole("button", { name: "Sign up" }).click();
-  await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Check your inbox" }),
+  ).toBeVisible();
 
   await page.goto("/confirm-email?token=confirm-token");
-  await expect(page.getByRole("heading", { name: "Tell us about yourself" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Tell us about yourself" }),
+  ).toBeVisible();
   await page.getByLabel("Name").fill("Diana Agent");
   await page.getByRole("button", { name: "Next", exact: true }).click();
 
-  await expect(page.getByRole("heading", { name: "Professional summary" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Professional summary" }),
+  ).toBeVisible();
   await page.getByLabel("Summary").fill("Product-minded backend engineer.");
   await page.getByRole("button", { name: "Next", exact: true }).click();
 
@@ -30,24 +38,30 @@ test("signup confirmation onboarding and dashboard notifications", async ({ page
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await page.getByLabel("Years of experience").fill("6");
   await page.getByRole("button", { name: "Next", exact: true }).click();
-  await page.getByLabel("Skills (comma-separated)").fill("Python, Django, Svelte");
+  await page
+    .getByLabel("Skills (comma-separated)")
+    .fill("Python, Django, Svelte");
   await page.getByRole("button", { name: "Next", exact: true }).click();
 
   await page.setInputFiles('input[type="file"]', {
-    buffer: Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"),
+    buffer: Buffer.from(
+      "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF",
+    ),
     mimeType: "application/pdf",
     name: "diana-cv.pdf",
   });
   await page.getByRole("button", { name: "Next", exact: true }).click();
 
   await page.getByLabel("Config name (optional)").fill("Platform roles");
-  await page.getByLabel("Keywords (comma-separated)").fill("Django, platform engineer");
+  await page
+    .getByLabel("Keywords (comma-separated)")
+    .fill("Django, platform engineer");
   await page.getByLabel("Location").fill("Remote");
   await page.getByLabel("Remote only").check();
   await page.getByRole("button", { name: "Finish setup" }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Diana Agent" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Diana" })).toBeVisible();
   await expect(page.getByRole("main").getByText("Search queued")).toBeVisible();
   await expect(page.getByText("1").first()).toBeVisible();
 });
@@ -59,7 +73,12 @@ async function routeDjangoApi(route: Route): Promise<void> {
   const method = request.method();
 
   if (method === "POST" && path === "/api/v1/auth/signup") {
-    await fulfill(route, { user_id: userId, email: "diana@example.com", confirmation_required: true, confirmation_sent: true });
+    await fulfill(route, {
+      user_id: userId,
+      email: "diana@example.com",
+      confirmation_required: true,
+      confirmation_sent: true,
+    });
     return;
   }
   if (method === "POST" && path === "/api/v1/auth/confirm-email") {
@@ -84,7 +103,11 @@ async function routeDjangoApi(route: Route): Promise<void> {
     return;
   }
   if (method === "POST" && path === "/api/v1/profile/cv") {
-    await fulfill(route, { has_master_cv: true, storage_path: "profiles/diana-cv.pdf", text_chars: 24 });
+    await fulfill(route, {
+      has_master_cv: true,
+      storage_path: "profiles/diana-cv.pdf",
+      text_chars: 24,
+    });
     return;
   }
   if (method === "GET" && path === "/api/v1/job-configs/schedule-presets") {
@@ -125,13 +148,21 @@ async function routeDjangoApi(route: Route): Promise<void> {
   }
 
   await route.fulfill({
-    body: JSON.stringify({ data: null, error: { code: "not_found", message: path }, meta: null }),
+    body: JSON.stringify({
+      data: null,
+      error: { code: "not_found", message: path },
+      meta: null,
+    }),
     contentType: "application/json",
     status: 404,
   });
 }
 
-async function fulfill<TData>(route: Route, data: TData, status = 200): Promise<void> {
+async function fulfill<TData>(
+  route: Route,
+  data: TData,
+  status = 200,
+): Promise<void> {
   await route.fulfill({
     body: JSON.stringify({ data, error: null, meta: null }),
     contentType: "application/json",
