@@ -41,13 +41,13 @@ async def mark_read(user: User, notification_id: str) -> NotificationResponse:
     notification = await repositories.get_for_user(user, notification_id)
     if notification is None:
         raise NotFoundError("Notification not found.", code="notification_not_found")
-    notification.mark_read()
+    await notification.mark_read()
     return to_response(notification)
 
 
 async def mark_all_read(user: User) -> NotificationListResponse:
     for notification in await repositories.list_for_user(user, unread_only=True, limit=100):
-        notification.mark_read()
+        await notification.mark_read()
     return await list_notifications(user)
 
 

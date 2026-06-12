@@ -27,6 +27,9 @@ class RequestLoggingMiddleware:
         )
         try:
             response = self.get_response(request)
+            if hasattr(request, "auth") and request.auth.is_authenticated: # type: ignore
+                structlog.contextvars.bind_contextvars(user_id=str(request.auth.id)) # type: ignore
+
             duration_ms = round((time.perf_counter() - started) * 1000, 2)
             response["X-Request-Id"] = request_id
             log.info(

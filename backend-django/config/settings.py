@@ -101,6 +101,10 @@ class Settings(BaseSettings):
             "PUBLIC_SITE_URL",
         ),
     )
+    SLOW_QUERY_THRESHOLD_MS: float = Field(
+        default=50.0,
+        description="Used by the database query middleware to flag slow queries",
+    )
 
     # -- Django core -------------------------------------------------------
     ROOT_URLCONF: str = "config.urls"
@@ -181,16 +185,28 @@ class Settings(BaseSettings):
         "apps.notifications",
     ]
     MIDDLEWARE: list[str] = [
-        "corsheaders.middleware.CorsMiddleware",
-        "django.middleware.security.SecurityMiddleware",
-        "apps.core.middleware.RequestLoggingMiddleware",
-        "django.contrib.sessions.middleware.SessionMiddleware",
-        "django.middleware.common.CommonMiddleware",
-        "django.middleware.csrf.CsrfViewMiddleware",
-        "django.contrib.auth.middleware.AuthenticationMiddleware",
-        "django.contrib.messages.middleware.MessageMiddleware",
-        "django.middleware.clickjacking.XFrameOptionsMiddleware",
-        "django_asgi_lifespan.middleware.LifespanStateMiddleware",
+    # CORS
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+
+    # Lifespan middleware
+    "django_asgi_lifespan.middleware.LifespanStateMiddleware",
+
+    # Standard Django Web Core layers
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+
+    # Authentication
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+
+    # Custom Middlewares
+    "apps.core.middlewares.RequestLoggingMiddleware",
+
+    # SQL Query Logger sits at the very bottom, closest to the actual view execution
+    "apps.core.middlewares.DatabaseQueryLoggerMiddleware",
     ]
     TEMPLATES: list[dict[str, Any]] = [
         {

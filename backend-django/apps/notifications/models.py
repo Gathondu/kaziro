@@ -29,10 +29,10 @@ class Notification(models.Model):
             models.Index(fields=["user", "created_at"], name="ix_notifications_user_created"),
         )
 
-    def mark_read(self) -> None:
+    async def mark_read(self) -> None:
         if self.read_at is None:
             self.read_at = timezone.now()
-            self.save(update_fields=["read_at"])
+            await self.asave(update_fields=["read_at"])
 
 
 __all__ = ["Notification"]
