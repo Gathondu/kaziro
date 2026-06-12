@@ -14,6 +14,6 @@ RUN uv sync --frozen --no-dev || uv sync --no-dev
 
 COPY backend-django/ .
 
-EXPOSE 8001
+EXPOSE 8000
 
-CMD ["uv", "run", "python", "manage.py", "runserver", "0.0.0.0:8001"]
+CMD ["uv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]

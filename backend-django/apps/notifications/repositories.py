@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+from apps.accounts.models import User
+from apps.notifications.models import Notification
+
+
+async def create(
+    *,
+    user: User,
+    event_type: str,
+    title: str,
+    body: str,
+    payload: dict[str, object],
+) -> Notification:
+    return await Notification.objects.acreate(
+        user=user,
+        event_type=event_type,
+        title=title,
+        body=body,
+        payload=payload,
+    )
+
+
+async def list_for_user(user: User, *, unread_only: bool = False, limit: int = 20) -> list[Notification]:
+    queryset = Notification.objects.filter(user=user)
+    if unread_only:
+        queryset = queryset.filter(read_at__isnull=True)
+    return [notification async for notification in queryset.order_by("-created_at")[:limit]]
+
+
+async def unread_count(user: User) -> int:
+    return await Notification.objects.filter(user=user, read_at__isnull=True).acount()
+
+
+async def get_for_user(user: User, notification_id: str) -> Notification | None:
+    return await Notification.objects.filter(user=user, id=notification_id).afirst()
+
+
+__all__ = ["create", "get_for_user", "list_for_user", "unread_count"]

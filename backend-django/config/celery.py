@@ -7,7 +7,11 @@ from typing import Final
 
 from celery import Celery
 
+from apps.core.logging_config import configure_logging
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
+configure_logging()
 
 QUEUE_DEFAULT: Final[str] = "default"
 QUEUE_PARSER: Final[str] = "parser"

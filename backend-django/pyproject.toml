@@ -1,11 +1,11 @@
 [project]
-name = "kaziro-backend-django"
+name = "kaziro-api"
 version = "0.1.0"
-description = "Parallel Kaziro backend scaffold built with Django, Django Ninja, Celery, and LangGraph."
+description = "Kaziro API built with Django, Django Ninja, Celery, and LangGraph."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 license = { text = "Proprietary" }
-authors = [{ name = "Kaziro" }]
+authors = [{ name = "Denis Ngugi Gathondu" }]
 
 dependencies = [
     "celery[redis]>=5.6,<6.0",
@@ -14,10 +14,14 @@ dependencies = [
     "django-ninja>=1.6.2,<2.0",
     "dj-database-url>=3.0,<4.0",
     "langgraph>=0.2",
+    "pydantic[email]>=2.10,<3.0",
     "psycopg[binary]>=3.2,<4.0",
     "pyjwt[crypto]>=2.10,<3.0",
+    "python-dotenv>=1.0,<2.0",
     "redis>=6.0,<6.5",
     "pydantic-settings>=2.14.1",
+    "structlog>=24.4",
+    "resend[async]>=2.30.1",
 ]
 
 [dependency-groups]

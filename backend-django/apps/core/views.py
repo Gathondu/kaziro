@@ -2,26 +2,24 @@ from __future__ import annotations
 
 from django.db import connections
 from django.db.utils import DatabaseError
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
+
+from apps.core.logging_config import get_logger
+from apps.core.schemas import envelope, error_envelope
+
+log = get_logger(__name__)
 
 
-def health(_request) -> JsonResponse:
-    return JsonResponse({"data": {"status": "ok"}, "meta": None, "error": None})
+def health(_request: HttpRequest) -> JsonResponse:
+    return JsonResponse(envelope({"status": "ok"}))
 
 
-def readiness(_request) -> JsonResponse:
+def readiness(_request: HttpRequest) -> JsonResponse:
     try:
         connections["default"].cursor().execute("SELECT 1")
     except DatabaseError:
+        log.error("health.readiness.database_unavailable", exc_info=True)
         return JsonResponse(
-            {
-                "data": {"status": "unavailable", "database": "error"},
-                "meta": None,
-                "error": {
-                    "code": "database_unavailable",
-                    "message": "Database readiness check failed.",
-                },
-            },
-            status=503,
+            error_envelope("database_unavailable", "Database readiness check failed."), status=503
         )
-    return JsonResponse({"data": {"status": "ready", "database": "ok"}, "meta": None, "error": None})
+    return JsonResponse(envelope({"status": "ready", "database": "ok"}))

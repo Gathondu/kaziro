@@ -28,7 +28,7 @@ from pydantic import (
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 _BASE_DIR: Path = Path(__file__).resolve().parent.parent
-_ENV_FILE:str = find_dotenv(filename=".env", usecwd=True, raise_error_if_not_found=False)
+_ENV_FILE: str = find_dotenv(filename=".env", usecwd=True, raise_error_if_not_found=False)
 
 
 class AppEnv(StrEnum):
@@ -83,11 +83,24 @@ class Settings(BaseSettings):
         description="Comma-separated hostnames Django may serve.",
     )
     CORS_ORIGINS: Annotated[list[AnyHttpUrl], NoDecode] = Field(
-        default_factory=lambda: [AnyHttpUrl("http://localhost:3000"), AnyHttpUrl("http://127.0.0.1:3000")],
+        default_factory=lambda: [
+            AnyHttpUrl("http://localhost:3000"),
+            AnyHttpUrl("http://127.0.0.1:3000"),
+        ],
         validation_alias=AliasChoices("DJANGO_CORS_ORIGINS", "CORS_ORIGINS"),
         description="Comma-separated browser origins allowed to call the API.",
     )
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    LOG_FORMAT: Literal["console", "json"] = "console"
+    FRONTEND_URL: AnyHttpUrl = Field(
+        default=AnyHttpUrl("http://localhost:3000"),
+        validation_alias=AliasChoices(
+            "DJANGO_FRONTEND_URL",
+            "FRONTEND_URL",
+            "NEXT_PUBLIC_SITE_URL",
+            "PUBLIC_SITE_URL",
+        ),
+    )
 
     # -- Django core -------------------------------------------------------
     ROOT_URLCONF: str = "config.urls"
@@ -99,6 +112,8 @@ class Settings(BaseSettings):
     USE_I18N: bool = True
     USE_TZ: bool = True
     STATIC_URL: str = "static/"
+    MEDIA_URL: str = "media/"
+    MEDIA_ROOT: Path = _BASE_DIR / "media"
     DEFAULT_AUTO_FIELD: str = "django.db.models.BigAutoField"
 
     # -- Database ----------------------------------------------------------
@@ -108,8 +123,23 @@ class Settings(BaseSettings):
     )
 
     # -- Auth --------------------------------------------------------------
-    JWT_ISSUER: str = "kaziro"
-    JWT_AUDIENCE: str = "kaziro-web"
+    JWT_ISSUER: str = Field(
+        default="kaziro",
+        validation_alias=AliasChoices("DJANGO_JWT_ISSUER", "JWT_ISSUER"),
+    )
+    JWT_AUDIENCE: str = Field(
+        default="kaziro-web",
+        validation_alias=AliasChoices("DJANGO_JWT_AUDIENCE", "JWT_AUDIENCE"),
+    )
+    AUTH_ACCESS_TOKEN_MINUTES: int = 60
+    AUTH_REFRESH_TOKEN_DAYS: int = 30
+    EMAIL_CONFIRMATION_TTL_HOURS: int = 24
+
+    # -- Email -------------------------------------------------------------
+    RESEND_API_KEY: SecretStr | None = None
+    RESEND_FROM_EMAIL: str = "Kaziro <onboarding@kaziro.local>"
+    RESEND_REPLY_TO: str | None = None
+    RESEND_TIMEOUT_SECONDS: int = 10
 
     # -- Redis / Celery ----------------------------------------------------
     REDIS_URL: RedisDsn = Field(
@@ -146,6 +176,7 @@ class Settings(BaseSettings):
     MIDDLEWARE: list[str] = [
         "corsheaders.middleware.CorsMiddleware",
         "django.middleware.security.SecurityMiddleware",
+        "apps.core.middleware.RequestLoggingMiddleware",
         "django.contrib.sessions.middleware.SessionMiddleware",
         "django.middleware.common.CommonMiddleware",
         "django.middleware.csrf.CsrfViewMiddleware",
@@ -227,6 +258,10 @@ class Settings(BaseSettings):
         return [str(origin).rstrip("/") for origin in self.CORS_ORIGINS]
 
     @property
+    def frontend_url(self) -> str:
+        return str(self.FRONTEND_URL).rstrip("/")
+
+    @property
     def jwt_issuer(self) -> str:
         return self.JWT_ISSUER
 
@@ -291,12 +326,9 @@ def get_settings() -> Settings:
 
 settings: Settings = get_settings()
 
+
 def _django_setting_exports(source: Settings) -> dict[str, Any]:
-    exports = {
-        name: getattr(source, name)
-        for name in source.model_fields
-        if name.isupper()
-    }
+    exports = {name: getattr(source, name) for name in source.model_fields if name.isupper()}
     exports["SECRET_KEY"] = source.SECRET_KEY.get_secret_value()
     exports["APP_ENV"] = source.APP_ENV.value
     exports["DATABASES"] = source.databases

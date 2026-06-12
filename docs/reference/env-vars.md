@@ -1,7 +1,7 @@
 # Environment Variables Reference
 
 **Status**: Living
-**Last updated**: 2026-04-28
+**Last updated**: 2026-06-11
 **Source**: Kaziro Design Document §13 + `.cursor/rules/002-backend.mdc`
 **Related**: [`docs/architecture/08-deployment.md`](../architecture/08-deployment.md), [`docs/architecture/07-security.md`](../architecture/07-security.md)
 
@@ -34,8 +34,13 @@ Conventions:
 | `DJANGO_ALLOWED_HOSTS` | No | `localhost,127.0.0.1,0.0.0.0` | backend-django | Comma-separated Django `ALLOWED_HOSTS`.                     |
 | `DJANGO_CORS_ORIGINS` | No | `http://localhost:3000,http://127.0.0.1:3000` | backend-django | Browser origins allowed by the Django scaffold.       |
 | `DJANGO_DATABASE_URL` | No | `sqlite:///backend-django/db.sqlite3` | backend-django | Django database URL; overrides the current FastAPI `DATABASE_URL` when set. |
-| `DJANGO_JWT_ISSUER` | No | `kaziro`      | backend-django  | Placeholder issuer for future Django-owned JWT auth.                            |
-| `DJANGO_JWT_AUDIENCE` | No | `kaziro-web` | backend-django  | Placeholder audience for future Django-owned JWT auth.                          |
+| `DJANGO_SECRET_KEY` | Yes | — | backend-django | Django signing secret. `SECRET_KEY` remains an accepted local alias. |
+| `DJANGO_FRONTEND_URL` | No | `http://localhost:3000` | backend-django | Public frontend origin used when building email confirmation links. |
+| `DJANGO_JWT_ISSUER` | No | `kaziro`      | backend-django  | Issuer used for Django-owned access and refresh JWTs.                            |
+| `DJANGO_JWT_AUDIENCE` | No | `kaziro-web` | backend-django  | Audience used for Django-owned access and refresh JWTs.                          |
+| `AUTH_ACCESS_TOKEN_MINUTES` | No | `60` | backend-django | Lifetime for Django access JWTs. |
+| `AUTH_REFRESH_TOKEN_DAYS` | No | `30` | backend-django | Lifetime for Django refresh JWTs. |
+| `EMAIL_CONFIRMATION_TTL_HOURS` | No | `24` | backend-django | Email confirmation token lifetime from signup/resend. |
 
 ## Database (Supabase / Postgres)
 
@@ -110,6 +115,10 @@ Conventions:
 | `RAPIDAPI_FETCH_RETRY_AFTER_CAP_S` | No       | `120`             | worker | Max seconds to honor upstream `Retry-After` on 429.                 |
 | `FIRECRAWL_API_KEY`                | Yes      | —                 | worker | Firecrawl API key.                                                  |
 | `FIRECRAWL_BASE_URL`               | No       | Firecrawl default | worker | Override (self-host or staging).                                    |
+| `RESEND_API_KEY`                   | Yes in production | —        | backend-django | Resend API key for Django signup confirmation emails. Local development degrades without sending when unset. |
+| `RESEND_FROM_EMAIL`                | No       | `Kaziro <onboarding@kaziro.local>` | backend-django | From address for confirmation emails. Use a verified Resend sender/domain in production. |
+| `RESEND_REPLY_TO`                  | No       | —                 | backend-django | Optional reply-to address for confirmation emails. |
+| `RESEND_TIMEOUT_SECONDS`           | No       | `10`              | backend-django | HTTP timeout for Resend API calls. |
 
 ## Observability
 
@@ -156,6 +165,7 @@ Next.js exposes browser variables only when prefixed with `NEXT_PUBLIC_`.
 | `NEXT_PUBLIC_API_URL` | Yes      | `http://localhost:8001` | Django Ninja REST origin only; no `/api/v1` suffix. |
 | `NEXT_PUBLIC_WS_URL`  | Yes      | `ws://localhost:8001/ws` | Future Django WebSocket URL.                       |
 | `NEXT_PUBLIC_APP_ENV` | No       | `development` | Surfaces environment in the React scaffold.          |
+| `NEXT_PUBLIC_SITE_URL` | No      | `http://localhost:3000` | Public Next.js origin; can also feed Django confirmation links through `DJANGO_FRONTEND_URL` aliases. |
 
 ## Local dev only
 
