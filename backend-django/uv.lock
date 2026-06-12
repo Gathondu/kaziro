@@ -284,6 +284,19 @@ wheels = [
 ]
 
 [[package]]
+name = "django-asgi-lifespan"
+version = "0.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asgiref" },
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/26/7a/d0ba29fa4c3d105d83b0f0fef41c7ac51c291907b40b154e6ffa6ee5f488/django_asgi_lifespan-0.5.2.tar.gz", hash = "sha256:a56872ffc8cd41a9236fd435e18740646da5762dfb1157c639b3909b531a8b3a", size = 9182, upload-time = "2026-04-18T20:47:34.969Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e7/06/5c79ef479cc130eb0bf9e29c2aec3f2d7865c226e3e672ab7123ef20552d/django_asgi_lifespan-0.5.2-py3-none-any.whl", hash = "sha256:d0478aa6b217c04eb56aaaf8a51cf57e51719d9af6266101cd715743ac03d9c5", size = 12478, upload-time = "2026-04-18T20:47:33.892Z" },
+]
+
+[[package]]
 name = "django-cors-headers"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -443,6 +456,7 @@ dependencies = [
     { name = "celery", extra = ["redis"] },
     { name = "dj-database-url" },
     { name = "django" },
+    { name = "django-asgi-lifespan" },
     { name = "django-cors-headers" },
     { name = "django-ninja" },
     { name = "langgraph" },
@@ -454,6 +468,7 @@ dependencies = [
     { name = "redis" },
     { name = "resend", extra = ["async"] },
     { name = "structlog" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -470,6 +485,7 @@ requires-dist = [
     { name = "celery", extras = ["redis"], specifier = ">=5.6,<6.0" },
     { name = "dj-database-url", specifier = ">=3.0,<4.0" },
     { name = "django", specifier = ">=6.0,<7.0" },
+    { name = "django-asgi-lifespan", specifier = ">=0.5.2" },
     { name = "django-cors-headers", specifier = ">=4.9.0,<5.0" },
     { name = "django-ninja", specifier = ">=1.6.2,<2.0" },
     { name = "langgraph", specifier = ">=0.2" },
@@ -481,6 +497,7 @@ requires-dist = [
     { name = "redis", specifier = ">=6.0,<6.5" },
     { name = "resend", extras = ["async"], specifier = ">=2.30.1" },
     { name = "structlog", specifier = ">=24.4" },
+    { name = "uvicorn", specifier = ">=0.49.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1150,6 +1167,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/42/19/b521f7d73094fca4c0c44002f4a42bfcbcf0b770fdc3c4b9a596dda25734/uuid_utils-0.16.0-cp312-cp312-win32.whl", hash = "sha256:52d2cc8c12a3466cd1727883e0746d8bad5dddd670369eb553ba17fdc3b565ca", size = 168887, upload-time = "2026-05-19T07:45:45.502Z" },
     { url = "https://files.pythonhosted.org/packages/87/1f/4126c3ccbc2d98a613664e55f6ab6d7bd4b98424a04486e4fcc76549af15/uuid_utils-0.16.0-cp312-cp312-win_amd64.whl", hash = "sha256:c97625e5edfda8b118160ce1e88756f92b1635775f836c168be7bf10928d97fa", size = 174607, upload-time = "2026-05-19T07:43:52.938Z" },
     { url = "https://files.pythonhosted.org/packages/74/62/b83ccc8446ae39dcc0bda2cb3b525b6af6a2036383afe1d1d5fe7b234c2c/uuid_utils-0.16.0-cp312-cp312-win_arm64.whl", hash = "sha256:baf79c8050eb784b252dd34807df73f61130fe8676b61231baccab62530f20ec", size = 173021, upload-time = "2026-05-19T07:45:10.204Z" },
+]
+
+[[package]]
+name = "uvicorn"
+version = "0.49.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "h11" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c4/1f/fa18009dea8469069cca78a4e877a008ab78f08b064bfc9ab891579077ff/uvicorn-0.49.0.tar.gz", hash = "sha256:ebf4271aa580d9de97f93192d4595176df6e91f9aae919ca73e4fc07df1e66a3", size = 91284, upload-time = "2026-06-03T22:01:30.448Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/fa/e1388bbcf24ef3274f45c0c1c7b501fd14971037c1b6ee23610553307497/uvicorn-0.49.0-py3-none-any.whl", hash = "sha256:ba3d14c3ee7e41c6c654c46c9eb489d33213cdd30aa1696eab1374337c13f68f", size = 71376, upload-time = "2026-06-03T22:01:29.037Z" },
 ]
 
 [[package]]

@@ -155,6 +155,12 @@ class Settings(BaseSettings):
     CELERY_TASK_TIME_LIMIT: int = 1800
     CELERY_TASK_SOFT_TIME_LIMIT: int = 1500
 
+    # -- LangSmith ----------------------------------------------------------
+    LANGSMITH_TRACING: bool = False
+    LANGSMITH_API_KEY: SecretStr | None = None
+    LANGSMITH_PROJECT: str | None = None
+    LANGSMITH_ENDPOINT: AnyHttpUrl | None = None
+
     # -- Django constants --------------------------------------------------
     INSTALLED_APPS: list[str] = [
         "django.contrib.admin",
@@ -164,6 +170,7 @@ class Settings(BaseSettings):
         "django.contrib.messages",
         "django.contrib.staticfiles",
         "corsheaders",
+        "config.apps.KaziroAppConfig",
         "apps.accounts",
         "apps.core",
         "apps.profiles",
@@ -183,6 +190,7 @@ class Settings(BaseSettings):
         "django.contrib.auth.middleware.AuthenticationMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
+        "django_asgi_lifespan.middleware.LifespanStateMiddleware",
     ]
     TEMPLATES: list[dict[str, Any]] = [
         {
