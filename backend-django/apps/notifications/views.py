@@ -31,7 +31,7 @@ async def mark_read(request: HttpRequest, notification_id: str) -> dict[str, obj
 
 @notifications_router.post("/read-all", auth=jwt_auth, response=Envelope[NotificationListResponse])
 async def mark_all_read(request: HttpRequest) -> dict[str, object]:
-    return envelope(data=services.mark_all_read(cast(User, request.auth))) # type: ignore
+    return envelope(data=await services.mark_all_read(cast(User, request.auth))) # type: ignore
 
 
 __all__ = ["notifications_router"]
