@@ -1,9 +1,13 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, Check, CheckCheck } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { markAllNotificationsRead, subscribe } from "@/lib/api/notifications";
+import {
+  markNotificationRead,
+  markAllNotificationsRead,
+  subscribe,
+} from "@/lib/api/notifications";
 import type {
   NotificationItem,
   NotificationListResponse,
@@ -29,7 +33,12 @@ export function NotificationBell() {
   ).length;
 
   const markAll = useMutation({
-    mutationFn: () => markAllNotificationsRead(token ?? ""),
+    mutationFn: async () => await markAllNotificationsRead(token ?? ""),
+  });
+
+  const markRead = useMutation({
+    mutationFn: async (id: string) =>
+      await markNotificationRead(token ?? "", id),
   });
 
   const updateNotificationCache = useCallback(
@@ -65,59 +74,55 @@ export function NotificationBell() {
       token,
       controller.signal,
       (payload: NotificationStreamPayload) => {
-        if (payload.action === "SYNC") {
-          setNotifications(payload.items);
-          seenIds.current = new Set(payload.items.map((item) => item.id));
-          queryClient.setQueryData<NotificationListResponse>(
-            ["notifications", "all"],
-            {
-              items: payload.items,
-              unread_count: payload.unread_count,
-            },
-          );
-          return;
-        }
-
-        if (payload.action === "NEW_ALERT") {
-          const nextNotification = payload.notification;
-
-          updateNotificationCache((current) => {
-            const filtered = current.filter(
-              (item) => item.id !== nextNotification.id,
+        switch (payload.action) {
+          case "SYNC":
+            setNotifications(payload.items);
+            seenIds.current = new Set(payload.items.map((item) => item.id));
+            queryClient.setQueryData<NotificationListResponse>(
+              ["notifications", "all"],
+              {
+                items: payload.items,
+                unread_count: payload.unread_count,
+              },
             );
-            return [nextNotification, ...filtered];
-          });
+            break;
+          case "NEW_ALERT":
+            const nextNotification = payload.notification;
 
-          if (!seenIds.current.has(nextNotification.id)) {
-            seenIds.current.add(nextNotification.id);
-            pushToast("info", payload.message ?? nextNotification.title);
-          }
-          return;
-        }
+            updateNotificationCache((current) => {
+              const filtered = current.filter(
+                (item) => item.id !== nextNotification.id,
+              );
+              return [nextNotification, ...filtered];
+            });
 
-        if (payload.action === "MARK_SINGLE_READ") {
-          updateNotificationCache((current) =>
-            current.map((notification) =>
-              notification.id === payload.notification_id
-                ? {
-                    ...notification,
-                    read_at: notification.read_at ?? new Date().toISOString(),
-                  }
-                : notification,
-            ),
-          );
-          return;
-        }
-
-        if (payload.action === "MARK_ALL_READ") {
-          const readAt = new Date().toISOString();
-          updateNotificationCache((current) =>
-            current.map((notification) =>
-              notification.read_at
-                ? notification
-                : { ...notification, read_at: readAt },
-            ),
-          );
+            if (!seenIds.current.has(nextNotification.id)) {
+              seenIds.current.add(nextNotification.id);
+              pushToast("info", payload.message ?? nextNotification.title);
+            }
+            break;
+          case "MARK_SINGLE_READ":
+            updateNotificationCache((current) =>
+              current.map((notification) =>
+                notification.id === payload.notification_id
+                  ? {
+                      ...notification,
+                      read_at: notification.read_at ?? new Date().toISOString(),
+                    }
+                  : notification,
+              ),
+            );
+            break;
+          case "MARK_ALL_READ":
+            const readAt = new Date().toISOString();
+            updateNotificationCache((current) =>
+              current.map((notification) =>
+                notification.read_at
+                  ? notification
+                  : { ...notification, read_at: readAt },
+              ),
+            );
+            break;
         }
       },
       (error) => {
@@ -168,7 +173,7 @@ export function NotificationBell() {
               type="button"
             >
               <CheckCheck className="size-3.5" aria-hidden="true" />
-              Read
+              Mark all as read
             </button>
             <button className="btn btn-ghost btn-xs" onClick={handleViewAll}>
               {viewAll ? "Unread" : "All"}
@@ -185,7 +190,19 @@ export function NotificationBell() {
           ) : (
             notificationsToView.map((item) => (
               <article className="rounded-xl bg-base-200 p-3" key={item.id}>
-                <p className="text-sm font-semibold">{item.title}</p>
+                <div className="flex justify-between">
+                  <p className="text-sm font-semibold">{item.title}</p>
+
+                  <button
+                    className="btn btn-ghost btn-xs gap-1"
+                    disabled={unreadCount === 0 || markAll.isPending}
+                    onClick={() => markRead.mutate(item.id)}
+                    type="button"
+                  >
+                    <Check className="size-3.5" aria-hidden="true" />
+                    Mark as Read
+                  </button>
+                </div>
                 <p className="mt-1 text-xs leading-relaxed text-base-content/70">
                   {item.body}
                 </p>
