@@ -10,7 +10,6 @@ from apps.accounts.models import User
 from apps.core.schemas import Envelope, envelope
 from apps.notifications import services
 from apps.notifications.schemas import NotificationListResponse
-from apps.notifications.tasks import mark_all_read_task, mark_single_read_task
 
 notifications_router = Router(tags=["notifications"])
 
@@ -40,20 +39,15 @@ async def stream_response(request: HttpRequest) -> StreamingHttpResponse:
     response["X-Accel-Buffering"] = "no"  # Prevents Nginx from proxy-buffering stream chunks
     return response
 
-@notifications_router.post(
-    "/{notification_id}/read", auth=jwt_auth, response=Envelope[dict[str, str]]
-)
-def mark_read(request: HttpRequest, notification_id: str) -> dict[str, object]:
+@notifications_router.post("/{notification_id}/read", auth=jwt_auth)
+async def mark_read(request: HttpRequest, notification_id: str) -> None:
     user = request.auth # type: ignore
-    mark_single_read_task.delay(user.id, notification_id) # type: ignore
-    return envelope({"status": "processing"})
+    await services.mark_read(cast(User, user), notification_id)
 
-@notifications_router.post("/read-all", auth=jwt_auth, response=Envelope[dict[str, str]])
-def mark_all_read(request: HttpRequest) -> dict[str, object]:
-
+@notifications_router.post("/read-all", auth=jwt_auth)
+async def mark_all_read(request: HttpRequest) -> None:
     user = request.auth # type: ignore
-    mark_all_read_task.delay(user.id) # type: ignore
-    return envelope({"status": "processing"})
+    await services.mark_all_read(cast(User, user))
 
 
 __all__ = ["notifications_router"]

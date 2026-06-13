@@ -36,18 +36,16 @@ export async function subscribe(
 export async function markNotificationRead(
   token: string,
   notificationId: string,
-): Promise<NotificationItem> {
-  return await apiClient.post<NotificationItem>(
+): Promise<void> {
+  await apiClient.post<NotificationItem>(
     `/api/v1/notifications/${notificationId}/read`,
     {},
     token,
   );
 }
 
-export async function markAllNotificationsRead(
-  token: string,
-): Promise<NotificationListResponse> {
-  return await apiClient.post<NotificationListResponse>(
+export async function markAllNotificationsRead(token: string): Promise<void> {
+  await apiClient.post<NotificationListResponse>(
     "/api/v1/notifications/read-all",
     {},
     token,
