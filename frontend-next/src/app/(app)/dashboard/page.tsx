@@ -24,7 +24,6 @@ export default function DashboardPage() {
     queryKey: ["notifications", "all"],
     queryFn: () => listNotifications(token ?? "", false),
     enabled: Boolean(token),
-    refetchInterval: 15_000,
   });
   const profile = useQuery({
     queryKey: ["profile"],

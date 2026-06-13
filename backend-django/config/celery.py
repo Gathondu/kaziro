@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
-from typing import Final
+from collections.abc import Callable, Coroutine
+from typing import Any, Final
 
 from celery import Celery
 
-from apps.core.logging_config import configure_logging
+from config.langsmith import apply_langsmith_from_settings
+from config.logging import configure_logging
+from config.settings import get_settings
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 configure_logging()
+
+settings = get_settings()
+apply_langsmith_from_settings(settings)
 
 QUEUE_DEFAULT: Final[str] = "default"
 QUEUE_PARSER: Final[str] = "parser"
@@ -19,6 +26,7 @@ QUEUE_EVALUATOR: Final[str] = "evaluator"
 QUEUE_RESEARCH: Final[str] = "research"
 QUEUE_DOCUMENT: Final[str] = "document"
 QUEUE_MAINTENANCE: Final[str] = "maintenance"
+QUEUE_NOTIFICATION: Final[str] = 'notification'
 
 ALL_QUEUES: Final[tuple[str, ...]] = (
     QUEUE_DEFAULT,
@@ -27,13 +35,24 @@ ALL_QUEUES: Final[tuple[str, ...]] = (
     QUEUE_RESEARCH,
     QUEUE_DOCUMENT,
     QUEUE_MAINTENANCE,
+    QUEUE_NOTIFICATION,
 )
+
+TASK_ROUTES: Final[dict[str, dict[str, str]]] = {
+    "apps.notifications.create_notification":{"queue": QUEUE_NOTIFICATION},
+    "apps.notifications.mark_all_read":{"queue": QUEUE_NOTIFICATION},
+
+}
+
+
+def run_async[T](factory: Callable[[], Coroutine[Any, Any, T]]) -> T:
+    return asyncio.run(factory())
 
 celery_app = Celery("kaziro_django")
 celery_app.config_from_object("django.conf:settings", namespace="CELERY")
 celery_app.conf.update(
     task_default_queue=QUEUE_DEFAULT,
-    task_routes={},
+    task_routes=TASK_ROUTES,
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
@@ -44,6 +63,7 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     broker_connection_retry_on_startup=True,
 )
+
 celery_app.autodiscover_tasks()
 
 __all__ = [
@@ -52,7 +72,9 @@ __all__ = [
     "QUEUE_DOCUMENT",
     "QUEUE_EVALUATOR",
     "QUEUE_MAINTENANCE",
+    "QUEUE_NOTIFICATION",
     "QUEUE_PARSER",
     "QUEUE_RESEARCH",
     "celery_app",
+    "run_async",
 ]

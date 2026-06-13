@@ -8,8 +8,8 @@ from django.http import Http404, HttpRequest, JsonResponse
 from ninja import NinjaAPI
 from ninja.errors import AuthenticationError, HttpError, ValidationError
 
-from apps.core.logging_config import get_logger
 from apps.core.schemas import error_envelope
+from config.logging import get_logger
 
 log = get_logger(__name__)
 
@@ -132,13 +132,13 @@ def unhandled_exception_handler(request: HttpRequest, exc: Exception) -> JsonRes
 
 
 def register_exception_handlers(api: NinjaAPI) -> None:
-    api.add_exception_handler(ApiError, api_error_handler) # type: ignore
-    api.add_exception_handler(AuthenticationError, authentication_error_handler) # type: ignore
-    api.add_exception_handler(ValidationError, validation_error_handler) # type: ignore
-    api.add_exception_handler(HttpError, http_error_handler) # type: ignore
-    api.add_exception_handler(Http404, django_not_found_handler) # type: ignore
-    api.add_exception_handler(PermissionDenied, permission_denied_handler) # type: ignore
-    api.add_exception_handler(Exception, unhandled_exception_handler) # type: ignore
+    api.add_exception_handler(ApiError, api_error_handler)  # type: ignore
+    api.add_exception_handler(AuthenticationError, authentication_error_handler)  # type: ignore
+    api.add_exception_handler(ValidationError, validation_error_handler)  # type: ignore
+    api.add_exception_handler(HttpError, http_error_handler)  # type: ignore
+    api.add_exception_handler(Http404, django_not_found_handler)  # type: ignore
+    api.add_exception_handler(PermissionDenied, permission_denied_handler)  # type: ignore
+    api.add_exception_handler(Exception, unhandled_exception_handler)  # type: ignore
 
 
 __all__ = [

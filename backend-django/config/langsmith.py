@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from langsmith import Client
 from langsmith.run_trees import configure
 
-from apps.core.logging_config import get_logger
+from config.logging import get_logger
 
 if TYPE_CHECKING:
     from config.settings import Settings
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 log = get_logger(__name__)
 
 
-def apply_langsmith_tracing_from_settings(settings: Settings) -> None:
+def apply_langsmith_from_settings(settings: Settings) -> None:
     """If LangSmith tracing is on and an API key is present, enable global tracing."""
     if not settings.LANGSMITH_TRACING:
         return
@@ -47,4 +47,4 @@ def apply_langsmith_tracing_from_settings(settings: Settings) -> None:
     )
 
 
-__all__ = ["apply_langsmith_tracing_from_settings"]
+__all__ = ["apply_langsmith_from_settings"]

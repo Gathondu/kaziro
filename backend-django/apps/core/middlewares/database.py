@@ -6,10 +6,11 @@ from collections.abc import Callable
 from django.db import connection
 from django.http import HttpRequest, HttpResponse
 
-from apps.core.logging_config import get_logger
+from config.logging import get_logger
 from config.settings import get_settings
 
 log = get_logger(__name__)
+
 
 class DatabaseQueryLoggerMiddleware:
     """Instruments the Django database connection to intercept and log slow SQL statements."""
@@ -37,5 +38,6 @@ class DatabaseQueryLoggerMiddleware:
 
         with connection.execute_wrapper(query_wrapper):
             return self.get_response(request)
+
 
 __all__ = ["DatabaseQueryLoggerMiddleware"]

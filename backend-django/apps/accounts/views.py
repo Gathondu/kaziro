@@ -69,7 +69,7 @@ async def resend_confirmation(
 
 @auth_router.get("/me", auth=jwt_auth, response=Envelope[MeResponse])
 async def me(request: HttpRequest) -> dict[str, object]:
-    return envelope(data=await services.me(cast(User, request.auth))) # type: ignore
+    return envelope(data=await services.me(cast(User, request.auth)))  # type: ignore
 
 
 async def _signup(payload: SignupPayload) -> SignupResponse:

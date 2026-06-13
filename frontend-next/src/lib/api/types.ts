@@ -123,3 +123,24 @@ export type NotificationListResponse = {
   items: NotificationItem[];
   unread_count: number;
 };
+
+export type NotificationStreamPayload =
+  | {
+      action: "SYNC";
+      items: NotificationItem[];
+      unread_count: number;
+    }
+  | {
+      action: "NEW_ALERT";
+      notification: NotificationItem;
+      message?: string;
+    }
+  | {
+      action: "MARK_ALL_READ";
+      message?: string;
+    }
+  | {
+      action: "MARK_SINGLE_READ";
+      notification_id: string;
+      message?: string;
+    };

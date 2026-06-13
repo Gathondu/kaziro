@@ -23,6 +23,7 @@ def post_json(client: Client, path: str, payload: dict[str, object], **extra: An
         **extra,
     )
 
+
 async def async_post_json(client: AsyncClient, path: str, payload: dict[str, object], **extra: Any):
     return await client.post(
         path,
@@ -30,6 +31,7 @@ async def async_post_json(client: AsyncClient, path: str, payload: dict[str, obj
         content_type="application/json",
         **extra,
     )
+
 
 def put_json(client: Client, path: str, payload: dict[str, object], **extra: Any):
     return client.put(
@@ -39,6 +41,7 @@ def put_json(client: Client, path: str, payload: dict[str, object], **extra: Any
         **extra,
     )
 
+
 async def async_put_json(client: AsyncClient, path: str, payload: dict[str, object], **extra: Any):
     return await client.put(
         path,
@@ -46,6 +49,7 @@ async def async_put_json(client: AsyncClient, path: str, payload: dict[str, obje
         content_type="application/json",
         **extra,
     )
+
 
 def auth_header(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
@@ -94,7 +98,9 @@ class AuthProfileNotificationTests(TransactionTestCase):
         assert confirm_response.status_code == 200
         access_token = confirm_response.json()["data"]["token"]["access_token"]
 
-        me_response = await self.async_client.get("/api/v1/auth/me", headers=auth_header(access_token))
+        me_response = await self.async_client.get(
+            "/api/v1/auth/me", headers=auth_header(access_token)
+        )
         assert me_response.status_code == 200
         assert me_response.json()["data"]["email"] == "candidate@example.com"
 
@@ -154,7 +160,8 @@ class AuthProfileNotificationTests(TransactionTestCase):
 
     async def test_notification_task_creates_user_notification(self) -> None:
         user = await self._confirmed_user(email="task@example.com")
-        notification_id = await create_notification_task(
+        notification_id = create_notification_task(
+            None,
             str(user.id),
             "documents_ready",
             "Documents ready",
@@ -162,7 +169,7 @@ class AuthProfileNotificationTests(TransactionTestCase):
             {"type": "documents_ready"},
         )
         notification = await Notification.objects.aget(id=notification_id)
-        assert notification.user_id == user.id #type: ignore
+        assert notification.user_id == user.id  # type: ignore
         assert notification.payload["type"] == "documents_ready"
 
     def test_protected_routes_return_envelope_401(self) -> None:

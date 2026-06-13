@@ -6,7 +6,7 @@ import resend
 from httpx import TimeoutException
 from resend.exceptions import ResendError
 
-from apps.core.logging_config import get_logger
+from config.logging import get_logger
 from config.settings import settings
 
 log = get_logger(__name__)
@@ -45,8 +45,10 @@ async def send_confirmation_email(
 
     try:
         response: resend.Emails.SendResponse = await resend.Emails.send_async(payload)
-    except (TimeoutException, ResendError ) as exc:
-        log.error("email.confirmation.resend_failed", error=f"{exc.__class__.__name__}: {exc!s}")
+    except (TimeoutException, ResendError) as exc:
+        log.error(
+            "email.confirmation.resend_failed", error=exc.__class__.__name__, message=str(exc)
+        )
         raise EmailDeliveryError("Could not send confirmation email.") from exc
 
     provider_id = getattr(response, "id", None) or response.get("id")

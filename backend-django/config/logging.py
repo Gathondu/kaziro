@@ -45,6 +45,7 @@ def _redact_sensitive_fields(
 
     return cast(EventDict, walk(event_dict))
 
+
 def _filter_health_checks(
     _logger: WrappedLogger,
     method_name: str,
@@ -53,11 +54,14 @@ def _filter_health_checks(
     """Silently drops uvicorn access logs for health probe endpoints."""
     event_msg = event_dict.get("event", "")
 
-    if isinstance(event_msg, str) and any(probe in event_msg for probe in ("GET /ping", "GET /healthz")):
+    if isinstance(event_msg, str) and any(
+        probe in event_msg for probe in ("GET /ping", "GET /healthz")
+    ):
         # Match common health endpoints (e.g., "GET /ping HTTP/1.1" or "GET /healthz"
         raise structlog.DropEvent
 
     return event_dict
+
 
 def _uvicorn_style_renderer(
     _logger: WrappedLogger,
@@ -67,15 +71,15 @@ def _uvicorn_style_renderer(
     raw_level = str(event_dict.pop("level", "info")).lower()
     timestamp = event_dict.pop("timestamp", "")
     event = event_dict.pop("event", "")
-    user_id = event_dict.pop('user_id', None)
+    user_id = event_dict.pop("user_id", None)
     request_id = event_dict.pop("request_id", None)
 
     color_map = {
-        "debug": "\x1b[36mDEBUG:\x1b[0m   ",   # Cyan
-        "info": "\x1b[32mINFO:\x1b[0m    ",    # Green
-        "warning": "\x1b[33mWARNING:\x1b[0m ", # Yellow
-        "error": "\x1b[31mERROR:\x1b[0m   ",   # Red
-        "critical": "\x1b[35mCRITICAL:\x1b[0m",# Magenta
+        "debug": "\x1b[36mDEBUG:\x1b[0m   ",  # Cyan
+        "info": "\x1b[32mINFO:\x1b[0m    ",  # Green
+        "warning": "\x1b[33mWARNING:\x1b[0m ",  # Yellow
+        "error": "\x1b[31mERROR:\x1b[0m   ",  # Red
+        "critical": "\x1b[35mCRITICAL:\x1b[0m",  # Magenta
     }
     level_header = color_map.get(raw_level, f"{raw_level.upper()}:")
 
@@ -97,6 +101,7 @@ def _uvicorn_style_renderer(
     if timestamp:
         return f"{level_header} \x1b[90m{timestamp}\x1b[0m {payload}"
     return f"{level_header} {payload}"
+
 
 def _processor_chain(source: Settings) -> list[Processor]:
     processors: list[Processor] = [

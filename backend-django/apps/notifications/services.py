@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
+
 from apps.accounts.models import User
 from apps.core.exceptions import NotFoundError
-from apps.core.logging_config import get_logger
 from apps.notifications import repositories
 from apps.notifications.models import Notification
 from apps.notifications.schemas import NotificationListResponse, NotificationResponse
+from config.logging import get_logger
 
 log = get_logger(__name__)
 
@@ -36,6 +38,11 @@ async def list_notifications(user: User, *, unread_only: bool = False) -> Notifi
         unread_count=await repositories.unread_count(user),
     )
 
+async def subscribe_to_notifications(user: User):
+    snapshot = await list_notifications(user)
+    yield f"data: {json.dumps({'action': 'SYNC', **snapshot.model_dump()}, default=str)}\n\n"
+    async for chunk in repositories.subscribe_to_users_notifications(user.id):
+        yield chunk
 
 async def mark_read(user: User, notification_id: str) -> NotificationResponse:
     notification = await repositories.get_for_user(user, notification_id)

@@ -13,11 +13,14 @@ async def get_by_email(email: str) -> User | None:
     normalized = User.objects.normalize_email(email)
     return await users().filter(email__iexact=normalized).afirst()
 
+
 async def get_by_identifier(identifier: str) -> User | None:
-    return await users().filter(Q(email__iexact=identifier) | Q(username__iexact=identifier)).afirst()
+    return (
+        await users().filter(Q(email__iexact=identifier) | Q(username__iexact=identifier)).afirst()
+    )
 
 
-async  def get_by_id(user_id: str) -> User | None:
+async def get_by_id(user_id: str) -> User | None:
     return await users().filter(id=user_id).afirst()
 
 

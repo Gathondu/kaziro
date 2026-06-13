@@ -7,17 +7,20 @@ from django.apps import AppConfig
 from django_asgi_lifespan.register import register_lifespan_manager
 from django_asgi_lifespan.types import LifespanManager
 
-from apps.core.langsmith_tracing import apply_langsmith_tracing_from_settings
-from apps.core.logging_config import configure_logging, get_logger
+from config.langsmith import apply_langsmith_from_settings
+from config.logging import configure_logging, get_logger
+from config.redis import get_redis
 from config.settings import get_settings
 
+configure_logging()
+
 log = get_logger(__name__)
+
 
 @asynccontextmanager
 async def _lifespan_manager() -> LifespanManager:
     settings = get_settings()
-    configure_logging(settings)
-    apply_langsmith_tracing_from_settings(settings)
+    apply_langsmith_from_settings(settings)
     log.info(
         "app.startup",
         app_env=str(settings.APP_ENV),
@@ -28,7 +31,10 @@ async def _lifespan_manager() -> LifespanManager:
     try:
         yield state
     finally:
+        client = get_redis()
+        await client.aclose()
         log.info("app.shutdown")
+
 
 class KaziroAppConfig(AppConfig):
     name = "config"

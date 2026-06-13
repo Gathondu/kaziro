@@ -12,7 +12,7 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Final, Literal
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import dj_database_url
@@ -158,6 +158,16 @@ class Settings(BaseSettings):
     CELERY_TASK_ALWAYS_EAGER: bool = False
     CELERY_TASK_TIME_LIMIT: int = 1800
     CELERY_TASK_SOFT_TIME_LIMIT: int = 1500
+    CELERY_RETRY_KWARGS: Final[dict[str, Any]] = {
+        "autoretry_for": (Exception,),
+        "retry_backoff": True,
+        "retry_backoff_max": 600,
+        "retry_jitter": True,
+        "max_retries": 3,
+    }
+    USER_CHANNEL_PREFIX: str = Field(
+        default="user:", description="PREFIX appended to a user channel"
+    )
 
     # -- LangSmith ----------------------------------------------------------
     LANGSMITH_TRACING: bool = False
@@ -185,28 +195,23 @@ class Settings(BaseSettings):
         "apps.notifications",
     ]
     MIDDLEWARE: list[str] = [
-    # CORS
-    "corsheaders.middleware.CorsMiddleware",
-    "django.middleware.security.SecurityMiddleware",
-
-    # Lifespan middleware
-    "django_asgi_lifespan.middleware.LifespanStateMiddleware",
-
-    # Standard Django Web Core layers
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-
-    # Authentication
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-
-    # Custom Middlewares
-    "apps.core.middlewares.RequestLoggingMiddleware",
-
-    # SQL Query Logger sits at the very bottom, closest to the actual view execution
-    "apps.core.middlewares.DatabaseQueryLoggerMiddleware",
+        # CORS
+        "corsheaders.middleware.CorsMiddleware",
+        "django.middleware.security.SecurityMiddleware",
+        # Lifespan middleware
+        "django_asgi_lifespan.middleware.LifespanStateMiddleware",
+        # Standard Django Web Core layers
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.common.CommonMiddleware",
+        "django.middleware.csrf.CsrfViewMiddleware",
+        # Authentication
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+        # Custom Middlewares
+        "apps.core.middlewares.RequestLoggingMiddleware",
+        # SQL Query Logger sits at the very bottom, closest to the actual view execution
+        "apps.core.middlewares.DatabaseQueryLoggerMiddleware",
     ]
     TEMPLATES: list[dict[str, Any]] = [
         {
@@ -305,6 +310,10 @@ class Settings(BaseSettings):
             return str(self.CELERY_RESULT_BACKEND)
         return _redis_url_with_db(str(self.REDIS_URL), self.REDIS_RESULT_DB)
 
+    @property
+    def redis_pub_sub_url(self) -> str:
+        return _redis_url_with_db(str(self.REDIS_URL), self.REDIS_PUBSUB_DB)
+
 
 def _redis_url_with_db(url: str, db: int) -> str:
     parsed = urlsplit(url)
@@ -352,7 +361,9 @@ settings: Settings = get_settings()
 
 
 def _django_setting_exports(source: Settings) -> dict[str, Any]:
-    exports = {name: getattr(source, name) for name in source.__class__.model_fields if name.isupper()}
+    exports = {
+        name: getattr(source, name) for name in source.__class__.model_fields if name.isupper()
+    }
     exports["SECRET_KEY"] = source.SECRET_KEY.get_secret_value()
     exports["APP_ENV"] = source.APP_ENV.value
     exports["DATABASES"] = source.databases

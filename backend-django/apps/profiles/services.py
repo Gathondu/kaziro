@@ -5,10 +5,10 @@ from django.core.files.uploadedfile import UploadedFile
 
 from apps.accounts.models import User
 from apps.core.exceptions import BadRequestError, NotFoundError
-from apps.core.logging_config import get_logger
 from apps.profiles import repositories
 from apps.profiles.models import UserProfile
 from apps.profiles.schemas import CvUploadResponse, ProfilePayload, ProfileResponse
+from config.logging import get_logger
 
 log = get_logger(__name__)
 
@@ -57,7 +57,7 @@ async def upload_cv(user: User, file: UploadedFile) -> CvUploadResponse:
 def to_response(profile: UserProfile) -> ProfileResponse:
     return ProfileResponse(
         id=profile.id,
-        user_id=profile.user_id, # type: ignore
+        user_id=profile.user_id,  # type: ignore
         full_name=profile.full_name,
         professional_summary=profile.professional_summary or None,
         skills=profile.skills or [],
@@ -76,7 +76,7 @@ def _clean_skills(skills: list[str]) -> list[str]:
 
 
 def _is_pdf(file: UploadedFile) -> bool:
-    return file.content_type == "application/pdf" or file.name.lower().endswith(".pdf") # type: ignore
+    return file.content_type == "application/pdf" or file.name.lower().endswith(".pdf")  # type: ignore
 
 
 __all__ = ["get_profile", "to_response", "upload_cv", "upsert_profile"]

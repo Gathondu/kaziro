@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from apps.accounts.models import User
 from apps.core.exceptions import NotFoundError
-from apps.core.logging_config import get_logger
 from apps.jobs import repositories
 from apps.jobs.models import JobSearchConfig
 from apps.jobs.schemas import (
@@ -13,6 +12,7 @@ from apps.jobs.schemas import (
 )
 from apps.notifications.services import create_notification
 from apps.notifications.tasks import create_notification_task
+from config.logging import get_logger
 
 log = get_logger(__name__)
 
@@ -50,7 +50,7 @@ async def run_config(user: User, config_id: str) -> RunConfigResponse:
 def to_response(config: JobSearchConfig) -> JobConfigResponse:
     return JobConfigResponse(
         id=config.id,
-        user_id=config.user_id, # type: ignore
+        user_id=config.user_id,  # type: ignore
         name=config.name or None,
         keywords=config.keywords or [],
         location=config.location or None,
@@ -74,7 +74,7 @@ async def _enqueue_notification(user: User, config: JobSearchConfig) -> str:
         {"type": "fetch_queued", "config_id": str(config.id)},
     )
     try:
-        return str(object=await create_notification_task.delay(*args).id)
+        return str(object=create_notification_task.delay(*args).id)
     except Exception:
         log.warning("job_config.run_enqueue_failed", user_id=str(user.id), exc_info=True)
         notification = await create_notification(
@@ -82,7 +82,7 @@ async def _enqueue_notification(user: User, config: JobSearchConfig) -> str:
             event_type=args[1],
             title=args[2],
             body=args[3],
-            payload=args[4], # type: ignore
+            payload=args[4],  # type: ignore
         )
         return str(notification.id)
 

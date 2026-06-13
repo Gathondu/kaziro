@@ -29,7 +29,7 @@ from apps.core.exceptions import (
     UnauthorizedError,
     UpstreamError,
 )
-from apps.core.logging_config import get_logger
+from config.logging import get_logger
 from config.settings import settings
 
 log = get_logger(__name__)
@@ -48,6 +48,7 @@ async def signup(*, email: str, password: str, username: str) -> SignupResponse:
     _validate_password(password)
     token = _new_confirmation_token()
     expires_at = timezone.now() + timedelta(hours=settings.EMAIL_CONFIRMATION_TTL_HOURS)
+
     def _create_user_sync() -> User:
         try:
             with transaction.atomic():
@@ -64,6 +65,7 @@ async def signup(*, email: str, password: str, username: str) -> SignupResponse:
             raise ConflictError(
                 "An account already exists for this email.", code="email_exists"
             ) from exc
+
     create_user_async = sync_to_async(_create_user_sync, thread_sensitive=True)
     user = await create_user_async()
 
@@ -82,7 +84,10 @@ async def login(*, identifier: str, password: str) -> TokenData:
     if user is None or not await user.acheck_password(password):
         raise UnauthorizedError("Invalid username, email or password.", code="invalid_credentials")
     if not getattr(user, "email_confirmed_at", None):
-        raise ForbiddenError("Confirm your email before signing in. Use email instead of username to allow a confirmation link to be resent.", code="email_not_confirmed")
+        raise ForbiddenError(
+            "Confirm your email before signing in. Use email instead of username to allow a confirmation link to be resent.",
+            code="email_not_confirmed",
+        )
     if not user.is_active:
         raise ForbiddenError("This account is inactive.", code="account_inactive")
     log.info("auth.login.succeeded", user_id=str(user.pk))

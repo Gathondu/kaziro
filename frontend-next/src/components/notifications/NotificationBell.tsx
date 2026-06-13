@@ -1,12 +1,14 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck } from "lucide-react";
-import { useEffect, useRef } from "react";
-import {
-  listNotifications,
-  markAllNotificationsRead,
-} from "@/lib/api/notifications";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { markAllNotificationsRead, subscribe } from "@/lib/api/notifications";
+import type {
+  NotificationItem,
+  NotificationListResponse,
+  NotificationStreamPayload,
+} from "@/lib/api/types";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useToastStore } from "@/lib/stores/toast";
 
@@ -14,34 +16,128 @@ export function NotificationBell() {
   const token = useAuthStore((state) => state.token?.access_token ?? null);
   const queryClient = useQueryClient();
   const pushToast = useToastStore((state) => state.push);
-  const seenIds = useRef(new Set<string>());
+  const initialNotifications =
+    queryClient.getQueryData<NotificationListResponse>(["notifications", "all"])
+      ?.items ?? [];
+  const seenIds = useRef(new Set(initialNotifications.map((item) => item.id)));
+  const [notifications, setNotifications] =
+    useState<NotificationItem[]>(initialNotifications);
+  const [viewAll, setViewAll] = useState<boolean>(false);
 
-  const notifications = useQuery({
-    queryKey: ["notifications", "unread"],
-    queryFn: () => listNotifications(token ?? "", true),
-    enabled: Boolean(token),
-    refetchInterval: 15_000,
-  });
+  const unreadCount = notifications.filter(
+    (notification) => !notification.read_at,
+  ).length;
 
   const markAll = useMutation({
     mutationFn: () => markAllNotificationsRead(token ?? ""),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    },
   });
 
-  useEffect(() => {
-    const items = notifications.data?.items ?? [];
-    for (const item of items) {
-      if (seenIds.current.has(item.id)) {
-        continue;
-      }
-      seenIds.current.add(item.id);
-      pushToast("info", item.title);
-    }
-  }, [notifications.data?.items, pushToast]);
+  const updateNotificationCache = useCallback(
+    (updater: (current: NotificationItem[]) => NotificationItem[]) => {
+      setNotifications((current) => {
+        const next = updater(current);
+        const unread_count = next.filter(
+          (notification) => !notification.read_at,
+        ).length;
 
-  const unreadCount = notifications.data?.unread_count ?? 0;
+        queryClient.setQueryData<NotificationListResponse>(
+          ["notifications", "all"],
+          {
+            items: next,
+            unread_count,
+          },
+        );
+
+        return next;
+      });
+    },
+    [queryClient],
+  );
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    void subscribe(
+      token,
+      controller.signal,
+      (payload: NotificationStreamPayload) => {
+        if (payload.action === "SYNC") {
+          setNotifications(payload.items);
+          seenIds.current = new Set(payload.items.map((item) => item.id));
+          queryClient.setQueryData<NotificationListResponse>(
+            ["notifications", "all"],
+            {
+              items: payload.items,
+              unread_count: payload.unread_count,
+            },
+          );
+          return;
+        }
+
+        if (payload.action === "NEW_ALERT") {
+          const nextNotification = payload.notification;
+
+          updateNotificationCache((current) => {
+            const filtered = current.filter(
+              (item) => item.id !== nextNotification.id,
+            );
+            return [nextNotification, ...filtered];
+          });
+
+          if (!seenIds.current.has(nextNotification.id)) {
+            seenIds.current.add(nextNotification.id);
+            pushToast("info", payload.message ?? nextNotification.title);
+          }
+          return;
+        }
+
+        if (payload.action === "MARK_SINGLE_READ") {
+          updateNotificationCache((current) =>
+            current.map((notification) =>
+              notification.id === payload.notification_id
+                ? {
+                    ...notification,
+                    read_at: notification.read_at ?? new Date().toISOString(),
+                  }
+                : notification,
+            ),
+          );
+          return;
+        }
+
+        if (payload.action === "MARK_ALL_READ") {
+          const readAt = new Date().toISOString();
+          updateNotificationCache((current) =>
+            current.map((notification) =>
+              notification.read_at
+                ? notification
+                : { ...notification, read_at: readAt },
+            ),
+          );
+        }
+      },
+      (error) => {
+        pushToast("error", error.message);
+      },
+    ).catch(() => undefined);
+
+    return () => {
+      controller.abort();
+    };
+  }, [pushToast, queryClient, token, updateNotificationCache]);
+
+  const handleViewAll = () => {
+    setViewAll((prev) => !prev);
+  };
+
+  const allNotifications = notifications;
+  const notificationsToView = viewAll
+    ? allNotifications
+    : allNotifications.filter((notification) => !notification.read_at);
 
   return (
     <div className="dropdown dropdown-end">
@@ -64,23 +160,30 @@ export function NotificationBell() {
       >
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="font-semibold">Notifications</p>
-          <button
-            className="btn btn-ghost btn-xs gap-1"
-            disabled={unreadCount === 0 || markAll.isPending}
-            onClick={() => markAll.mutate()}
-            type="button"
-          >
-            <CheckCheck className="size-3.5" aria-hidden="true" />
-            Read
-          </button>
+          <div>
+            <button
+              className="btn btn-ghost btn-xs gap-1"
+              disabled={unreadCount === 0 || markAll.isPending}
+              onClick={() => markAll.mutate()}
+              type="button"
+            >
+              <CheckCheck className="size-3.5" aria-hidden="true" />
+              Read
+            </button>
+            <button className="btn btn-ghost btn-xs" onClick={handleViewAll}>
+              {viewAll ? "Unread" : "All"}
+            </button>
+          </div>
         </div>
         <div className="max-h-72 space-y-2 overflow-y-auto scroll-region">
-          {(notifications.data?.items ?? []).length === 0 ? (
+          {notificationsToView.length === 0 ? (
             <p className="py-6 text-center text-sm text-base-content/65">
-              No unread notifications
+              {allNotifications.length === 0
+                ? "No notifications yet"
+                : "No unread notifications"}
             </p>
           ) : (
-            notifications.data?.items.map((item) => (
+            notificationsToView.map((item) => (
               <article className="rounded-xl bg-base-200 p-3" key={item.id}>
                 <p className="text-sm font-semibold">{item.title}</p>
                 <p className="mt-1 text-xs leading-relaxed text-base-content/70">

@@ -7,6 +7,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from apps.accounts.models import User
+
 
 class Notification(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -22,6 +24,10 @@ class Notification(models.Model):
     read_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
+
+    @classmethod
+    def user_channel(cls, user_id: str):
+        return User.channel_for_user(user_id, Notification())
     class Meta:
         ordering: ClassVar[tuple[str, ...]] = ("-created_at",)
         indexes: ClassVar[tuple[models.Index, ...]] = (

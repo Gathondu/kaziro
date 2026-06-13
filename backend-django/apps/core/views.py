@@ -4,8 +4,8 @@ from django.db import connections
 from django.db.utils import DatabaseError
 from django.http import HttpRequest, JsonResponse
 
-from apps.core.logging_config import get_logger
 from apps.core.schemas import envelope, error_envelope
+from config.logging import get_logger
 
 log = get_logger(__name__)
 

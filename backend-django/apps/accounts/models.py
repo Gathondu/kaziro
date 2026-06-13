@@ -7,6 +7,9 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
+from config.settings import get_settings
+
+settings = get_settings()
 
 class User(AbstractUser):
     """Django-owned user model using UUIDs compatible with existing Kaziro rows."""
@@ -22,6 +25,11 @@ class User(AbstractUser):
     email_confirmation_expires_at = models.DateTimeField(blank=True, null=True)
 
     REQUIRED_FIELDS: ClassVar[tuple[str, ...]] = ("email",)
+
+
+    @classmethod
+    def channel_for_user(cls, user_id: str | uuid.UUID, model: models.Model) -> str:
+        return f"{settings.USER_CHANNEL_PREFIX}{user_id}{f':{model.__class__.__name__.lower()}'}"
 
     @property
     def is_email_confirmed(self) -> bool:

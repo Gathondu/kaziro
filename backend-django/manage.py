@@ -8,13 +8,18 @@ import sys
 
 from django.core.management import execute_from_command_line
 
-from apps.core.logging_config import configure_logging
+from config.langsmith import apply_langsmith_from_settings
+from config.logging import configure_logging
+from config.settings import get_settings
 
 
 def main() -> None:
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
     configure_logging()
+    settings = get_settings()
+    apply_langsmith_from_settings(settings)
+
     execute_from_command_line(sys.argv)
 
 
