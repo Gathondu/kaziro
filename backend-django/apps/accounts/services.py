@@ -113,7 +113,7 @@ async def confirm_email(token: str) -> ConfirmationResponse:
             "email_confirmation_expires_at",
         ]
     )
-    await _create_welcome_notification(user)
+    await _create_welcome_notification(user.id)
     log.info("auth.email_confirmed", user_id=str(user.id))
     return ConfirmationResponse(
         user_id=user.id,
@@ -211,11 +211,11 @@ async def _send_confirmation(user: User, token: str) -> bool:
     return result.sent
 
 
-async def _create_welcome_notification(user: User) -> None:
-    from apps.notifications.services import create_notification
+async def _create_welcome_notification(user_id: str) -> None:
+    from apps.notifications.tasks import create_notification_task
 
-    await create_notification(
-        user=user,
+    await create_notification_task.delay(
+        user=user_id,
         event_type="account_confirmed",
         title="Your account is confirmed",
         body="Welcome to Kaziro. Finish onboarding to start your first job search.",

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import uuid
 from typing import Any
 
 from apps.accounts.models import User
@@ -81,10 +80,10 @@ def to_response(notification: Notification) -> NotificationResponse:
         created_at=notification.created_at,
     )
 
-async def notify_user(user_id: str | uuid.UUID, payload: dict[str, Any]) -> int:
+async def notify_user(user_id: str, payload: dict[str, Any]) -> int:
     """Publish ``payload`` to the user's channel.
     """
-    channel = Notification().user_channel(str(user_id))
+    channel = Notification().user_channel(user_id)
     body = json.dumps(payload, default=str)
     redis_delivered = 0
 

@@ -28,7 +28,7 @@ class User(AbstractUser):
 
 
     @classmethod
-    def channel_for_user(cls, user_id: str | uuid.UUID, model: models.Model) -> str:
+    def channel_for_user(cls, user_id: str, model: models.Model) -> str:
         return f"{settings.USER_CHANNEL_PREFIX}{user_id}{f':{model.__class__.__name__.lower()}'}"
 
     @property

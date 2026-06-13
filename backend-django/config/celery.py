@@ -38,12 +38,6 @@ ALL_QUEUES: Final[tuple[str, ...]] = (
     QUEUE_NOTIFICATION,
 )
 
-# TASK_ROUTES: Final[dict[str, dict[str, str]]] = {
-#     "apps.notifications.create_notification":{"queue": QUEUE_NOTIFICATION},
-#     "apps.notifications.mark_all_read":{"queue": QUEUE_NOTIFICATION},
-
-# }
-
 
 def run_async[T](factory: Callable[[], Coroutine[Any, Any, T]]) -> T:
     return asyncio.run(factory())
