@@ -54,11 +54,10 @@ async def unsubscribe(channel: str) -> None:
         client = _pubsub_client()
         await client.unsubscribe(channel)
         await client.aclose()
-        await close_redis()
-        log.info("redis.resource.cleanup", channel=channel)
+        log.info("redis.pubsub.resource_cleanup", channel=channel)
     except Exception as exc:
         log.error(
-            "redis.resource.cleanup_failed",
+            "redis.pubsub.resource_cleanup_failed",
             error=exc.__class__.__name__,
             message=str(exc),
             channel=channel,
@@ -70,11 +69,11 @@ async def publish(channel: str, payload: str) -> int:
     log.info("redis.pubsub.subscribed", channel=channel, subscribers=subscribers)
     return int(subscribers)
 
-async def get_message(client: PubSub, channel: str):
+async def get_message(client: PubSub, channel: str, shutdown_event: asyncio.Event | None = None):
     try:
         yield ": initial connection established\n\n"
-        while True:
-            message = await client.get_message(ignore_subscribe_messages=True, timeout=15.0)
+        while shutdown_event is None or not shutdown_event.is_set():
+            message = await client.get_message(ignore_subscribe_messages=True, timeout=1.0)
 
             if message:
                 payload = message['data']

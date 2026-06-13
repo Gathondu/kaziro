@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 
 from apps.accounts.models import User
@@ -38,10 +39,10 @@ async def list_notifications(user: User, *, unread_only: bool = False) -> Notifi
         unread_count=await repositories.unread_count(user),
     )
 
-async def subscribe_to_notifications(user: User):
+async def subscribe_to_notifications(user: User, shutdown_event: asyncio.Event | None = None):
     snapshot = await list_notifications(user)
     yield f"data: {json.dumps({'action': 'SYNC', **snapshot.model_dump()}, default=str)}\n\n"
-    async for chunk in repositories.subscribe_to_users_notifications(user.id):
+    async for chunk in repositories.subscribe_to_users_notifications(user.id, shutdown_event):
         yield chunk
 
 async def mark_read(user: User, notification_id: str) -> NotificationResponse:

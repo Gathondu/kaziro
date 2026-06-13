@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from typing import Any, Final
 
@@ -27,10 +28,18 @@ async def _lifespan_manager() -> LifespanManager:
         log_format=str(settings.LOG_FORMAT),
         log_level=settings.LOG_LEVEL,
     )
-    state: Final[dict[str, Any]] = {}
+
+    shutdown_event = asyncio.Event()
+
+    state: Final[dict[str, Any]] = {
+        "shutdown_event": shutdown_event,
+    }
     try:
         yield state
     finally:
+        log.info("app.shutdown.initiating")
+        shutdown_event.set()
+
         client = get_redis()
         await client.aclose()
         log.info("app.shutdown")

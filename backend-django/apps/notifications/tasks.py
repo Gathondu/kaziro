@@ -28,14 +28,14 @@ async def notify_user(user_id: str | uuid.UUID, payload: dict[str, Any]) -> int:
 
     try:
         redis_delivered = await publish(channel, body)
-        log.info(
+        await log.ainfo(
             "notifications.published",
             channel=channel,
             event_type=payload.get("action") or payload.get("type"),
             delivered=redis_delivered
         )
     except Exception as exc:
-        log.error(
+        await log.aerror(
             "notification.publish_failed",
             error=exc.__class__.__name__,
             message=str(exc),
@@ -77,14 +77,14 @@ def create_notification_task(
                     "notification": to_response(notification).model_dump(),
                 },
             )
-            log.info(
+            await log.ainfo(
                 event="notification.task.create",
                 event_type=event_type,
                 retry=self.request.retries + 1,
             )
             return str(notification.id)
         except Exception as exc:
-            log.error(
+            await log.aerror(
                 event="notification.task.create_failed",
                 error=exc.__class__.__name__,
                 message=str(exc),
@@ -102,20 +102,19 @@ def create_notification_task(
 def mark_all_read_task(self, user_id: str) -> None:
     async def _run():
         try:
-            notifications = Notification.objects.filter(user_id=user_id, read_at=None)
-            [await notification.mark_read() for notification in notifications ]
+            await Notification.objects.filter(user_id=user_id, read_at=None).aupdate(read_at=datetime.now(UTC))
             channel = Notification().user_channel(user_id=user_id)
             payload = json.dumps({
                 "action": "MARK_ALL_READ",
                 "message": "All notifications marked as read."
             })
             await publish(channel, payload)
-            log.info(
+            await log.ainfo(
                 event="notification.task.mark_all_read",
                 retry=self.request.retries + 1,
             )
         except Exception as exc:
-            log.error(
+            await log.aerror(
                 "notifications.task.mark_all_read_failed",
                 error=exc.__class__.__name__,
                 message=str(exc),
@@ -139,12 +138,12 @@ def mark_single_read_task(self, user_id: str, notification_id: str) -> None:
                 "notification_id": notification_id
             })
             await publish(channel, payload)
-            log.info(
+            await log.ainfo(
                 event="notification.task.mark_single_read",
                 retry=self.request.retries + 1,
             )
         except Exception as exc:
-            log.error(
+            await log.aerror(
                 "notifications.task.mark_single_read_failed",
                 error=exc.__class__.__name__,
                 message=str(exc),

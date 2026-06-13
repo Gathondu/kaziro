@@ -38,11 +38,11 @@ ALL_QUEUES: Final[tuple[str, ...]] = (
     QUEUE_NOTIFICATION,
 )
 
-TASK_ROUTES: Final[dict[str, dict[str, str]]] = {
-    "apps.notifications.create_notification":{"queue": QUEUE_NOTIFICATION},
-    "apps.notifications.mark_all_read":{"queue": QUEUE_NOTIFICATION},
+# TASK_ROUTES: Final[dict[str, dict[str, str]]] = {
+#     "apps.notifications.create_notification":{"queue": QUEUE_NOTIFICATION},
+#     "apps.notifications.mark_all_read":{"queue": QUEUE_NOTIFICATION},
 
-}
+# }
 
 
 def run_async[T](factory: Callable[[], Coroutine[Any, Any, T]]) -> T:
@@ -52,7 +52,7 @@ celery_app = Celery("kaziro_django")
 celery_app.config_from_object("django.conf:settings", namespace="CELERY")
 celery_app.conf.update(
     task_default_queue=QUEUE_DEFAULT,
-    task_routes=TASK_ROUTES,
+    # task_routes=TASK_ROUTES,
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",

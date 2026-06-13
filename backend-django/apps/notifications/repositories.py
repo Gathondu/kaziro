@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from apps.accounts.models import User
 from apps.notifications.models import Notification
 from config.redis import get_message, subscribe
@@ -30,10 +32,10 @@ async def list_for_user(
         queryset = queryset.filter(read_at__isnull=True)
     return [notification async for notification in queryset.order_by("-created_at")[:limit]]
 
-async def subscribe_to_users_notifications(user_id: str):
+async def subscribe_to_users_notifications(user_id: str, shutdown_event: asyncio.Event | None = None):
     channel = Notification().user_channel(user_id)
     client = await subscribe(channel)
-    async for chunk in get_message(client, channel):
+    async for chunk in get_message(client, channel, shutdown_event):
         yield chunk
 
 async def unread_count(user: User) -> int:

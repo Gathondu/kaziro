@@ -9,7 +9,7 @@ from apps.accounts.auth import jwt_auth
 from apps.accounts.models import User
 from apps.core.schemas import Envelope, envelope
 from apps.notifications import services
-from apps.notifications.schemas import NotificationListResponse, NotificationResponse
+from apps.notifications.schemas import NotificationListResponse
 from apps.notifications.tasks import mark_all_read_task, mark_single_read_task
 
 notifications_router = Router(tags=["notifications"])
@@ -26,8 +26,12 @@ async def list_notifications(
 
 @notifications_router.get("/stream", auth=jwt_auth)
 async def stream_response(request: HttpRequest) -> StreamingHttpResponse:
+    asgi_state = request.META.get("asgi.state", {})
+    shutdown_event = asgi_state.get("shutdown_event")
     response = StreamingHttpResponse(
-        services.subscribe_to_notifications(cast(User, request.auth)), # type: ignore
+        services.subscribe_to_notifications(
+            cast(User, request.auth), # type: ignore
+            shutdown_event),
         content_type="text/event-stream"
     )
     # Performance and architectural headers for production load balancers (Nginx, AWS ALB)
@@ -37,14 +41,14 @@ async def stream_response(request: HttpRequest) -> StreamingHttpResponse:
     return response
 
 @notifications_router.post(
-    "/{notification_id}/read", auth=jwt_auth, response=Envelope[NotificationResponse]
+    "/{notification_id}/read", auth=jwt_auth, response=Envelope[dict[str, str]]
 )
 def mark_read(request: HttpRequest, notification_id: str) -> dict[str, object]:
     user = request.auth # type: ignore
     mark_single_read_task.delay(user.id, notification_id) # type: ignore
     return envelope({"status": "processing"})
 
-@notifications_router.post("/read-all", auth=jwt_auth, response=Envelope[NotificationListResponse])
+@notifications_router.post("/read-all", auth=jwt_auth, response=Envelope[dict[str, str]])
 def mark_all_read(request: HttpRequest) -> dict[str, object]:
 
     user = request.auth # type: ignore
