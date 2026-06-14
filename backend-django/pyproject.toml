@@ -24,6 +24,7 @@ dependencies = [
     "resend[async]>=2.30.1",
     "uvicorn>=0.49.0",
     "django-asgi-lifespan>=0.5.2",
+    "whitenoise>=6.12.0",
 ]
 
 [dependency-groups]

@@ -13,7 +13,13 @@ from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Any, Final, Literal
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import (
+    SplitResult,
+    parse_qsl,
+    urlencode,
+    urlsplit,
+    urlunsplit,
+)
 
 import dj_database_url
 from dotenv import find_dotenv
@@ -28,7 +34,9 @@ from pydantic import (
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 _BASE_DIR: Path = Path(__file__).resolve().parent.parent
-_ENV_FILE: str = find_dotenv(filename=".env", usecwd=True, raise_error_if_not_found=False)
+_ENV_FILE: str = find_dotenv(
+    filename=".env", usecwd=True, raise_error_if_not_found=False
+)
 
 
 class AppEnv(StrEnum):
@@ -86,7 +94,9 @@ class Settings(BaseSettings):
         ],
         description="Comma-separated browser origins allowed to call the API.",
     )
-    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = (
+        "INFO"
+    )
     LOG_FORMAT: Literal["console", "json"] = "console"
     FRONTEND_URL: AnyHttpUrl = Field(
         default=AnyHttpUrl("http://localhost:3000"),
@@ -111,13 +121,22 @@ class Settings(BaseSettings):
     TIME_ZONE: str = "Africa/Nairobi"
     USE_I18N: bool = True
     USE_TZ: bool = True
+
+    # -- Static ----------------------------------------------------------------
     STATIC_URL: str = "static/"
     STATIC_ROOT: Path = _BASE_DIR / "staticfiles"
+    STORAGES: dict[str, dict[str, str]] = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
+    # -- Media -----------------------------------------------------------------
     MEDIA_URL: str = "media/"
     MEDIA_ROOT: Path = _BASE_DIR / "media"
     DEFAULT_AUTO_FIELD: str = "django.db.models.BigAutoField"
 
-    # -- Database ----------------------------------------------------------
+    # -- Database --------------------------------------------------------------
     DJANGO_DATABASE_URL: str | None = Field(
         default=None,
         description="Django database URL. Falls back to DATABASE_URL outside tests.",
@@ -174,6 +193,7 @@ class Settings(BaseSettings):
 
     # -- Django constants --------------------------------------------------
     INSTALLED_APPS: list[str] = [
+        "whitenoise.runserver_nostatic",
         "django.contrib.admin",
         "django.contrib.auth",
         "django.contrib.contenttypes",
@@ -195,6 +215,8 @@ class Settings(BaseSettings):
         # CORS
         "corsheaders.middleware.CorsMiddleware",
         "django.middleware.security.SecurityMiddleware",
+        # Static
+        "whitenoise.middleware.WhiteNoiseMiddleware",
         # Lifespan middleware
         "django_asgi_lifespan.middleware.LifespanStateMiddleware",
         # Standard Django Web Core layers
@@ -225,27 +247,40 @@ class Settings(BaseSettings):
         },
     ]
     AUTH_PASSWORD_VALIDATORS: list[dict[str, str]] = [
-        {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-        {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-        {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-        {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+        {
+            "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+        },
+        {
+            "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"
+        },
+        {
+            "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"
+        },
+        {
+            "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"
+        },
     ]
 
     @field_validator("ALLOWED_HOSTS", mode="before")
     @classmethod
     def _split_csv_hosts(cls, value: object) -> object:
         if isinstance(value, str):
-            return [item.strip() for item in value.split(",") if item.strip()]
+            return list(filter(None, map(str.strip, value.split(","))))
         return value
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def _split_csv_origins(cls, value: object) -> object:
         if isinstance(value, str) and not value.startswith("["):
-            return [item.strip().rstrip("/") for item in value.split(",") if item.strip()]
+            cleaned_items: filter[str] = filter(
+                None, map(str.strip, value.split(","))
+            )
+            return list(map(lambda item: item.rstrip("/"), cleaned_items))
         return value
 
-    @field_validator("CELERY_BROKER_URL", "CELERY_RESULT_BACKEND", mode="before")
+    @field_validator(
+        "CELERY_BROKER_URL", "CELERY_RESULT_BACKEND", mode="before"
+    )
     @classmethod
     def _normalize_optional_dsn(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():
@@ -281,7 +316,9 @@ class Settings(BaseSettings):
 
     @property
     def cors_allowed_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.CORS_ORIGINS]
+        return list(
+            map(lambda origin: str(origin).rstrip("/"), self.CORS_ORIGINS)
+        )
 
     @property
     def frontend_url(self) -> str:
@@ -313,19 +350,23 @@ class Settings(BaseSettings):
 
 
 def _redis_url_with_db(url: str, db: int) -> str:
-    parsed = urlsplit(url)
-    base_path = parsed.path or "/0"
+    parsed: SplitResult = urlsplit(url)
+    base_path: str = parsed.path or "/0"
     head, sep, _tail = base_path.rpartition("/")
-    target_db = 0 if parsed.scheme == "rediss" else db
-    db_path = f"{head}/{target_db}" if sep else f"/{target_db}"
+    target_db: int = 0 if parsed.scheme == "rediss" else db
+    db_path: str = f"{head}/{target_db}" if sep else f"/{target_db}"
 
-    query_pairs = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query_pairs: dict[str, str] = dict(
+        parse_qsl(parsed.query, keep_blank_values=True)
+    )
     if parsed.scheme == "rediss":
-        ssl_cert_reqs = query_pairs.get("ssl_cert_reqs")
+        ssl_cert_reqs: str | None = query_pairs.get("ssl_cert_reqs")
         if ssl_cert_reqs is None:
             query_pairs["ssl_cert_reqs"] = "required"
         else:
-            query_pairs["ssl_cert_reqs"] = _normalize_ssl_cert_reqs(ssl_cert_reqs)
+            query_pairs["ssl_cert_reqs"] = _normalize_ssl_cert_reqs(
+                ssl_cert_reqs
+            )
 
     return urlunsplit(
         (
@@ -339,8 +380,8 @@ def _redis_url_with_db(url: str, db: int) -> str:
 
 
 def _normalize_ssl_cert_reqs(value: str) -> str:
-    normalized = value.strip().lower()
-    mapping = {
+    normalized: str = value.strip().lower()
+    mapping: dict[str, str] = {
         "cert_required": "required",
         "cert_optional": "optional",
         "cert_none": "none",
@@ -358,9 +399,12 @@ settings: Settings = get_settings()
 
 
 def _django_setting_exports(source: Settings) -> dict[str, Any]:
-    exports = {
-        name: getattr(source, name) for name in source.__class__.model_fields if name.isupper()
-    }
+    exports: dict[str, Any] = dict(
+        map(
+            lambda name: (name, getattr(source, name)),
+            filter(str.isupper, source.__class__.model_fields),
+        )
+    )
     exports["SECRET_KEY"] = source.SECRET_KEY.get_secret_value()
     exports["APP_ENV"] = source.APP_ENV.value
     exports["DATABASES"] = source.databases

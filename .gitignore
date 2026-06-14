@@ -99,3 +99,6 @@ celerybeat-schedule.*.db-lock
 celerybeat-schedule.*.db-lock-shm
 celerybeat-schedule.*.db-lock-wal
 
+# --- Django -------------------------------------------------------------------
+staticfiles/
+media/
