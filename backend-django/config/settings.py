@@ -69,17 +69,14 @@ class Settings(BaseSettings):
     )
     SECRET_KEY: SecretStr = Field(
         default=...,
-        validation_alias=AliasChoices("DJANGO_SECRET_KEY", "SECRET_KEY"),
         description="Django secret key.",
     )
     DEBUG: bool = Field(
         default=False,
-        validation_alias="DJANGO_DEBUG",
         description="Django debug mode; do not enable in production.",
     )
     ALLOWED_HOSTS: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["localhost", "127.0.0.1", "0.0.0.0"],
-        validation_alias=AliasChoices("DJANGO_ALLOWED_HOSTS", "ALLOWED_HOSTS"),
         description="Comma-separated hostnames Django may serve.",
     )
     CORS_ORIGINS: Annotated[list[AnyHttpUrl], NoDecode] = Field(
@@ -87,7 +84,6 @@ class Settings(BaseSettings):
             AnyHttpUrl("http://localhost:3000"),
             AnyHttpUrl("http://127.0.0.1:3000"),
         ],
-        validation_alias=AliasChoices("DJANGO_CORS_ORIGINS", "CORS_ORIGINS"),
         description="Comma-separated browser origins allowed to call the API.",
     )
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
@@ -116,6 +112,7 @@ class Settings(BaseSettings):
     USE_I18N: bool = True
     USE_TZ: bool = True
     STATIC_URL: str = "static/"
+    STATIC_ROOT: Path = _BASE_DIR / "staticfiles"
     MEDIA_URL: str = "media/"
     MEDIA_ROOT: Path = _BASE_DIR / "media"
     DEFAULT_AUTO_FIELD: str = "django.db.models.BigAutoField"

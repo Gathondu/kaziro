@@ -99,8 +99,3 @@ celerybeat-schedule.*.db-lock
 celerybeat-schedule.*.db-lock-shm
 celerybeat-schedule.*.db-lock-wal
 
-# ----- Local planning (optional per clone) -----------------------------------
-PLAN.md
-
-
-#

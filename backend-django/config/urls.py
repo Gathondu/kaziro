@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from django.contrib import admin
-from django.urls import path
-
 from apps.core.api import api
 from apps.core.views import health, readiness
+from django.contrib import admin
+from django.urls import path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
