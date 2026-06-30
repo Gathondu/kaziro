@@ -3,7 +3,7 @@
 -- ``/docker-entrypoint-initdb.d`` against the default database).
 --
 -- Phase 0 only needs the ``pgvector`` extension; later migrations
--- (T1.x) introduce the application schema via Alembic.
+-- Application schema is introduced through Django migrations.
 
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;

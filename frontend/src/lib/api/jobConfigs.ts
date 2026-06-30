@@ -1,56 +1,44 @@
-import { apiFetch, apiFetchMeta } from './client';
-import { clampListLimit } from './limits';
-import type { JobConfig } from '$lib/types/jobConfig';
-import type { SchedulePreset } from '$lib/types/schedulePreset';
-
-export interface ListJobConfigsParams {
-	cursor?: string | null;
-	limit?: number;
-	active_only?: boolean;
-}
-
-function qc(p: ListJobConfigsParams): string {
-	const q = new URLSearchParams();
-	if (p.cursor) q.set('cursor', p.cursor);
-	if (p.limit != null) {
-		q.set('limit', String(clampListLimit(p.limit)));
-	}
-	if (p.active_only) q.set('active_only', 'true');
-	const s = q.toString();
-	return s ? `?${s}` : '';
-}
-
-export async function listSchedulePresets(): Promise<SchedulePreset[]> {
-	return apiFetch<SchedulePreset[]>('/api/v1/job-configs/schedule-presets');
-}
+import { apiClient } from "@/lib/api/client";
+import type {
+  JobConfigPayload,
+  JobConfigResponse,
+  RunConfigResponse,
+  SchedulePreset,
+} from "@/lib/api/types";
 
 export async function listJobConfigs(
-	params: ListJobConfigsParams
-): Promise<{ items: JobConfig[]; nextCursor: string | null }> {
-	const { data, nextCursor } = await apiFetchMeta<JobConfig[]>(`/api/v1/job-configs${qc(params)}`);
-	return { items: data, nextCursor };
+  token: string,
+): Promise<JobConfigResponse[]> {
+  return await apiClient.get<JobConfigResponse[]>("/api/v1/job-configs", token);
 }
 
-export function createJobConfig(body: Record<string, unknown>): Promise<JobConfig> {
-	return apiFetch<JobConfig>(`/api/v1/job-configs`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body)
-	});
+export async function listSchedulePresets(
+  token: string,
+): Promise<SchedulePreset[]> {
+  return await apiClient.get<SchedulePreset[]>(
+    "/api/v1/job-configs/schedule-presets",
+    token,
+  );
 }
 
-export function updateJobConfig(id: string, body: Record<string, unknown>): Promise<JobConfig> {
-	return apiFetch<JobConfig>(`/api/v1/job-configs/${id}`, {
-		method: 'PUT',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body)
-	});
+export async function createJobConfig(
+  token: string,
+  payload: JobConfigPayload,
+): Promise<JobConfigResponse> {
+  return await apiClient.post<JobConfigResponse>(
+    "/api/v1/job-configs",
+    payload,
+    token,
+  );
 }
 
-export function disableJobConfig(id: string): Promise<JobConfig> {
-	return apiFetch<JobConfig>(`/api/v1/job-configs/${id}`, { method: 'DELETE' });
-}
-
-export function runJobConfigPipeline(id: string): Promise<{ task_id: string }> {
-	return apiFetch<{ task_id: string }>(`/api/v1/job-configs/${id}/run`, { method: 'POST' });
+export async function runJobConfig(
+  token: string,
+  configId: string,
+): Promise<RunConfigResponse> {
+  return await apiClient.post<RunConfigResponse>(
+    `/api/v1/job-configs/${configId}/run`,
+    {},
+    token,
+  );
 }

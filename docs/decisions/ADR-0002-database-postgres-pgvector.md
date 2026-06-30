@@ -47,7 +47,7 @@ auth-integration for free.
 
 ### Positive consequences
 
-- Single source of truth — one DB, one migration story (Alembic).
+- Single source of truth: one database and one Django migration story.
 - Transactional writes across structured rows and vectors.
 - RLS policies enforce per-user isolation at the DB layer (no app-level
   bug can leak another user's data).

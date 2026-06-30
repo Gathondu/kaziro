@@ -32,8 +32,8 @@ Kaziro is not only a job board view. It is a pipeline: fetch jobs, evaluate them
 
 ### Slide bullets
 
-- Frontend: SvelteKit + TanStack Query + single WebSocket notification channel.
-- API: FastAPI with `/api/v1` resource routes and root `/auth/*` proxy routes.
+- Frontend: Next.js + TanStack Query + single WebSocket notification channel.
+- API: Django Ninja with `/api/v1` resource routes and root `/auth/*` proxy routes.
 - Async execution: Celery tasks orchestrate multi-stage agent workflows.
 - Data layer: PostgreSQL + pgvector; Redis for queueing, pub/sub, and rate limiting.
 - External integrations: RapidAPI (job fetch), Firecrawl (research), OpenRouter models.
@@ -43,8 +43,8 @@ Kaziro is not only a job board view. It is a pipeline: fetch jobs, evaluate them
 ```mermaid
 flowchart LR
   user[User]
-  fe[Frontend_SvelteKit]
-  api[FastAPI_API]
+  fe[Frontend_Next.js]
+  api[Django Ninja_API]
   ws[WS_Notifications]
   celery[Celery_Workers]
   agents[Agent_Pipeline]
@@ -82,7 +82,7 @@ Keep this simple for mixed audience: web app and API are synchronous entry point
 - **LangGraph agents + orchestrator**: explicit stage boundaries and recoverable flow.
 - **Celery + Redis**: reliable background execution with retries and scheduled runs.
 - **PostgreSQL + pgvector**: transactional data plus semantic capabilities in one store.
-- **SvelteKit + TanStack Query**: reactive UI with consistent server-state management.
+- **Next.js + TanStack Query**: reactive UI with consistent server-state management.
 - **Structured observability**: request IDs, stage logs, and notifications for user feedback.
 
 ### Diagram: Decision map
@@ -93,7 +93,7 @@ flowchart TD
   d1[LangGraph_for_stateful_multi_pass_agents]
   d2[Celery_Redis_for_async_orchestration]
   d3[Postgres_pgvector_for_data_and_similarity]
-  d4[SvelteKit_TanStack_for_responsive_UI]
+  d4[Next.js_TanStack_for_responsive_UI]
   d5[Structured_logging_and_metrics]
   outcome[Auditable_scalable_user_visible_pipeline]
 

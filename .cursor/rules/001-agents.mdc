@@ -6,7 +6,7 @@ alwaysApply: true
 
 # =====================
 
-# Applies to: backend/agents/\*_/_.py
+# Applies to: backend/apps/pipeline/\*_/_.py
 
 # These rules govern how LangGraph agents are written in the Kaziro codebase.
 
@@ -66,7 +66,7 @@ alwaysApply: true
 
 ## Naming Conventions
 
-- Agent files: `<role>_agent.py` (e.g., `evaluator_agent.py`)
+- Agent files: `<role>_agent.py` (e.g., `tasks.py`)
 - State classes: `<Role>State` (e.g., `EvaluatorState`)
 - Node functions: `<step>_node` (e.g., `pass1_draft_node`)
 - Routing functions: `route_after_<step>` (e.g., `route_after_parse`)
@@ -74,7 +74,7 @@ alwaysApply: true
 
 ## What NOT to do in agent files
 
-- ❌ Never import FastAPI, APIRouter, or any HTTP framework
+- ❌ Never import Django Ninja routers or any HTTP framework
 - ❌ Never call other agents — use the pipeline orchestrator
 - ❌ Never use `print()` — always `structlog`
 - ❌ Never hardcode user_id, job_id, or any IDs as literals

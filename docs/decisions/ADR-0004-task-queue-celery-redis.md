@@ -28,7 +28,7 @@ queues, observability, and Python integration.
 - Distinct queues for different SLOs (parser fast lane vs. document slow
   lane).
 - Observability via Flower + Prometheus exporters.
-- Plays well with FastAPI and SQLAlchemy.
+- Plays well with Django, Django Ninja, and the ORM.
 
 ## Considered options
 

@@ -27,16 +27,16 @@ updates:
       - "dependencies"
       - "backend"
     groups:
-      python-runtime:
+      django-runtime:
         patterns:
-          - "fastapi"
           - "pydantic*"
-          - "sqlalchemy"
-          - "alembic"
+          - "django*"
+          - "dj-database-url"
           - "celery"
           - "redis"
           - "httpx"
           - "structlog"
+          - "resend*"
       python-dev:
         patterns:
           - "pytest*"
@@ -58,12 +58,14 @@ updates:
       - "dependencies"
       - "frontend"
     groups:
-      svelte-stack:
+      react-stack:
         patterns:
-          - "svelte"
-          - "@sveltejs/*"
-          - "vite"
-          - "vitest"
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@tanstack/*"
+          - "zustand"
+          - "daisyui"
       frontend-dev:
         patterns:
           - "eslint*"

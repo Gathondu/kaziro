@@ -3,7 +3,7 @@
 **Status**: Active
 **Last updated**: 2026-04-22
 **Source**: Section 3.2 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
-**Code**: [`backend/agents/parser_agent.py`](../../../backend/agents/parser_agent.py)
+**Code**: [`backend/apps/pipeline/tasks.py`](../../../backend/apps/pipeline/tasks.py)
 **Pipeline position**: Stage 1 (after Job Fetch, before Evaluator)
 
 ## Purpose
@@ -134,4 +134,4 @@ Every node binds `raw_job_id` and `node`. Key events:
 - Unit tests for `parse_node`, `embed_node`, `persist_node` with mocked LLM
   via VCR or pytest fixtures.
 - Integration tests for `run_parser_agent` against a real Postgres test DB.
-- See [`backend/tests/agents/test_parser_agent.py`](../../../backend/tests/agents/test_parser_agent.py).
+- See `backend/tests/` for pipeline and parsing coverage.

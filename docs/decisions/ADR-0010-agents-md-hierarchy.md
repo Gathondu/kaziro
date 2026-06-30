@@ -24,11 +24,10 @@ is **how many** AGENTS.md files we should ship and **where**.
 
 ## Decision drivers
 
-- Different stacks need different rules — Python conventions don't apply
-  to Svelte and vice versa.
-- LangGraph agents (`backend/agents/`) have stack-on-top-of-stack
-  conventions (state classes, prompt rules, model selection) that don't
-  apply to all of `backend/`.
+- Different stacks need different rules; backend conventions do not apply
+  to frontend files and vice versa.
+- Agent workflow modules have stack-on-top-of-stack conventions around
+  state classes, prompt rules, and model selection.
 - A single mega-AGENTS.md becomes a wall of text; agents (and humans)
   scan less of it.
 - Most agent tools (Cursor, Claude Code) honour the **nearest**
@@ -55,9 +54,8 @@ The hierarchy:
 | Path                          | Scope                                              |
 | ----------------------------- | -------------------------------------------------- |
 | `AGENTS.md`                   | Project identity, monorepo map, where to run what. |
-| `backend/AGENTS.md`           | Python, FastAPI, Celery, DB, observability rules.  |
-| `backend/agents/AGENTS.md`    | LangGraph agents — state, nodes, prompts, models.  |
-| `frontend/AGENTS.md`          | Svelte 5, runes, Tailwind, TanStack Query, a11y.   |
+| `backend/AGENTS.md`           | Django, Django Ninja, Celery, DB, observability rules.  |
+| `frontend/AGENTS.md`          | Next.js, React, Tailwind, TanStack Query, a11y.   |
 
 Each AGENTS.md:
 
@@ -110,7 +108,6 @@ Each AGENTS.md:
 
 - [`AGENTS.md`](../../AGENTS.md) (root)
 - [`backend/AGENTS.md`](../../backend/AGENTS.md)
-- [`backend/agents/AGENTS.md`](../../backend/agents/AGENTS.md)
 - [`frontend/AGENTS.md`](../../frontend/AGENTS.md)
 - [`.cursor/rules/`](../../.cursor/rules/)
 - [ADR-0009: Monorepo layout](ADR-0009-monorepo-layout.md)

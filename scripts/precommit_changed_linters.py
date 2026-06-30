@@ -17,7 +17,7 @@ def _resolve_command(command: list[str]) -> list[str] | None:
     args = command[1:]
     if executable == "pnpm":
         # On Windows, pnpm.CMD forwards `%*` unquoted, so paths containing
-        # parentheses (SvelteKit route groups like `(app)`) break in cmd.exe.
+        # parentheses (Next.js route groups like `(app)`) break in cmd.exe.
         # Run pnpm's JS entrypoint through Node directly to preserve argv.
         pnpm_cmd = which("pnpm.cmd")
         if pnpm_cmd:
@@ -107,7 +107,7 @@ def main() -> int:
         if path.startswith("backend/")
         and path.endswith(".py")
         and "/tests/" not in path
-        and "/alembic/" not in path
+        and "/migrations/" not in path
     )
     if backend_py:
         if (
@@ -139,7 +139,6 @@ def main() -> int:
             ".jsx",
             ".md",
             ".mjs",
-            ".svelte",
             ".ts",
             ".tsx",
             ".yaml",
@@ -164,7 +163,7 @@ def main() -> int:
         path.removeprefix("frontend/")
         for path in staged
         if path.startswith("frontend/")
-        and Path(path).suffix in {".js", ".mjs", ".cjs", ".ts", ".svelte"}
+        and Path(path).suffix in {".js", ".mjs", ".cjs", ".ts", ".tsx"}
     )
     if frontend_eslint:
         if (

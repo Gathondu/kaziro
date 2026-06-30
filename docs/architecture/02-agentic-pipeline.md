@@ -4,7 +4,7 @@
 **Last updated**: 2026-04-22
 **Source**: Section 3 of [`Kaziro_Design_Document.pdf`](../../Kaziro_Design_Document.pdf)
 **Related ADRs**: [ADR-0001](../decisions/ADR-0001-agentic-framework-langgraph.md), [ADR-0006](../decisions/ADR-0006-evaluator-three-pass.md)
-**Code**: [`backend/agents/`](../../backend/agents/) — see also [`design/agents/`](../design/agents/) for per-agent specs.
+**Code**: [`backend/apps/pipeline/`](../../backend/apps/pipeline/) — see also [`design/agents/`](../design/agents/) for per-agent specs.
 
 ## 1. Framework choice — LangGraph
 
@@ -61,7 +61,7 @@ Detailed sequence is in
 ### Stage 0 — Job Fetch Service
 
 **Type**: Celery periodic task. Not a LangGraph agent — no reasoning required.
-**Code**: `backend/services/job_fetcher.py` (Phase 1).
+**Code**: `backend/apps/jobs/services.py` and `backend/apps/pipeline/tasks.py`.
 
 - Triggered by Celery Beat hourly (UTC minute 0): `enqueue_active_pipelines`
   enqueues `run_pipeline_for_config` only when each active config's
@@ -80,7 +80,7 @@ Detailed sequence is in
 
 **Type**: LangGraph 3-node agent with a retry loop on the parse step.
 **Model**: `settings.LLM_MODEL_PARSER` (default `nvidia/nemotron-3-super-120b-a12b:free`).
-**Code**: [`backend/agents/parser_agent.py`](../../backend/agents/parser_agent.py).
+**Code**: [`backend/apps/pipeline/tasks.py`](../../backend/apps/pipeline/tasks.py).
 **Detailed spec**: [`design/agents/parser-agent.md`](../design/agents/parser-agent.md).
 
 ```
@@ -99,7 +99,7 @@ parse → (route_after_parse) → embed → persist → END
 
 **Type**: LangGraph multi-node stateful graph.
 **Model**: `settings.LLM_MODEL_EVALUATOR` (default `nvidia/nemotron-3-super-120b-a12b:free`).
-**Code**: [`backend/agents/evaluator_agent.py`](../../backend/agents/evaluator_agent.py).
+**Code**: [`backend/apps/pipeline/tasks.py`](../../backend/apps/pipeline/tasks.py).
 **Detailed spec**: [`design/agents/evaluator-agent.md`](../design/agents/evaluator-agent.md).
 **Why 3 passes**: see [ADR-0006](../decisions/ADR-0006-evaluator-three-pass.md).
 
@@ -131,7 +131,7 @@ The full audit trail (all three passes' outputs) is persisted to
 **Type**: LangGraph agent with tool use.
 **Model**: `settings.LLM_MODEL_RESEARCH` (default `nvidia/nemotron-3-super-120b-a12b:free`).
 **Tools**: Firecrawl scrape (`POST /v1/scrape`).
-**Code**: [`backend/agents/research_agent.py`](../../backend/agents/research_agent.py).
+**Code**: [`backend/apps/pipeline/tasks.py`](../../backend/apps/pipeline/tasks.py).
 **Detailed spec**: [`design/agents/research-agent.md`](../design/agents/research-agent.md).
 
 ```
@@ -160,7 +160,7 @@ check_cache ──fresh?──→ END
 
 **Type**: LangGraph multi-node agent.
 **Model**: `settings.LLM_MODEL_DOCUMENT` (default `nvidia/nemotron-3-super-120b-a12b:free`, `temperature=0.4`).
-**Code**: [`backend/agents/document_agent.py`](../../backend/agents/document_agent.py).
+**Code**: [`backend/apps/pipeline/tasks.py`](../../backend/apps/pipeline/tasks.py).
 **Detailed spec**: [`design/agents/document-agent.md`](../design/agents/document-agent.md).
 
 ```
@@ -177,7 +177,7 @@ load_context → cv_tailor → cover_letter → quality_check → render_persist
 
 ## 4. Pipeline orchestrator
 
-**Code**: [`backend/agents/pipeline_orchestrator.py`](../../backend/agents/pipeline_orchestrator.py).
+**Code**: [`backend/apps/pipeline/tasks.py`](../../backend/apps/pipeline/tasks.py).
 
 The orchestrator chains the agents above. It is the **only** layer allowed to
 call multiple agents — individual agents must never invoke each other.
@@ -199,7 +199,7 @@ upstream returned a usable result.
 
 **Notifications**: after evaluation completion and after document generation,
 the orchestrator publishes a JSON message to the user's WebSocket channel via
-`backend/services/notifications.py` (Redis pub/sub).
+`backend/apps/notifications/` services and Celery tasks.
 
 ```python
 await notify_user(user_id, {
@@ -267,8 +267,8 @@ This payload is logged at INFO and exposed to the admin pipeline dashboard
 
 | Want to add…                                        | Touch                                                                                |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| A new agent stage (e.g., interview-prep agent)      | New file in `backend/agents/`, register in `pipeline_orchestrator.py`                |
-| A new classification bucket                         | `Classification` enum in `evaluator_agent.py` + DB migration + frontend badges       |
-| A different LLM model per stage                     | Set `LLM_MODEL_<STAGE>` (see `backend/config.py`); values are OpenRouter model ids. |
-| A new external scrape source                        | New service in `backend/services/`, called from `research_agent.scrape_node`         |
+| A new agent stage (e.g., interview-prep agent)      | New file in `backend/apps/pipeline/`, register in `tasks.py`                |
+| A new classification bucket                         | `Classification` enum in `tasks.py` + DB migration + frontend badges       |
+| A different LLM model per stage                     | Set `LLM_MODEL_<STAGE>` in `backend/config/settings.py`; values are OpenRouter model ids. |
+| A new external scrape source                        | New service in the relevant `backend/apps/<domain>/services.py`, called from the pipeline stage |
 | Real-time progress for individual passes            | Publish `notify_user(...)` from each pass node; extend frontend toast types          |

@@ -51,20 +51,13 @@ jobs:
     env:
       APP_ENV: test
       LOG_FORMAT: console
-      DATABASE_URL: postgresql+asyncpg://kaziro:kaziro@localhost:5432/kaziro_test
-      DATABASE_URL_SYNC: postgresql://kaziro:kaziro@localhost:5432/kaziro_test
+      SECRET_KEY: ci-django-secret-key
+      DJANGO_DATABASE_URL: postgresql://kaziro:kaziro@localhost:5432/kaziro_test
       REDIS_URL: redis://localhost:6379/0
       CELERY_BROKER_URL: redis://localhost:6379/1
       CELERY_RESULT_BACKEND: redis://localhost:6379/2
-      SUPABASE_URL: https://example.supabase.co
-      SUPABASE_ANON_KEY: ci-anon-key
-      SUPABASE_SERVICE_KEY: ci-service-key
-      SUPABASE_JWT_SECRET: ci-jwt-secret
-      OPENROUTER_API_KEY: ci-openrouter-key
-      RAPIDAPI_KEY: ci-rapidapi-key
-      RAPIDAPI_HOST: jsearch.p.rapidapi.com
-      FIRECRAWL_API_KEY: ci-firecrawl-key
-      CORS_ORIGINS: http://localhost:5173
+      RESEND_API_KEY: ci-resend-key
+      RESEND_FROM_EMAIL: "Kaziro <onboarding@example.com>"
 
     steps:
       - name: Checkout
@@ -78,7 +71,7 @@ jobs:
           cache-dependency-glob: "backend/uv.lock"
 
       - name: Set up Python
-        run: uv python install 3.12
+        run: uv python install 3.14
         working-directory: backend
 
       - name: Install dependencies
@@ -93,31 +86,14 @@ jobs:
         run: uv run ruff format --check .
         working-directory: backend
 
-      - name: mypy
-        run: uv run mypy .
-        working-directory: backend
-
-      - name: Bootstrap Supabase auth primitives (CI)
-        run: uv run python tasks/bootstrap_ci_supabase_primitives.py
+      - name: Django system checks
+        run: uv run python manage.py check
         working-directory: backend
 
       - name: Run migrations
-        run: uv run alembic upgrade head
+        run: uv run python manage.py migrate --noinput
         working-directory: backend
 
-      - name: Guard DB schema ready
-        run: |
-          uv run python -c "import os; import sys; import psycopg; dsn = os.environ['DATABASE_URL_SYNC']; conn = psycopg.connect(dsn); cur = conn.cursor(); cur.execute(\"SELECT to_regclass('public.users')\"); row = cur.fetchone(); cur.close(); conn.close(); ok = bool(row and row[0]); print('users table present' if ok else 'users table missing after migrations'); sys.exit(0 if ok else 1)"
+      - name: Django tests
+        run: uv run python manage.py test
         working-directory: backend
-
-      - name: pytest
-        run: uv run pytest --cov=backend --cov-report=term-missing --cov-report=xml --cov-fail-under=60
-        working-directory: backend
-
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: backend-coverage
-          path: backend/coverage.xml
-          if-no-files-found: ignore

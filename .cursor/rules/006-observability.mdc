@@ -10,9 +10,9 @@ alwaysApply: true
 
 ## Logging with structlog
 
-### Setup (backend/logging_config.py)
+### Setup (`backend/config/logging.py`)
 
-- Configure structlog once at app startup in `main.py`.
+- Configure structlog once through Django settings and startup wiring.
 - Use JSON renderer in production, ConsoleRenderer in development.
 - Every module gets its logger via: `logger = structlog.get_logger(__name__)`.
 - Never use `logging.getLogger()` — always `structlog.get_logger()`.
@@ -62,7 +62,7 @@ Every log call must include ALL relevant context for the operation:
 
 ## Metrics with Prometheus
 
-### Instrument (backend/metrics.py)
+### Instrument (`backend/apps/core/` or a domain-owned metrics module)
 
 Define all metrics in a single file and import where needed:
 
@@ -97,7 +97,7 @@ active_pipeline_tasks = Gauge(
   ```
 - Increment `pipeline_jobs_total` at each stage with `status="success"` or `status="error"`.
 - Use `active_pipeline_tasks.inc()` / `.dec()` around Celery task execution.
-- Expose metrics at `/metrics` endpoint (FastAPI route, Prometheus format).
+- Expose metrics at `/metrics` in Prometheus format.
 
 ### Key Metrics to Track
 
@@ -114,7 +114,7 @@ active_pipeline_tasks = Gauge(
 
 ## Distributed Tracing
 
-- Use OpenTelemetry for trace correlation across FastAPI ↔ Celery ↔ agents.
+- Use OpenTelemetry for trace correlation across Django, Celery, and agent workflows.
 - Propagate `trace_id` in Celery task headers and structlog context.
 - Every log entry must include `trace_id` when available.
 - Traces are exported to Grafana Tempo (or Jaeger in local dev).

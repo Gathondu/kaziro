@@ -22,8 +22,8 @@
 ```mermaid
 flowchart LR
   user[User]
-  fe[Frontend_SvelteKit]
-  api[FastAPI_API]
+  fe[Frontend_Next.js]
+  api[Django Ninja_API]
   ws[WS_Notifications]
   celery[Celery_Workers]
   agents[Agent_Pipeline]
@@ -57,7 +57,7 @@ flowchart LR
 - **LangGraph + orchestrator** for explicit staged AI flow.
 - **Celery + Redis** for retries, scheduling, and async reliability.
 - **PostgreSQL + pgvector** for transactional + semantic data in one place.
-- **SvelteKit + TanStack Query** for fast, consistent user experience.
+- **Next.js + TanStack Query** for fast, consistent user experience.
 - **Structured observability** for traceability and operations.
 
 ---
@@ -70,7 +70,7 @@ flowchart TD
   d1[LangGraph_for_stateful_multi_pass_agents]
   d2[Celery_Redis_for_async_orchestration]
   d3[Postgres_pgvector_for_data_and_similarity]
-  d4[SvelteKit_TanStack_for_responsive_UI]
+  d4[Next.js_TanStack_for_responsive_UI]
   d5[Structured_logging_and_metrics]
   outcome[Auditable_scalable_user_visible_pipeline]
 

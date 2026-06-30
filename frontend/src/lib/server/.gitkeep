@@ -1,3 +1,0 @@
-# Placeholder so git tracks the empty `server/` folder.
-# Server-only code (load fns, server actions). Imports only from
-# `$lib/server/*` are bundle-stripped in the client.

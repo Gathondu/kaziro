@@ -161,7 +161,7 @@ resource "aws_ecs_task_definition" "worker" {
       command = [
         "celery",
         "-A",
-        "backend.tasks.celery_app:celery_app",
+        "config.celery:app",
         "worker",
         "--loglevel=INFO",
         "-Q",
@@ -215,7 +215,7 @@ resource "aws_ecs_task_definition" "beat" {
       command = [
         "celery",
         "-A",
-        "backend.tasks.celery_app:celery_app",
+        "config.celery:app",
         "beat",
         "--loglevel=INFO",
         "--schedule=/tmp/celerybeat-schedule"

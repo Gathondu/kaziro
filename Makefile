@@ -1,43 +1,28 @@
-# Kaziro — root Makefile.
-# One-stop convenience commands. Run ``make help`` for the full list.
+# Kaziro root Makefile.
 
 SHELL := /usr/bin/env bash
 
-# Override on the CLI: ``make migrate MSG="add jobs"``
 MSG ?=
 
-# Tool dispatchers — keep them centralised so we can swap them out later.
-COMPOSE  := docker compose
-UV       := uv
-PNPM     := pnpm
-ALEMBIC  := $(UV) run alembic
+COMPOSE := docker compose
+UV := uv
+PNPM := pnpm
 
-BACKEND_DIR  := backend
+BACKEND_DIR := backend
 FRONTEND_DIR := frontend
-BACKEND_DJANGO_DIR := backend-django
-FRONTEND_NEXT_DIR := frontend-next
 
 .DEFAULT_GOAL := help
 
-# ---------------------------------------------------------------------------
-# Help
-# ---------------------------------------------------------------------------
-
 .PHONY: help
 help: ## Show this help.
-	@awk 'BEGIN {FS = ":.*?## "; printf "\nKaziro Make targets\n\n"} \
-		/^[a-zA-Z0-9_.-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-
-# ---------------------------------------------------------------------------
-# Local dev orchestration (docker-compose)
-# ---------------------------------------------------------------------------
+	@awk 'BEGIN {FS = ":.*?## "; printf "\nKaziro Make targets\n\n"} /^[a-zA-Z0-9_.-]+:.*?## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: dev
-dev: ## Boot the full stack (postgres, redis, backend, all workers, beat, frontend).
+dev: ## Boot the full local stack.
 	$(COMPOSE) up --build
 
 .PHONY: dev-detached
-dev-detached: ## Boot the full stack in the background.
+dev-detached: ## Boot the full local stack in the background.
 	$(COMPOSE) up --build -d
 
 .PHONY: down
@@ -48,130 +33,85 @@ down: ## Stop the stack and wipe named volumes.
 logs: ## Tail logs for every service.
 	$(COMPOSE) logs -f --tail=100
 
-# ---------------------------------------------------------------------------
-# Per-service dev loops (run on the host without docker)
-# ---------------------------------------------------------------------------
-
 .PHONY: dev-backend
-dev-backend: ## Run the FastAPI app with autoreload on the host.
-	cd $(BACKEND_DIR) && $(UV) run uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+dev-backend: ## Run the Django API on the host.
+	cd $(BACKEND_DIR) && $(UV) run python manage.py runserver 0.0.0.0:8000
 
 .PHONY: dev-frontend
-dev-frontend: ## Run the Vite dev server on the host.
+dev-frontend: ## Run the Next.js dev server on the host.
 	cd $(FRONTEND_DIR) && $(PNPM) dev
 
-.PHONY: dev-django
-dev-django: ## Run the parallel Django Ninja API on the host.
-	cd $(BACKEND_DJANGO_DIR) && $(UV) run python manage.py runserver 0.0.0.0:8000
-
-.PHONY: dev-frontend-next
-dev-frontend-next: ## Run the parallel Next.js dev server on the host.
-	cd $(FRONTEND_NEXT_DIR) && $(PNPM) dev
-
 .PHONY: dev-worker
-dev-worker: ## Run a single Celery worker on the host listening to all queues.
-	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=2 -Q default,parser,evaluator,research,document,maintenance
+dev-worker: ## Run a Celery worker listening to all queues.
+	cd $(BACKEND_DIR) && $(UV) run celery -A config.celery:app worker --loglevel=info --concurrency=2 -Q default,parser,evaluator,research,document,maintenance,notification
 
 .PHONY: dev-worker-parser
-dev-worker-parser: ## Run a host-side Celery worker dedicated to the parser queue.
-	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=4 -Q parser -n worker-parser@%h
+dev-worker-parser: ## Run a Celery worker dedicated to the parser queue.
+	cd $(BACKEND_DIR) && $(UV) run celery -A config.celery:app worker --loglevel=info --concurrency=4 -Q parser -n worker-parser@%h
 
 .PHONY: dev-worker-evaluator
-dev-worker-evaluator: ## Run a host-side Celery worker dedicated to the evaluator queue.
-	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=2 -Q evaluator -n worker-evaluator@%h
+dev-worker-evaluator: ## Run a Celery worker dedicated to the evaluator queue.
+	cd $(BACKEND_DIR) && $(UV) run celery -A config.celery:app worker --loglevel=info --concurrency=2 -Q evaluator -n worker-evaluator@%h
 
 .PHONY: dev-worker-research-doc
-dev-worker-research-doc: ## Run a host-side Celery worker for research + document queues.
-	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app worker --loglevel=info --concurrency=2 -Q research,document -n worker-research-doc@%h
+dev-worker-research-doc: ## Run a Celery worker for research and document queues.
+	cd $(BACKEND_DIR) && $(UV) run celery -A config.celery:app worker --loglevel=info --concurrency=2 -Q research,document -n worker-research-doc@%h
 
 .PHONY: dev-beat
 dev-beat: ## Run the Celery Beat scheduler on the host.
-	cd $(BACKEND_DIR) && $(UV) run celery -A backend.tasks.celery_app:celery_app beat --loglevel=info
-
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
+	cd $(BACKEND_DIR) && $(UV) run celery -A config.celery:app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
 
 .PHONY: test
-test: test-backend test-frontend ## Run the full test suite (backend + frontend).
+test: test-backend test-frontend ## Run backend and frontend checks.
 
 .PHONY: test-backend
-test-backend: ## Run backend pytest with coverage.
-	cd $(BACKEND_DIR) && $(UV) run pytest --cov=backend --cov-report=term-missing
+test-backend: ## Run Django tests.
+	cd $(BACKEND_DIR) && $(UV) run python manage.py test
 
 .PHONY: test-frontend
-test-frontend: ## Run frontend Vitest suite.
-	cd $(FRONTEND_DIR) && $(PNPM) test
+test-frontend: ## Run frontend type checks.
+	cd $(FRONTEND_DIR) && $(PNPM) typecheck
 
 .PHONY: e2e
-e2e: ## Run Playwright end-to-end tests (requires the backend up).
-	cd $(FRONTEND_DIR) && $(PNPM) e2e
-
-# ---------------------------------------------------------------------------
-# Lint / format / typecheck
-# ---------------------------------------------------------------------------
+e2e: ## Run Playwright end-to-end tests.
+	cd $(FRONTEND_DIR) && $(PNPM) test:e2e
 
 .PHONY: lint
-lint: lint-backend lint-frontend ## Run all linters.
+lint: lint-backend lint-frontend ## Run backend and frontend linters.
 
 .PHONY: lint-backend
-lint-backend: ## Backend: ruff + mypy.
+lint-backend: ## Backend: ruff lint and format check.
 	cd $(BACKEND_DIR) && $(UV) run ruff check .
 	cd $(BACKEND_DIR) && $(UV) run ruff format --check .
-	cd $(BACKEND_DIR) && $(UV) run mypy .
 
 .PHONY: lint-frontend
-lint-frontend: ## Frontend: prettier --check + eslint + svelte-check.
+lint-frontend: ## Frontend: ESLint and TypeScript.
 	cd $(FRONTEND_DIR) && $(PNPM) lint
-	cd $(FRONTEND_DIR) && $(PNPM) check
+	cd $(FRONTEND_DIR) && $(PNPM) typecheck
 
-.PHONY: check-django
-check-django: ## Parallel Django backend: framework checks.
-	cd $(BACKEND_DJANGO_DIR) && $(UV) run python manage.py check
-
-.PHONY: test-django
-test-django: ## Parallel Django backend: scaffold tests.
-	cd $(BACKEND_DJANGO_DIR) && $(UV) run python manage.py test
-
-.PHONY: lint-frontend-next
-lint-frontend-next: ## Parallel Next.js frontend: ESLint and TypeScript.
-	cd $(FRONTEND_NEXT_DIR) && $(PNPM) lint
-	cd $(FRONTEND_NEXT_DIR) && $(PNPM) typecheck
-
-.PHONY: build-frontend-next
-build-frontend-next: ## Parallel Next.js frontend: production build.
-	cd $(FRONTEND_NEXT_DIR) && $(PNPM) build
+.PHONY: build-frontend
+build-frontend: ## Frontend production build.
+	cd $(FRONTEND_DIR) && $(PNPM) build
 
 .PHONY: format
 format: format-backend format-frontend ## Auto-format every workspace.
 
 .PHONY: format-backend
-format-backend: ## Backend: ruff format + ruff check --fix.
+format-backend: ## Backend: ruff format and fix.
 	cd $(BACKEND_DIR) && $(UV) run ruff format .
 	cd $(BACKEND_DIR) && $(UV) run ruff check --fix .
 
 .PHONY: format-frontend
-format-frontend: ## Frontend: prettier --write.
+format-frontend: ## Frontend: run the project formatter if configured.
 	cd $(FRONTEND_DIR) && $(PNPM) format
 
-# ---------------------------------------------------------------------------
-# Database / migrations
-# ---------------------------------------------------------------------------
-
 .PHONY: migrate
-migrate: ## Apply Alembic migrations to ``head``.
-	cd $(BACKEND_DIR) && $(ALEMBIC) upgrade head
+migrate: ## Apply Django database migrations.
+	cd $(BACKEND_DIR) && $(UV) run python manage.py migrate
 
 .PHONY: migration
-migration: ## Create a new Alembic revision: ``make migration MSG="add jobs table"``.
-	@if [ -z "$(MSG)" ]; then \
-		echo "Usage: make migration MSG=\"description\""; exit 2; \
-	fi
-	cd $(BACKEND_DIR) && $(ALEMBIC) revision --autogenerate -m "$(MSG)"
-
-.PHONY: seed
-seed: ## Load development seed data (Phase 1+).
-	cd $(BACKEND_DIR) && $(UV) run python -m backend.scripts.seed
+migration: ## Create Django migrations. Optional: make migration MSG="description".
+	cd $(BACKEND_DIR) && $(UV) run python manage.py makemigrations
 
 .PHONY: psql
 psql: ## Open a psql shell against the dev Postgres container.
@@ -181,27 +121,15 @@ psql: ## Open a psql shell against the dev Postgres container.
 redis-cli: ## Open a redis-cli shell against the dev Redis container.
 	$(COMPOSE) exec redis redis-cli
 
-# ---------------------------------------------------------------------------
-# Housekeeping
-# ---------------------------------------------------------------------------
-
 .PHONY: clean
-clean: ## Remove caches, build artefacts, and coverage reports.
+clean: ## Remove caches, build artifacts, and coverage reports.
 	rm -rf $(BACKEND_DIR)/.pytest_cache $(BACKEND_DIR)/.ruff_cache $(BACKEND_DIR)/.mypy_cache
-	rm -rf $(BACKEND_DIR)/htmlcov $(BACKEND_DIR)/.coverage $(BACKEND_DIR)/coverage.xml
+	rm -rf $(BACKEND_DIR)/htmlcov $(BACKEND_DIR)/.coverage $(BACKEND_DIR)/coverage.xml $(BACKEND_DIR)/db.sqlite3
 	find $(BACKEND_DIR) -type d -name __pycache__ -prune -exec rm -rf {} +
-	rm -rf $(FRONTEND_DIR)/.svelte-kit $(FRONTEND_DIR)/.vercel $(FRONTEND_DIR)/build $(FRONTEND_DIR)/dist
-	rm -rf $(FRONTEND_DIR)/coverage $(FRONTEND_DIR)/playwright-report $(FRONTEND_DIR)/test-results
-	rm -rf $(BACKEND_DJANGO_DIR)/.pytest_cache $(BACKEND_DJANGO_DIR)/.ruff_cache $(BACKEND_DJANGO_DIR)/.mypy_cache
-	rm -rf $(BACKEND_DJANGO_DIR)/db.sqlite3
-	rm -rf $(FRONTEND_NEXT_DIR)/.next $(FRONTEND_NEXT_DIR)/.vercel $(FRONTEND_NEXT_DIR)/coverage
+	rm -rf $(FRONTEND_DIR)/.next $(FRONTEND_DIR)/.vercel $(FRONTEND_DIR)/coverage
+	rm -rf $(FRONTEND_DIR)/playwright-report $(FRONTEND_DIR)/test-results $(FRONTEND_DIR)/tsconfig.tsbuildinfo
 
 .PHONY: install
-install: ## Install backend (uv) and frontend (pnpm) dependencies.
+install: ## Install backend and frontend dependencies.
 	cd $(BACKEND_DIR) && $(UV) sync
 	cd $(FRONTEND_DIR) && $(PNPM) install
-
-.PHONY: install-next-stack
-install-next-stack: ## Install the parallel Django + Next.js scaffold dependencies.
-	cd $(BACKEND_DJANGO_DIR) && $(UV) sync
-	cd $(FRONTEND_NEXT_DIR) && $(PNPM) install

@@ -3,7 +3,7 @@
 **Status**: Active
 **Last updated**: 2026-05-27
 **Source**: Sections 3.3 and 11.6 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
-**Code**: [`backend/agents/evaluator_agent.py`](../../../backend/agents/evaluator_agent.py)
+**Code**: [`backend/apps/pipeline/tasks.py`](../../../backend/apps/pipeline/tasks.py)
 **Pipeline position**: Stage 2 (after Parser, gates Research/Document)
 **Why 3 passes**: see [ADR-0006](../../decisions/ADR-0006-evaluator-three-pass.md)
 

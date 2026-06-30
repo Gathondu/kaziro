@@ -7,8 +7,8 @@
 
 ## Context and problem statement
 
-Kaziro consists of (at minimum) a Python backend (FastAPI + LangGraph +
-Celery) and a SvelteKit frontend, plus shared documentation, CI config,
+Kaziro consists of (at minimum) a Python backend (Django Ninja + LangGraph +
+Celery) and a Next.js frontend, plus shared documentation, CI config,
 docker-compose, and infra manifests. Two main shapes are common in the
 Python+JS ecosystem:
 
@@ -23,7 +23,7 @@ Inside a monorepo there are also two common shapes:
   `kaziro/frontend/`. The early `.cursor/rules` glob patterns hinted at
   this (they referenced `kaziro/agents/`, `kaziro/api/`).
 
-Existing code already lives under `backend/agents/` — the `kaziro/`
+Existing code already lives under `backend/apps/pipeline/` — the `kaziro/`
 wrapper was only ever a glob convention.
 
 > "Should Kaziro be one repo with `backend/` and `frontend/` at the root,

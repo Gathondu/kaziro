@@ -11,7 +11,7 @@ ready-to-edit job application in their dashboard.
 ```mermaid
 sequenceDiagram
   participant Sched as APScheduler / Celery beat
-  participant API as FastAPI
+  participant API as Django Ninja
   participant Cel as Celery worker
   participant Fetch as Job Fetch Service
   participant Parse as Parser Agent

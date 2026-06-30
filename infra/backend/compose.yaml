@@ -2,9 +2,9 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -25,7 +25,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8000/health"]
+      test: [ "CMD", "uv", "run", "python", "manage.py", "check" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -38,25 +38,12 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
-    command:
-      [
-        "celery",
-        "-A",
-        "backend.tasks.celery_app:celery_app",
-        "worker",
-        "--loglevel=info",
-        "--concurrency=2",
-        "-Q",
-        "default,maintenance",
-        "-n",
-        "worker-default@%h",
-        "--prefetch-multiplier=1"
-      ]
+    command: [ "uv", "run", "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "default,maintenance", "-n", "worker-default@%h", "--prefetch-multiplier=1" ]
     depends_on:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "grep -zq celery /proc/1/cmdline && grep -zq worker /proc/1/cmdline"]
+      test: [ "CMD-SHELL", "grep -zq celery /proc/1/cmdline && grep -zq worker /proc/1/cmdline" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -70,25 +57,12 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
-    command:
-      [
-        "celery",
-        "-A",
-        "backend.tasks.celery_app:celery_app",
-        "worker",
-        "--loglevel=info",
-        "--concurrency=4",
-        "-Q",
-        "parser",
-        "-n",
-        "worker-parser@%h",
-        "--prefetch-multiplier=1"
-      ]
+    command: [ "uv", "run", "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=4", "-Q", "parser", "-n", "worker-parser@%h", "--prefetch-multiplier=1" ]
     depends_on:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "grep -zq celery /proc/1/cmdline && grep -zq worker /proc/1/cmdline"]
+      test: [ "CMD-SHELL", "grep -zq celery /proc/1/cmdline && grep -zq worker /proc/1/cmdline" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -102,25 +76,12 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
-    command:
-      [
-        "celery",
-        "-A",
-        "backend.tasks.celery_app:celery_app",
-        "worker",
-        "--loglevel=info",
-        "--concurrency=2",
-        "-Q",
-        "evaluator",
-        "-n",
-        "worker-evaluator@%h",
-        "--prefetch-multiplier=1"
-      ]
+    command: [ "uv", "run", "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "evaluator", "-n", "worker-evaluator@%h", "--prefetch-multiplier=1" ]
     depends_on:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "grep -zq celery /proc/1/cmdline && grep -zq worker /proc/1/cmdline"]
+      test: [ "CMD-SHELL", "grep -zq celery /proc/1/cmdline && grep -zq worker /proc/1/cmdline" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -134,25 +95,12 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
-    command:
-      [
-        "celery",
-        "-A",
-        "backend.tasks.celery_app:celery_app",
-        "worker",
-        "--loglevel=info",
-        "--concurrency=2",
-        "-Q",
-        "research,document",
-        "-n",
-        "worker-research-doc@%h",
-        "--prefetch-multiplier=1"
-      ]
+    command: [ "uv", "run", "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "research,document", "-n", "worker-research-doc@%h", "--prefetch-multiplier=1" ]
     depends_on:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "grep -zq celery /proc/1/cmdline && grep -zq worker /proc/1/cmdline"]
+      test: [ "CMD-SHELL", "grep -zq celery /proc/1/cmdline && grep -zq worker /proc/1/cmdline" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -166,20 +114,12 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
-    command:
-      [
-        "celery",
-        "-A",
-        "backend.tasks.celery_app:celery_app",
-        "beat",
-        "--loglevel=info",
-        "--schedule=/tmp/celerybeat-schedule"
-      ]
+    command: [ "uv", "run", "celery", "-A", "config.celery:app", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule" ]
     depends_on:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "test -w /tmp && test -f /tmp/celerybeat-schedule"]
+      test: [ "CMD-SHELL", "test -w /tmp && test -f /tmp/celerybeat-schedule" ]
       interval: 30s
       timeout: 5s
       retries: 3

@@ -3,120 +3,38 @@ alwaysApply: false
 description: when working on frontend files
 ---
 
-# Kaziro — Svelte Frontend Rules
+# Kaziro — Next.js Frontend Rules
 
-# ================================
+## Framework
 
-# Applies to: frontend/src/**/\*.svelte, frontend/src/**/\*.ts
+- Use Next.js App Router with React and TypeScript.
+- Prefer Server Components; use `"use client"` only for interactivity, browser APIs, or client state.
+- Use route groups: `(marketing)`, `(auth)`, `(onboarding)`, and `(app)`.
 
-## Framework & Syntax
+## API Layer
 
-- Use Svelte 5 with runes. Never use Svelte 4 reactive statements (`$:`) or stores (`writable()`).
-- Rune usage:
-  - `$state()` for local mutable state
-  - `$derived()` for computed values (replaces `$: derived = ...`)
-  - `$effect()` for side effects (replaces `onMount` for data-driven effects)
-  - `$props()` for component props
-- All component scripts use `<script lang="ts">`.
-- All event handlers use the new Svelte 5 syntax: `onclick={handler}` not `on:click={handler}`.
+- All API calls go through `src/lib/api/`.
+- Preserve the backend envelope shape: `{ data, meta, error }`.
+- Use TanStack Query for client-side server state and mutations.
+- Handle loading, empty, and error states explicitly.
 
-## File & Folder Structure
+## Components
 
-```
-frontend/src/
-├── routes/                    # SvelteKit pages
-│   ├── +layout.svelte         # Root layout (auth guard, nav)
-│   ├── +layout.server.ts      # Root load (appearance cookie → theme)
-│   ├── onboarding/
-│   ├── dashboard/
-│   ├── jobs/
-│   │   ├── +page.svelte       # Job list
-│   │   └── [id]/
-│   │       ├── +page.svelte   # Job detail
-│   │       └── apply/
-│   ├── applications/
-│   └── settings/
-├── lib/
-│   ├── components/            # Reusable UI components (PascalCase)
-│   │   ├── jobs/              # Job-specific components
-│   │   ├── applications/      # Application-specific
-│   │   └── ui/                # Generic UI (Button, Badge, Modal)
-│   ├── api/                   # API client functions
-│   │   ├── client.ts          # Base fetch wrapper with auth headers
-│   │   ├── jobs.ts
-│   │   ├── applications.ts
-│   │   └── profile.ts
-│   ├── stores/                # Svelte 5 rune-based state (auth, notifications)
-│   ├── types/                 # TypeScript interfaces matching API schemas
-│   └── utils/                 # Pure utility functions
-```
+- Component files use PascalCase and `.tsx`.
+- Keep reusable UI in `src/components/`.
+- Keep business-specific form helpers in `src/lib/forms/`.
+- Never use `any`; type props, API payloads, and form values.
+- Avoid direct DOM manipulation; use React state, refs, and effects.
 
-## Component Rules
+## Styling
 
-- One component per file. File name = component name (PascalCase).
-- Props must be typed with a TypeScript interface: `const { job }: { job: JobPosting } = $props()`.
-- Components must not make API calls directly — receive data via props or use TanStack Query.
-- Extract any logic block > 10 lines into a utility function in `lib/utils/`.
-- Never use `document.querySelector` or direct DOM manipulation — use Svelte bindings.
-- All async operations in components must handle loading and error states explicitly.
-
-## API Layer (lib/api/)
-
-- All API calls go through `lib/api/client.ts` which:
-  - Attaches the Supabase auth token to every request
-  - Handles 401 responses by redirecting to login
-  - Throws typed errors with `code` and `message`
-- Each resource has its own file (`jobs.ts`, `applications.ts`, etc.).
-- API functions are plain async functions, not classes.
-- Use TanStack Query (`@tanstack/svelte-query`) for all data fetching in components.
-- Mutations use `createMutation()` with proper `onSuccess` / `onError` handlers.
-
-## TypeScript Types (lib/types/)
-
-- Every API response shape has a corresponding TypeScript interface in `lib/types/`.
-- Types mirror the Pydantic response schemas from the backend.
-- Use `type` for simple shapes, `interface` for extensible objects.
-- Never use `any`. Use `unknown` and narrow it properly.
-- Shared enums (e.g., `Classification`, `ApplicationStatus`) are defined once in `lib/types/enums.ts`.
-
-## Styling Rules
-
-- TailwindCSS utility classes only. No `<style>` blocks in components unless unavoidable.
-- Use DaisyUI component classes for form elements, modals, and alerts.
-- Use semantic color names from the Kaziro theme (defined in `tailwind.config.ts`):
-  - `primary` — main brand colour
-  - `secondary` — accent
-  - `success` — good fit / confirmed actions
-  - `warning` — maybe / pending states
-  - `error` — rejected / error states
-- Classification badges: `GOOD_FIT` → `badge-success`, `MAYBE` → `badge-warning`, `REJECT` → `badge-error`.
-- Never use arbitrary Tailwind values (`w-[347px]`) — use spacing scale.
-
-## Real-time (WebSocket)
-
-- WebSocket connection is managed in `lib/stores/notifications.ts`.
-- Components subscribe to notification events via the store — never open their own WebSocket.
-- Always disconnect WebSocket on component destroy (`$effect` cleanup).
-- Show a toast notification for: `evaluation_complete`, `documents_ready`.
-
-## Forms
-
-- Use native `<form>` with SvelteKit `use:enhance` for progressive enhancement.
-- Validate on the client with Zod schemas that mirror the backend Pydantic schemas.
-- Show field-level errors next to each input, not just a global error message.
-- Disable submit buttons while mutation is in progress.
-- Never use `form.reset()` after a successful mutation — use TanStack Query invalidation.
-
-## Performance
-
-- Use `+page.ts` load functions for initial data — avoid client-side-only data fetching for page content.
-- Lazy-load heavy components (PDF viewer, rich text editor) with dynamic `import()`.
-- Paginated lists must use virtual scrolling if items exceed 100.
-- Images must always include `width`, `height`, and `alt` attributes.
+- Use Tailwind CSS and DaisyUI classes first.
+- Use `lucide-react` icons where available.
+- Keep layouts responsive and accessible.
+- Do not use `console.log` in committed code.
 
 ## Accessibility
 
-- All interactive elements must be keyboard accessible.
-- Use semantic HTML: `<button>` for actions, `<a>` for navigation.
-- All form inputs must have associated `<label>` elements.
-- Use `aria-live="polite"` on areas that update with pipeline status.
+- Use semantic HTML and keyboard-accessible controls.
+- Every form input has an associated label.
+- Dynamic status updates should be announced where appropriate.

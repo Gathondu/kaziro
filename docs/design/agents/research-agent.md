@@ -3,7 +3,7 @@
 **Status**: Active
 **Last updated**: 2026-04-22
 **Source**: Section 3.4 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
-**Code**: [`backend/agents/research_agent.py`](../../../backend/agents/research_agent.py)
+**Code**: [`backend/apps/pipeline/tasks.py`](../../../backend/apps/pipeline/tasks.py)
 **Pipeline position**: Stage 3 — **batch / scheduled**: after `GOOD_FIT` only.
 **Manual** `POST /jobs/{id}/trigger-evaluation`: also runs for `MAYBE` (research
 only; no auto document stage).

@@ -36,7 +36,7 @@ stateDiagram-v2
 
 Rejected, Offered, and Withdrawn are terminal states — no further
 transitions allowed. The validation lives in
-`backend/services/application_state.py`; routes return **409 Conflict** on
+`backend/apps/applications/`; routes return **409 Conflict** on
 invalid transitions.
 
 ## Side effects per transition

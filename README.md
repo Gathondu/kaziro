@@ -1,118 +1,57 @@
 # Kaziro
 
-AI-powered agentic job recommendation and application system. Kaziro
-fetches job postings, evaluates fit per user, gathers company context, and
-generates a tailored CV + cover letter for every good fit.
+AI-powered agentic job recommendation and application system. Kaziro fetches
+job postings, evaluates fit per user, gathers company context, and generates a
+tailored CV plus cover letter for every good fit.
 
-> **Where to start**: [`AGENTS.md`](AGENTS.md) is the entry point for any
-> contributor (human or AI). Detailed docs live under [`docs/`](docs/).
->
-> **Current build status**: see [`PLAN.md`](PLAN.md) for the
-> task-by-task MVP plan and what's done / next up.
+Start with [`AGENTS.md`](AGENTS.md) for contributor instructions. Detailed
+architecture and design docs live under [`docs/`](docs/).
 
 ## Stack
 
-- **Backend**: Python 3.12 · FastAPI · LangGraph · OpenRouter · Celery · Redis
-- **Database**: PostgreSQL 16 + pgvector (via Supabase)
-- **Frontend**: SvelteKit · Svelte 5 (runes) · TailwindCSS · DaisyUI · TanStack Query
-- **Infra**: Docker Compose · Caddy · Vercel · GitHub Actions
+- **Backend**: Python 3.14, Django, Django Ninja, LangGraph, Celery, Redis.
+- **Database**: PostgreSQL 16 with pgvector.
+- **Frontend**: Next.js App Router, React, TypeScript, Tailwind CSS, DaisyUI,
+  TanStack Query.
+- **Infra**: Docker Compose, Caddy, Vercel, GitHub Actions.
 
-Parallel migration scaffold:
+## Repo Layout
 
-- **Next backend**: Django · Django Ninja · Celery · Redis
-- **Next frontend**: Next.js App Router · React · TypeScript · TailwindCSS · DaisyUI
-
-Full architecture: [`docs/architecture/01-system-overview.md`](docs/architecture/01-system-overview.md).
-
-## Repo layout
-
-```
+```text
 kaziro/
-├── AGENTS.md          ← read this first
-├── README.md          ← you are here
-├── backend/           ← FastAPI + LangGraph + Celery
-├── backend-django/    ← parallel Django Ninja migration scaffold
-├── frontend/          ← SvelteKit
-├── frontend-next/     ← parallel Next.js migration scaffold
-├── docs/              ← architecture, design, decisions, reference
-├── infra/             ← server deploy files and local docker helpers
-└── .cursor/rules/     ← detailed coding rules
+├── AGENTS.md
+├── README.md
+├── backend/           # Django API, Celery workers, agent orchestration
+├── frontend/          # Next.js application
+├── docs/              # architecture, design, decisions, reference
+├── infra/             # deployment and local infrastructure
+└── scripts/           # repository automation
 ```
 
-ADR for the layout: [`docs/decisions/ADR-0009-monorepo-layout.md`](docs/decisions/ADR-0009-monorepo-layout.md).
+## Quick Start
 
-## Quick start
+Prerequisites:
 
-### Prerequisites
-
-- Python 3.12+ and [`uv`](https://docs.astral.sh/uv/)
-- Node 20+ and [`pnpm`](https://pnpm.io/)
-- Docker + docker-compose
-- A Supabase project (free tier is fine)
-- An OpenRouter API key
-
-### 1. Clone and configure
+- Python 3.14 and `uv`
+- Node 22 and `pnpm`
+- Docker Compose
+- PostgreSQL, Redis, and API keys documented in `.env.example`
 
 ```bash
-git clone https://github.com/<org>/kaziro.git
-cd kaziro
 cp .env.example .env
-# fill in SUPABASE_*, OPENROUTER_API_KEY, RAPIDAPI_KEY, FIRECRAWL_API_KEY, ...
-```
-
-Full env-var reference: [`docs/reference/env-vars.md`](docs/reference/env-vars.md).
-
-### 2. Bring up infra (Postgres + Redis)
-
-```bash
 docker compose up -d postgres redis
 ```
 
-### 3. Backend
+Backend:
 
 ```bash
 cd backend
 uv sync
-uv run alembic upgrade head
-uv run uvicorn main:app --reload
-# in a second terminal:
-uv run celery -A celery_app worker --loglevel=INFO
-# (optional) cron scheduler:
-uv run celery -A celery_app beat --loglevel=INFO
-# On Windows, ``backend.config`` defaults the worker pool to ``solo`` so Celery
-# avoids prefork/billiard (``PermissionError`` / invalid handle). Use Docker or
-# Linux for prefork workers in production-like setups.
+uv run python manage.py migrate
+uv run python manage.py runserver 0.0.0.0:8000
 ```
 
-API now serves at <http://localhost:8000> · OpenAPI at `/docs`.
-
-### Parallel migration scaffold
-
-The Django Ninja + Next.js stack is available beside the current app and is
-not used by production yet.
-
-```bash
-make install-next-stack
-make check-django
-make test-django
-make lint-frontend-next
-make build-frontend-next
-```
-
-Run the new stack locally:
-
-```bash
-make dev-django          # http://localhost:8001
-make dev-frontend-next   # http://localhost:3000
-```
-
-Or with Docker alongside the current Postgres/Redis services:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.migration.yml up --build django-api frontend-next
-```
-
-### 4. Frontend
+Frontend:
 
 ```bash
 cd frontend
@@ -120,71 +59,55 @@ pnpm install
 pnpm dev
 ```
 
-App now serves at <http://localhost:5173>.
-
-### 5. Run tests
+Full local stack:
 
 ```bash
-# backend
-cd backend && uv run pytest --cov=backend
-
-# frontend unit
-cd frontend && pnpm test
-
-# end-to-end (requires backend + frontend running)
-cd frontend && pnpm e2e
+docker compose up --build
 ```
 
-Detail: [`docs/design/testing-strategy.md`](docs/design/testing-strategy.md).
+## Common Commands
+
+```bash
+make install
+make dev
+make lint
+make test
+make build-frontend
+```
+
+Backend checks:
+
+```bash
+cd backend
+uv run ruff check .
+uv run ruff format --check .
+uv run python manage.py check
+uv run python manage.py test
+```
+
+Frontend checks:
+
+```bash
+cd frontend
+pnpm lint
+pnpm typecheck
+pnpm build
+pnpm test:e2e
+```
 
 ## Documentation
 
-| Topic                     | Where                                                                                |
-| ------------------------- | ------------------------------------------------------------------------------------ |
-| System overview           | [`docs/architecture/01-system-overview.md`](docs/architecture/01-system-overview.md) |
-| Agentic pipeline          | [`docs/architecture/02-agentic-pipeline.md`](docs/architecture/02-agentic-pipeline.md) |
-| Data model & ERD          | [`docs/architecture/03-data-model.md`](docs/architecture/03-data-model.md)           |
-| API reference             | [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md)           |
-| Frontend architecture     | [`docs/architecture/05-frontend-architecture.md`](docs/architecture/05-frontend-architecture.md) |
-| Observability             | [`docs/architecture/06-observability.md`](docs/architecture/06-observability.md)     |
-| Security                  | [`docs/architecture/07-security.md`](docs/architecture/07-security.md)               |
-| Deployment                | [`docs/architecture/08-deployment.md`](docs/architecture/08-deployment.md)           |
-| Per-agent design specs    | [`docs/design/agents/`](docs/design/agents/)                                          |
-| Frontend design specs     | [`docs/design/frontend/`](docs/design/frontend/)                                      |
-| Roadmap                   | [`docs/design/roadmap.md`](docs/design/roadmap.md)                                   |
-| Architecture decisions    | [`docs/decisions/`](docs/decisions/)                                                  |
-| Env-var reference         | [`docs/reference/env-vars.md`](docs/reference/env-vars.md)                           |
-| Dependency reference      | [`docs/reference/dependencies.md`](docs/reference/dependencies.md)                   |
-| Glossary                  | [`docs/reference/glossary.md`](docs/reference/glossary.md)                           |
+- Architecture: [`docs/architecture/01-system-overview.md`](docs/architecture/01-system-overview.md)
+- API design: [`docs/architecture/04-api-design.md`](docs/architecture/04-api-design.md)
+- Frontend architecture: [`docs/architecture/05-frontend-architecture.md`](docs/architecture/05-frontend-architecture.md)
+- Deployment: [`docs/architecture/08-deployment.md`](docs/architecture/08-deployment.md)
+- Environment variables: [`docs/reference/env-vars.md`](docs/reference/env-vars.md)
+- Dependencies: [`docs/reference/dependencies.md`](docs/reference/dependencies.md)
 
-Doc index: [`docs/README.md`](docs/README.md).
+## Contribution Rules
 
-## For agents and contributors
-
-Read the [`AGENTS.md`](AGENTS.md) file in the directory you're editing.
-The hierarchy:
-
-| Editing files in…    | Read this AGENTS.md                                    |
-| -------------------- | ------------------------------------------------------ |
-| Anywhere             | [`AGENTS.md`](AGENTS.md) (root)                        |
-| `backend/**`         | [`backend/AGENTS.md`](backend/AGENTS.md)               |
-| `backend/agents/**`  | [`backend/agents/AGENTS.md`](backend/agents/AGENTS.md) |
-| `frontend/**`        | [`frontend/AGENTS.md`](frontend/AGENTS.md)             |
-
-Detailed enforcement rules live under [`.cursor/rules/`](.cursor/rules/).
-ADR for this hierarchy: [`docs/decisions/ADR-0010-agents-md-hierarchy.md`](docs/decisions/ADR-0010-agents-md-hierarchy.md).
-
-## Contributing
-
-- Branches: `feat/<id>-<short>`, `fix/<id>-<short>`.
-- Commits: [Conventional Commits](https://www.conventionalcommits.org/) —
-  `feat(evaluator): add critic node`.
-- PRs must pass `ruff`, `mypy`, `pytest`, `eslint`, `svelte-check`,
-  `vitest`.
-- Update docs in the same PR as the change. ADR for any architectural
-  shift.
-- See [`AGENTS.md`](AGENTS.md) "Cardinal rules".
-
-## License
-
-Proprietary — © Kaziro. All rights reserved.
+- Keep secrets out of the repo.
+- Preserve the `{ data, meta, error }` API envelope.
+- Use structured logging.
+- Add tests for new behavior.
+- Update docs when workflows, env vars, dependencies, or architecture change.

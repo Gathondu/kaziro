@@ -3,7 +3,7 @@
 **Status**: Active
 **Last updated**: 2026-04-22
 **Source**: Sections 3.1 and 6.2 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
-**Code**: [`backend/agents/pipeline_orchestrator.py`](../../../backend/agents/pipeline_orchestrator.py)
+**Code**: [`backend/apps/pipeline/tasks.py`](../../../backend/apps/pipeline/tasks.py)
 **Related ADR**: [ADR-0004](../../decisions/ADR-0004-task-queue-celery-redis.md)
 
 ## Purpose
@@ -164,4 +164,4 @@ ID for the stage.
 | Skip stages based on user preferences  | Read flags from `user_profiles` or `job_search_configs` at orchestrator level  |
 | Increase parallelism                   | Bump `asyncio.Semaphore` value; watch OpenRouter quota / cost                |
 | Add per-stage notifications            | Add `notify_user(...)` calls in the relevant stage function                    |
-| Expose metrics per stage               | Add Prometheus histograms in `backend/metrics.py`; wrap stage with `.time()`   |
+| Expose metrics per stage               | Add Prometheus histograms in a domain-owned metrics module; wrap stage with `.time()` |

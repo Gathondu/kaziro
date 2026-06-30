@@ -1,30 +1,34 @@
-import { apiFetch, apiFetchEmpty } from './client';
-import type { CvDownloadResult, CvUploadResult, Profile } from '$lib/types/profile';
+import { apiClient } from "@/lib/api/client";
+import type {
+  CvUploadResponse,
+  ProfilePayload,
+  ProfileResponse,
+} from "@/lib/api/types";
 
-export function getProfile(): Promise<Profile> {
-	return apiFetch<Profile>(`/api/v1/profile`);
+export async function getProfile(token: string): Promise<ProfileResponse> {
+  return await apiClient.get<ProfileResponse>("/api/v1/profile", token);
 }
 
-export function putProfile(body: Record<string, unknown>): Promise<Profile> {
-	return apiFetch<Profile>(`/api/v1/profile`, {
-		method: 'PUT',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body)
-	});
+export async function putProfile(
+  token: string,
+  payload: ProfilePayload,
+): Promise<ProfileResponse> {
+  return await apiClient.put<ProfileResponse>(
+    "/api/v1/profile",
+    payload,
+    token,
+  );
 }
 
-/** Soft-deactivates the app user; caller should sign out and redirect. */
-export function postDisableOwnAccount(): Promise<void> {
-	return apiFetchEmpty(`/api/v1/profile/account/disable`, { method: 'POST' });
-}
-
-export async function signedProfileCvPdfUrl(): Promise<string> {
-	const result = await apiFetch<CvDownloadResult>(`/api/v1/profile/cv-url`);
-	return result.signed_url;
-}
-
-export async function uploadCvPdf(file: File): Promise<CvUploadResult> {
-	const fd = new FormData();
-	fd.append('file', file);
-	return apiFetch<CvUploadResult>(`/api/v1/profile/cv`, { method: 'POST', body: fd });
+export async function uploadCvPdf(
+  token: string,
+  file: File,
+): Promise<CvUploadResponse> {
+  const formData = new FormData();
+  formData.set("file", file);
+  return await apiClient.postForm<CvUploadResponse>(
+    "/api/v1/profile/cv",
+    formData,
+    token,
+  );
 }

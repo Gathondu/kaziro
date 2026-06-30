@@ -3,7 +3,7 @@
 **Status**: Active
 **Last updated**: 2026-05-27
 **Source**: Section 3.5 of [`Kaziro_Design_Document.pdf`](../../../Kaziro_Design_Document.pdf)
-**Code**: [`backend/agents/document_agent.py`](../../../backend/agents/document_agent.py)
+**Code**: [`backend/apps/pipeline/tasks.py`](../../../backend/apps/pipeline/tasks.py)
 **Pipeline position**: Stage 4 (final stage; gated by Research success)
 
 ## Purpose
@@ -20,7 +20,7 @@ paths are persisted to `application_docs`.
 | Framework       | LangGraph (5 functional nodes + error sink)            |
 | LLM             | `settings.LLM_MODEL_DOCUMENT` (default `nvidia/nemotron-3-super-120b-a12b:free`) |
 | Temperature     | 0.4 (more creative for cover letter copy)              |
-| PDF renderer    | `backend/services/pdf_renderer.render_pdf` (WeasyPrint or similar) |
+| PDF renderer    | Domain service under `backend/apps/documents/` (WeasyPrint or similar) |
 | Storage         | Supabase Storage bucket `documents/{user_id}/...`       |
 
 ## State (abbreviated)

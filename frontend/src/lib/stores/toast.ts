@@ -1,43 +1,27 @@
-export type ToastLevel = 'success' | 'warning' | 'error' | 'info';
+import { create } from "zustand";
 
-export interface ToastItem {
-	id: string;
-	level: ToastLevel;
-	message: string;
-}
+export type ToastTone = "success" | "error" | "info";
 
-const listeners = new Set<() => void>();
-let items: ToastItem[] = [];
-
-function emit(): void {
-	for (const l of listeners) l();
-}
-
-export function getToasts(): ToastItem[] {
-	return items;
-}
-
-export function subscribeToasts(cb: () => void): () => void {
-	listeners.add(cb);
-	cb();
-	return () => listeners.delete(cb);
-}
-
-function push(level: ToastLevel, message: string): void {
-	const id = crypto.randomUUID();
-	items = [...items, { id, level, message }];
-	emit();
-	setTimeout(() => dismiss(id), 7000);
-}
-
-export function dismiss(id: string): void {
-	items = items.filter((t) => t.id !== id);
-	emit();
-}
-
-export const toast = {
-	success: (m: string) => push('success', m),
-	warning: (m: string) => push('warning', m),
-	error: (m: string) => push('error', m),
-	info: (m: string) => push('info', m)
+export type ToastMessage = {
+  id: string;
+  tone: ToastTone;
+  message: string;
 };
+
+type ToastState = {
+  toasts: ToastMessage[];
+  push: (tone: ToastTone, message: string) => void;
+  dismiss: (id: string) => void;
+};
+
+export const useToastStore = create<ToastState>((set) => ({
+  toasts: [],
+  push: (tone, message) =>
+    set((state) => ({
+      toasts: [...state.toasts, { id: crypto.randomUUID(), tone, message }],
+    })),
+  dismiss: (id) =>
+    set((state) => ({
+      toasts: state.toasts.filter((toast) => toast.id !== id),
+    })),
+}));

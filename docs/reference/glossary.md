@@ -122,10 +122,10 @@ The Evaluator scores each job along weighted dimensions
 ## Internal jargon
 
 - **Agent (Kaziro)** — a LangGraph workflow under
-  [`backend/agents/`](../../backend/agents/). Not to be confused with
+  [`backend/apps/pipeline/`](../../backend/apps/pipeline/). Not to be confused with
   "AI agents" generically.
 - **Pipeline** — the chain `Fetch → Parser → Evaluator → Research →
-  Document` orchestrated by `pipeline_orchestrator.py`.
+  Document` orchestrated by `tasks.py`.
 - **Pipeline summary** — the structured contract returned by the
   orchestrator, recording per-stage outcomes for logging and the UI.
   See [`docs/design/agents/pipeline-orchestrator.md`](../design/agents/pipeline-orchestrator.md).

@@ -18,8 +18,8 @@ flowchart TB
   end
 
   subgraph kaziro [Kaziro Platform]
-    fe["Svelte SPA<br/>(SvelteKit)"]
-    api["FastAPI Backend"]
+    fe["React SPA<br/>(Next.js)"]
+    api["Django Ninja Backend"]
     workers["Celery Workers<br/>+ LangGraph Agents"]
   end
 

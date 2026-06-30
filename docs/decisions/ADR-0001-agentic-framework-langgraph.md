@@ -48,7 +48,7 @@ We need a framework that:
 It models each agent as a `StateGraph` with explicit nodes and conditional
 edges. State is a Pydantic model — fully typed and serializable. The
 existing parser/evaluator/research/document agents already use LangGraph
-in [`backend/agents/`](../../backend/agents/) and the pattern has proven to
+in [`backend/apps/pipeline/`](../../backend/apps/pipeline/) and the pattern has proven to
 fit the problem cleanly.
 
 ### Positive consequences
@@ -102,5 +102,5 @@ fit the problem cleanly.
 
 - [`docs/architecture/02-agentic-pipeline.md`](../architecture/02-agentic-pipeline.md)
 - [`docs/design/agents/`](../design/agents/)
-- [`backend/agents/`](../../backend/agents/)
+- [`backend/apps/pipeline/`](../../backend/apps/pipeline/)
 - [LangGraph docs](https://langchain-ai.github.io/langgraph/)

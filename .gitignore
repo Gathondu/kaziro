@@ -27,6 +27,7 @@ __pycache__/
 build/
 dist/
 .venv/
+.venv314/
 venv/
 .env.local
 .python-version.local
@@ -42,17 +43,15 @@ htmlcov/
 test-reports/
 test-results/
 backend/test-reports/
-frontend-next/test-results/
+frontend/test-results/
 
-# ----- Node / Vite / SvelteKit ----------------------------------------------
+# ----- Node / Next.js --------------------------------------------------------
 node_modules/
 .pnpm-store/
 .next/
-.svelte-kit/
 .vercel/
 build-frontend/
 dist-frontend/
-.vite/
 
 # ----- IDE / OS noise --------------------------------------------------------
 .idea/

@@ -112,7 +112,7 @@ resource "aws_lambda_function" "connect" {
   source_code_hash = data.archive_file.connect.output_base64sha256
   role             = aws_iam_role.lambda.arn
   handler          = "connect.lambda_handler"
-  runtime          = "python3.12"
+  runtime          = "python3.14"
   timeout          = 10
   memory_size      = 128
 
@@ -130,7 +130,7 @@ resource "aws_lambda_function" "disconnect" {
   source_code_hash = data.archive_file.disconnect.output_base64sha256
   role             = aws_iam_role.lambda.arn
   handler          = "disconnect.lambda_handler"
-  runtime          = "python3.12"
+  runtime          = "python3.14"
   timeout          = 10
   memory_size      = 128
 
@@ -147,7 +147,7 @@ resource "aws_lambda_function" "default" {
   source_code_hash = data.archive_file.default.output_base64sha256
   role             = aws_iam_role.lambda.arn
   handler          = "default.lambda_handler"
-  runtime          = "python3.12"
+  runtime          = "python3.14"
   timeout          = 10
   memory_size      = 128
 }

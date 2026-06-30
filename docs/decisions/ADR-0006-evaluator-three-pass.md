@@ -52,7 +52,7 @@ Single-pass evaluation with one LLM call has known weaknesses:
   the final score + classification.
 
 The Critic node is non-fatal: if it fails, the Judge falls back to the
-Draft directly (see [`evaluator_agent.py`](../../backend/agents/evaluator_agent.py)).
+Draft directly (see [`tasks.py`](../../backend/apps/pipeline/tasks.py)).
 
 ### Positive consequences
 
@@ -98,4 +98,4 @@ Draft directly (see [`evaluator_agent.py`](../../backend/agents/evaluator_agent.
 ## Links
 
 - [`docs/design/agents/evaluator-agent.md`](../design/agents/evaluator-agent.md)
-- [`backend/agents/evaluator_agent.py`](../../backend/agents/evaluator_agent.py)
+- [`backend/apps/pipeline/tasks.py`](../../backend/apps/pipeline/tasks.py)

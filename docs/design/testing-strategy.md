@@ -3,7 +3,7 @@
 **Status**: Active
 **Last updated**: 2026-04-22
 **Source**: Section 9 of [`Kaziro_Design_Document.pdf`](../../Kaziro_Design_Document.pdf) and [`.cursor/rules/005-testing.mdc`](../../.cursor/rules/005-testing.mdc)
-**Code (target)**: `backend/tests/`, `frontend/tests/`, `tests/e2e/`, `tests/load/`
+**Code (target)**: `backend/tests/`, `frontend/e2e/`, `tests/load/`
 
 ## 1. Test pyramid
 
@@ -20,7 +20,7 @@
 | Layer            | Volume          | Tool                                  | Run                |
 | ---------------- | --------------- | ------------------------------------- | ------------------ |
 | Unit (Python)    | Largest         | `pytest` + `pytest-asyncio`           | every PR (< 60 s)  |
-| Unit (frontend)  | Largest         | `vitest` + `@testing-library/svelte`  | every PR           |
+| Unit (frontend)  | Largest         | `vitest` + `@testing-library/React`  | every PR           |
 | Integration      | Many            | `pytest` + ephemeral Postgres+Redis   | every PR (< 5 min) |
 | E2E              | Few critical    | `playwright`                          | nightly + main merge |
 | Load             | Few key flows   | `locust`                              | weekly + before release |
@@ -29,25 +29,13 @@
 
 ```
 backend/tests/
-├── conftest.py                # Shared async client, db_session, mock_redis, sample_user fixtures
-├── unit/
-│   ├── services/
-│   ├── repositories/
-│   └── utils/
-├── agents/
-│   ├── test_parser_agent.py
-│   ├── test_evaluator_agent.py
-│   ├── test_research_agent.py
-│   ├── test_document_agent.py
-│   └── test_pipeline_orchestrator.py
-├── api/
-│   ├── test_auth.py
-│   ├── test_jobs.py
-│   ├── test_applications.py
-│   └── test_profile.py
-├── integration/
-│   ├── test_full_pipeline.py
-│   └── test_websocket_flow.py
+├── conftest.py                # Shared Django, auth, Redis, and sample data fixtures
+├── test_auth_profile_notifications.py
+├── test_scaffold.py
+├── accounts/
+├── jobs/
+├── pipeline/
+├── notifications/
 └── cassettes/                 # VCR cassettes for LLM-mocked tests
 ```
 
@@ -56,8 +44,8 @@ backend/tests/
 | Fixture           | Scope    | Purpose                                                    |
 | ----------------- | -------- | ---------------------------------------------------------- |
 | `event_loop`      | session  | Async event loop                                           |
-| `async_client`    | function | FastAPI `httpx.AsyncClient` against the app                |
-| `db_session`      | function | Transactional Postgres session, rolled back on teardown    |
+| `client`          | function | Django or Django Ninja test client against the app         |
+| `db`              | function | Transactional Django test database                         |
 | `mock_redis`      | function | `fakeredis.aioredis` instance                              |
 | `sample_user`     | function | Authenticated `User` row for tenant scoping tests          |
 | `sample_profile`  | function | Filled `UserProfile` for the `sample_user`                 |
@@ -71,10 +59,8 @@ Fixture pattern:
 ```python
 @pytest_asyncio.fixture
 async def db_session():
-    async with engine.begin() as conn:
-        async with AsyncSession(conn) as s:
-            yield s
-            await s.rollback()
+    user = User.objects.create_user(email="user@example.com", password="test-pass")
+    yield user
 ```
 
 ## 4. Agent tests
@@ -146,7 +132,7 @@ async def test_get_job_returns_404_for_other_users_job(
 ### 6.1 Unit (`vitest`)
 
 - Pure utility functions in `lib/utils/` — 100% coverage target.
-- Component rendering with `@testing-library/svelte`.
+- Component rendering with `@testing-library/React`.
 - Store logic (auth, notifications, toast).
 
 ### 6.2 Component contract tests
@@ -161,8 +147,8 @@ For each component documented in
 
 ## 7. End-to-end (`playwright`)
 
-Tests live in `tests/e2e/`. Run against staging or a local stack via
-`playwright.config.ts` projects.
+Tests live in `frontend/e2e/`. Run against staging or a local stack via
+`frontend/playwright.config.ts` projects.
 
 Critical paths covered:
 
@@ -201,11 +187,11 @@ backlog metrics — it's not a request-latency SLO.
 
 | Area                  | Minimum coverage |
 | --------------------- | ---------------- |
-| `backend/agents/`     | **90%**          |
-| `backend/services/`   | 85%              |
-| `backend/api/`        | 60%              |
-| `backend/db/`         | 75%              |
-| `backend/utils/`      | 70%              |
+| `backend/apps/pipeline/` | **90%**      |
+| `backend/apps/*/services.py` | 85%       |
+| `backend/apps/*/views.py` | 75%         |
+| `backend/apps/*/repositories.py` | 75%  |
+| `backend/apps/core/` | 70%             |
 | Frontend components   | 75%              |
 | Frontend stores       | 90%              |
 
@@ -238,17 +224,17 @@ staging post-deploy, gated by an explicit env var.
 
 ```bash
 # Backend unit + integration
-make test                      # pytest backend/tests/ --cov=backend
-pytest backend/tests/agents/ -v -k evaluator
-pytest backend/tests/ --cov=backend --cov-report=html
+make test
+cd backend && uv run python manage.py test
+cd backend && uv run ruff check .
 
-# Frontend unit
-pnpm --filter frontend test
-pnpm --filter frontend test --watch
+# Frontend checks
+cd frontend && pnpm lint
+cd frontend && pnpm typecheck
 
 # E2E
-make e2e                       # spin up stack + run playwright
-playwright test --ui
+cd frontend && pnpm test:e2e
+cd frontend && pnpm exec playwright test --ui
 
 # Load
 locust -f tests/load/locustfile.py --host http://staging.kaziro.io

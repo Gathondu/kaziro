@@ -6,43 +6,33 @@ alwaysApply: true
 
 # ========================
 
-# Applies to: backend/tests/\*_/_.py and frontend/tests/\*_/_.ts
+# Applies to: backend/tests/**/*.py and frontend/e2e/**/*.ts
 
 ## Test Structure (backend)
 
 ```
 backend/tests/
-├── conftest.py                    # Shared fixtures (DB, auth, async)
-├── agents/
-│   ├── test_parser_agent.py
-│   ├── test_evaluator_agent.py
-│   ├── test_research_agent.py
-│   └── test_document_agent.py
-├── api/
-│   ├── test_jobs.py
-│   ├── test_applications.py
-│   └── test_profile.py
-├── services/
-│   ├── test_job_fetcher.py
-│   └── test_notifications.py
-└── db/
-    └── test_repositories.py
+├── conftest.py                    # Shared fixtures (DB, auth, Redis, sample data)
+├── test_auth_profile_notifications.py
+├── test_scaffold.py
+├── accounts/
+├── jobs/
+├── pipeline/
+└── notifications/
 
-frontend/tests/
-├── unit/                          # vitest + @testing-library/svelte
-└── e2e/                           # Playwright (separate runner)
-    └── test_application_flow.spec.ts
+frontend/e2e/
+└── auth-onboarding.spec.ts         # Playwright user journeys
 ```
 
 ## Fixtures (conftest.py)
 
-- `async_session`: async DB session scoped to the test — rolls back after each test.
+- `db`: Django test database scoped to the test.
 - `test_user`: a pre-created User with full profile, scoped to test.
 - `test_job_posting`: a pre-parsed JobPosting for the test user's domain.
 - `test_evaluation`: a GOOD_FIT evaluation for `test_job_posting` and `test_user`.
 - `mock_llm`: patches `ChatOpenRouter` to return pre-recorded responses from fixtures/llm/.
 - `mock_firecrawl`: patches `firecrawl_scrape` to return fixture HTML content.
-- `authenticated_client`: `AsyncClient` with valid JWT headers for the test user.
+- `authenticated_client`: Django or Django Ninja test client with valid JWT headers for the test user.
 
 ## Agent Tests
 
@@ -92,15 +82,15 @@ async def test_parser_agent_happy_path(test_raw_job, async_session):
 ### Client pattern:
 
 ```python
-async def test_get_jobs_authenticated(authenticated_client, test_job_posting):
-    response = await authenticated_client.get("/api/v1/jobs")
+def test_get_jobs_authenticated(authenticated_client, test_job_posting):
+    response = authenticated_client.get("/api/v1/jobs")
     assert response.status_code == 200
     data = response.json()
     assert "data" in data
     assert len(data["data"]) >= 1
 
-async def test_get_jobs_unauthenticated(async_client):
-    response = await async_client.get("/api/v1/jobs")
+def test_get_jobs_unauthenticated(client):
+    response = client.get("/api/v1/jobs")
     assert response.status_code == 401
 ```
 
@@ -110,7 +100,7 @@ async def test_get_jobs_unauthenticated(async_client):
 - Agent files: 90% minimum (critical business logic)
 - API routes: 85% minimum
 - Services: 60% minimum
-- Run coverage: `pytest --cov=backend --cov-report=html`
+- Run coverage: `uv run coverage run manage.py test && uv run coverage html`
 - CI fails if coverage drops below thresholds
 
 ## Test Data
@@ -123,7 +113,7 @@ async def test_get_jobs_unauthenticated(async_client):
 ## What NOT to Test
 
 - ❌ Don't test Pydantic validation directly — it's tested by Pydantic's own suite.
-- ❌ Don't test SQLAlchemy query construction — test the repository output instead.
+- ❌ Don't test ORM query construction as strings; test repository behavior instead.
 - ❌ Don't write tests that depend on test execution order.
 - ❌ Don't use `time.sleep()` in tests — use `pytest-asyncio` timeouts.
 
@@ -131,14 +121,14 @@ async def test_get_jobs_unauthenticated(async_client):
 
 ```bash
 # Run all backend unit + integration tests
-pytest backend/tests/ -v --timeout=30
+cd backend && uv run python manage.py test
 
 # Run with coverage
-pytest backend/tests/ --cov=backend --cov-fail-under=60
+cd backend && uv run coverage run manage.py test && uv run coverage report --fail-under=60
 
-# Run only agent tests
-pytest backend/tests/agents/ -v
+# Run only pipeline tests
+cd backend && uv run python manage.py test tests.pipeline
 
 # Run E2E (separate, requires running server + frontend)
-pnpm --dir frontend e2e
+pnpm --dir frontend test:e2e
 ```
