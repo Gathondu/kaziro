@@ -86,6 +86,14 @@ jobs:
         run: uv run ruff format --check .
         working-directory: backend
 
+      - name: Mypy type check
+        run: uv run mypy .
+        working-directory: backend
+
+      - name: Pyrefly type check
+        run: uv run pyrefly check .
+        working-directory: backend
+
       - name: Django system checks
         run: uv run python manage.py check
         working-directory: backend

@@ -22,7 +22,15 @@ class DraftStatus(models.TextChoices):
     VALIDATION_FAILED = "validation_failed", "Validation failed"
     VALIDATED = "validated", "Validated"
     APPROVED = "approved", "Approved"
+    SUPERSEDED = "superseded", "Superseded"
     REJECTED = "rejected", "Rejected"
+
+
+class DiscoveryRunStatus(models.TextChoices):
+    QUEUED = "queued", "Queued"
+    RUNNING = "running", "Running"
+    SUCCEEDED = "succeeded", "Succeeded"
+    FAILED = "failed", "Failed"
 
 
 class RawJobParseStatus(models.TextChoices):
@@ -108,6 +116,13 @@ class JobSourceConfigDraft(models.Model):
     updated_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
+        constraints: ClassVar[tuple[models.BaseConstraint, ...]] = (
+            models.UniqueConstraint(
+                fields=["provider"],
+                condition=models.Q(status=DraftStatus.APPROVED),
+                name="uq_job_src_one_approved_draft",
+            ),
+        )
         indexes: ClassVar[tuple[models.Index, ...]] = (
             models.Index(fields=["provider", "status"], name="ix_job_src_draft_status"),
         )
@@ -115,6 +130,40 @@ class JobSourceConfigDraft(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.updated_at = timezone.now()
         super().save(*args, **kwargs)
+
+
+class JobSourceDiscoveryRun(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    provider = models.ForeignKey(
+        JobSourceProvider,
+        on_delete=models.CASCADE,
+        related_name="discovery_runs",
+    )
+    draft = models.ForeignKey(
+        JobSourceConfigDraft,
+        on_delete=models.SET_NULL,
+        related_name="discovery_runs",
+        blank=True,
+        null=True,
+    )
+    status = models.CharField(
+        max_length=32,
+        choices=DiscoveryRunStatus.choices,
+        default=DiscoveryRunStatus.QUEUED,
+    )
+    known_auth_type = models.CharField(max_length=32, blank=True)
+    keywords = models.JSONField(default=list, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
+    queued_at = models.DateTimeField(default=timezone.now)
+    started_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        indexes: ClassVar[tuple[models.Index, ...]] = (
+            models.Index(fields=["provider", "-queued_at"], name="ix_job_src_disc_provider"),
+            models.Index(fields=["status"], name="ix_job_src_disc_status"),
+        )
 
 
 class JobSourceValidationRun(models.Model):
@@ -126,8 +175,10 @@ class JobSourceValidationRun(models.Model):
     )
     status = models.CharField(max_length=32)
     request_url = models.URLField(max_length=2048)
+    request_headers = models.JSONField(default=dict, blank=True)
     response_status = models.PositiveIntegerField(blank=True, null=True)
     response_metadata = models.JSONField(default=dict, blank=True)
+    response_payload = models.JSONField(default=dict, blank=True)
     errors = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -204,10 +255,12 @@ class JobPosting(models.Model):
 __all__ = [
     "FETCH_CRON_DAILY",
     "FETCH_CRON_WEEKLY",
+    "DiscoveryRunStatus",
     "DraftStatus",
     "JobPosting",
     "JobSearchConfig",
     "JobSourceConfigDraft",
+    "JobSourceDiscoveryRun",
     "JobSourceProvider",
     "JobSourceValidationRun",
     "ProviderStatus",

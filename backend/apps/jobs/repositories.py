@@ -5,6 +5,7 @@ from apps.jobs.models import (
     DraftStatus,
     JobSearchConfig,
     JobSourceConfigDraft,
+    JobSourceDiscoveryRun,
     JobSourceProvider,
     ProviderStatus,
 )
@@ -67,6 +68,19 @@ async def create_draft(
     )
 
 
+async def create_discovery_run(
+    provider: JobSourceProvider,
+    *,
+    known_auth_type: str | None = None,
+    keywords: list[str] | None = None,
+) -> JobSourceDiscoveryRun:
+    return await JobSourceDiscoveryRun.objects.acreate(
+        provider=provider,
+        known_auth_type=known_auth_type or "",
+        keywords=keywords or [],
+    )
+
+
 async def get_draft(draft_id: str) -> JobSourceConfigDraft | None:
     return (
         await JobSourceConfigDraft.objects.select_related("provider").filter(id=draft_id).afirst()
@@ -74,7 +88,7 @@ async def get_draft(draft_id: str) -> JobSourceConfigDraft | None:
 
 
 async def list_drafts(provider: JobSourceProvider) -> list[JobSourceConfigDraft]:
-    queryset = provider.config_drafts.order_by("-created_at")
+    queryset = JobSourceConfigDraft.objects.filter(provider=provider).order_by("-created_at")
     return [draft async for draft in queryset]
 
 
@@ -88,6 +102,7 @@ async def active_provider_drafts() -> list[JobSourceConfigDraft]:
 
 __all__ = [
     "active_provider_drafts",
+    "create_discovery_run",
     "create_draft",
     "create_for_user",
     "create_provider",

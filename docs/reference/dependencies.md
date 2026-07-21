@@ -29,6 +29,7 @@
 | --- | --- |
 | `ruff` | Linting and formatting. |
 | `mypy` | Static type checking. |
+| `pyrefly` | Fast secondary Python type checker used alongside mypy. |
 | `django-stubs` | Django typing support. |
 | `pytest` | Test runner support. |
 | `pytest-django` | Django test integration. |

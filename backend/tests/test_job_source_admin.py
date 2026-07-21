@@ -5,9 +5,11 @@ from unittest.mock import patch
 from django.test import Client, TestCase
 
 from apps.accounts.models import User
+from apps.jobs.forms import JobSourceConfigDraftAdminForm
 from apps.jobs.models import (
     DraftStatus,
     JobSourceConfigDraft,
+    JobSourceDiscoveryRun,
     JobSourceProvider,
     ProviderStatus,
 )
@@ -42,7 +44,47 @@ class JobSourceAdminActionTests(TestCase):
             )
 
         assert response.status_code == 200
-        enqueue_discovery.assert_called_once_with(str(provider.id))
+        run = JobSourceDiscoveryRun.objects.get(provider=provider)
+        enqueue_discovery.assert_called_once_with(str(provider.id), str(run.id))
+
+    def test_provider_detail_form_queues_discovery_with_hints(self) -> None:
+        provider = JobSourceProvider.objects.create(
+            slug="example-jobs",
+            display_name="Example Jobs",
+            docs_url="https://example.com/docs",
+        )
+
+        with patch("apps.jobs.admin.discover_provider_task.delay") as enqueue_discovery:
+            response = self.client.post(
+                f"/admin/jobs/jobsourceprovider/{provider.id}/run-discovery/",
+                {"known_auth_type": "bearer", "keywords": "jobs, vacancies"},
+            )
+
+        assert response.status_code == 302
+        run = JobSourceDiscoveryRun.objects.get(provider=provider)
+        assert run.known_auth_type == "bearer"
+        assert run.keywords == ["jobs", "vacancies"]
+        enqueue_discovery.assert_called_once_with(
+            str(provider.id), str(run.id), "bearer", ["jobs", "vacancies"]
+        )
+
+    def test_non_staff_cannot_open_guided_discovery_form(self) -> None:
+        provider = JobSourceProvider.objects.create(
+            slug="example-jobs",
+            display_name="Example Jobs",
+            docs_url="https://example.com/docs",
+        )
+        normal_user = User.objects.create_user(
+            username="member",
+            email="member@example.com",
+            password="strong-password-123",
+        )
+        self.client.force_login(normal_user)
+
+        response = self.client.get(f"/admin/jobs/jobsourceprovider/{provider.id}/run-discovery/")
+
+        assert response.status_code == 302
+        assert "/admin/login/" in response.headers["Location"]
 
     def test_draft_admin_action_queues_validation(self) -> None:
         provider = JobSourceProvider.objects.create(
@@ -105,3 +147,54 @@ class JobSourceAdminActionTests(TestCase):
         assert validated_draft.approved_at is not None
         assert generated_draft.status == DraftStatus.GENERATED
         assert provider.status == ProviderStatus.ACTIVE
+
+    def test_approving_replacement_supersedes_previous_draft(self) -> None:
+        provider = JobSourceProvider.objects.create(
+            slug="example-jobs",
+            display_name="Example Jobs",
+            docs_url="https://example.com/docs",
+            status=ProviderStatus.ACTIVE,
+        )
+        previous = JobSourceConfigDraft.objects.create(
+            provider=provider,
+            status=DraftStatus.APPROVED,
+            config={"base_url": "https://old.example.com", "endpoint_path": "/jobs"},
+        )
+        replacement = JobSourceConfigDraft.objects.create(
+            provider=provider,
+            status=DraftStatus.VALIDATED,
+            config={"base_url": "https://new.example.com", "endpoint_path": "/jobs"},
+        )
+
+        response = self.client.post(f"/admin/jobs/jobsourceconfigdraft/{replacement.id}/approve/")
+
+        assert response.status_code == 302
+        previous.refresh_from_db()
+        replacement.refresh_from_db()
+        assert previous.status == DraftStatus.SUPERSEDED
+        assert replacement.status == DraftStatus.APPROVED
+        assert (
+            JobSourceConfigDraft.objects.filter(
+                provider=provider, status=DraftStatus.APPROVED
+            ).count()
+            == 1
+        )
+
+    def test_draft_admin_form_rejects_invalid_config(self) -> None:
+        provider = JobSourceProvider.objects.create(
+            slug="example-jobs",
+            display_name="Example Jobs",
+            docs_url="https://example.com/docs",
+        )
+        form = JobSourceConfigDraftAdminForm(
+            data={
+                "provider": provider.id,
+                "config": {"endpoint_path": "/jobs"},
+                "confidence_score": 0.5,
+                "evidence_urls": [],
+                "validation_errors": [],
+            }
+        )
+
+        assert not form.is_valid()
+        assert "config" in form.errors

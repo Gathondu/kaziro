@@ -20,12 +20,24 @@ ingestion.
 The discovery service is not managed by the Kaziro repo and is not the system of
 record. Kaziro only stores the service URL used for discovery requests. Django
 owns provider state, approval, validation history, and raw job persistence.
+Only one approved config is consumable per provider. Approving a replacement
+keeps the previous draft as superseded history.
 
 ## Consequences
 
 - RapidAPI/JSearch becomes one provider option, not the pipeline identity.
 - Generated configs never store API secrets; configs reference environment
   variable names for provider credentials.
+- Provider-specific non-secret request headers are stored in `request_headers`.
+  This supports values such as RapidAPI's per-provider `X-RapidAPI-Host`
+  without hardcoding RapidAPI behavior in the fetcher. Sensitive headers must
+  reference environment variables instead of storing literal values.
+- Discovery drafts include provider-native `smoke_test_params` inferred from
+  documentation evidence. Validation persists the executed URL, redacted
+  headers, status, response headers, and complete parsed response body so staff
+  can diagnose provider-specific failures in Django admin.
+- Provider configs may declare a dot-separated `response_list_path`, such as
+  `data.jobs`, for APIs whose job array is nested inside response envelopes.
 - Discovery is limited to public API documentation pages in v1.
 - The fetch pipeline can add or repair sources without changing core parser,
   evaluator, research, or document-agent behavior.

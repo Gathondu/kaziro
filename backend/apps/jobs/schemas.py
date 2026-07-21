@@ -110,6 +110,12 @@ class DraftConfigPagination(Schema):
     default_page_size: int = Field(default=10, ge=1, le=100)
 
 
+class DraftConfigRequestHeader(Schema):
+    name: str
+    value: str | None = None
+    value_env_var: str | None = None
+
+
 class ProviderConfigDraftPayload(Schema):
     base_url: AnyHttpUrl
     endpoint_path: str = Field(min_length=1, max_length=1024)
@@ -117,6 +123,9 @@ class ProviderConfigDraftPayload(Schema):
     query_params: dict[str, str] = Field(default_factory=dict)
     pagination: DraftConfigPagination = Field(default_factory=DraftConfigPagination)
     auth: DraftConfigAuth = Field(default_factory=lambda: DraftConfigAuth(type="none"))
+    request_headers: list[DraftConfigRequestHeader] = Field(default_factory=list)
+    smoke_test_params: dict[str, str] = Field(default_factory=dict)
+    response_list_path: str | None = None
     response_mapping: dict[str, str] = Field(default_factory=dict)
     confidence_score: float = Field(ge=0, le=1)
     evidence_urls: list[str] = Field(default_factory=list, max_length=20)
@@ -140,8 +149,10 @@ class JobSourceValidationRunResponse(Schema):
     draft_id: uuid.UUID
     status: str
     request_url: str
+    request_headers: dict[str, str]
     response_status: int | None = None
     response_metadata: dict[str, object]
+    response_payload: object
     errors: list[object]
     created_at: datetime
 
@@ -165,6 +176,7 @@ __all__ = [
     "DiscoveryRequestPayload",
     "DraftConfigAuth",
     "DraftConfigPagination",
+    "DraftConfigRequestHeader",
     "JobConfigPayload",
     "JobConfigResponse",
     "JobSourceConfigDraftResponse",

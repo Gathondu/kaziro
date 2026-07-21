@@ -8,6 +8,7 @@ derived helper properties, and provides a cached ``get_settings()`` entrypoint.
 
 from __future__ import annotations
 
+import os
 import sys
 from enum import StrEnum
 from functools import lru_cache
@@ -22,7 +23,7 @@ from urllib.parse import (
 )
 
 import dj_database_url
-from dotenv import find_dotenv
+from dotenv import dotenv_values, find_dotenv
 from pydantic import (
     AliasChoices,
     AnyHttpUrl,
@@ -39,6 +40,17 @@ filename = ".env"
 if "test" in sys.argv:
     filename = ".env.test"
 _ENV_FILE: str = find_dotenv(filename, usecwd=True, raise_error_if_not_found=False)
+
+
+def get_configured_env(name: str) -> str | None:
+    """Resolve arbitrary integration credentials without exposing them as settings fields."""
+    process_value = os.environ.get(name)
+    if process_value:
+        return process_value
+    if not _ENV_FILE:
+        return None
+    file_value = dotenv_values(_ENV_FILE).get(name)
+    return file_value if isinstance(file_value, str) and file_value else None
 
 
 class AppEnv(StrEnum):
@@ -415,6 +427,7 @@ globals().update(_django_setting_exports(settings))
 
 __all__: list[str] = [
     "Settings",
+    "get_configured_env",
     "get_settings",
     "settings",
 ]

@@ -298,7 +298,11 @@ class AuthProfileNotificationTests(TransactionTestCase):
 
         with patch(
             "apps.jobs.fetcher._get_json",
-            return_value=(200, {"jobs": [{"id": "job-1", "title": "Engineer"}]}),
+            return_value=(
+                200,
+                {"jobs": [{"id": "job-1", "title": "Engineer"}]},
+                {},
+            ),
         ):
             first_run = await fetcher.fetch_jobs_for_config(config)
             second_run = await fetcher.fetch_jobs_for_config(config)

@@ -98,8 +98,10 @@ erDiagram
     uuid draft_id FK
     text status
     text request_url
+    jsonb request_headers
     int response_status
     jsonb response_metadata
+    jsonb response_payload
     jsonb errors
   }
 

@@ -1,0 +1,24 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+  {% if original %}
+    {% if original.status != "approved" and original.status != "superseded" %}
+      <li>
+        <form method="post" action="{% url 'admin:jobs_jobsourceconfigdraft_validate' original.pk %}">
+          {% csrf_token %}
+          <button type="submit">{% translate "Validate draft" %}</button>
+        </form>
+      </li>
+    {% endif %}
+    {% if original.status == "validated" %}
+      <li>
+        <form method="post" action="{% url 'admin:jobs_jobsourceconfigdraft_approve' original.pk %}">
+          {% csrf_token %}
+          <button type="submit">{% translate "Approve and activate" %}</button>
+        </form>
+      </li>
+    {% endif %}
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

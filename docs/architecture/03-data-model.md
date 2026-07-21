@@ -168,9 +168,11 @@ class ParseStatus(str, enum.Enum):
 | ------------------- | ---------- | -------- | ------------------------------------------------ |
 | `draft_id`          | UUID FK    | NOT NULL | Config draft being validated                     |
 | `status`            | TEXT       | NOT NULL | Validation result                                |
-| `request_url`       | TEXT       | NOT NULL | Smoke-test URL with no secrets persisted         |
+| `request_url`       | TEXT       | NOT NULL | Full smoke-test URL with credential values redacted |
+| `request_headers`   | JSONB      | NOT NULL | Request headers with credential values redacted  |
 | `response_status`   | INTEGER    | NULL     | Provider HTTP status                             |
-| `response_metadata` | JSONB      | NOT NULL | Safe response metadata such as jobs seen         |
+| `response_metadata` | JSONB      | NOT NULL | Response headers and summary metadata            |
+| `response_payload`  | JSONB      | NOT NULL | Complete parsed provider success or error body   |
 | `errors`            | JSONB      | NOT NULL | User-safe validation errors                      |
 
 ### 3.8 `job_postings`

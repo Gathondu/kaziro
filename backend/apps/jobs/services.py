@@ -20,7 +20,11 @@ from apps.jobs.schemas import (
     RunConfigResponse,
     schedule_presets,
 )
-from apps.jobs.tasks import approve_draft, discover_provider_task, validate_provider_draft_task
+from apps.jobs.tasks import (
+    approve_draft,
+    discover_provider_task,
+    validate_provider_draft_task,
+)
 from apps.notifications.services import create_notification
 from apps.notifications.tasks import create_notification_task
 from apps.pipeline.tasks import run_pipeline_for_config
@@ -84,7 +88,11 @@ async def create_provider(
         robots_notes=payload.robots_notes,
         terms_notes=payload.terms_notes,
     )
-    log.info("job_source.provider_created", provider_id=str(provider.id), slug=provider.slug)
+    log.info(
+        "job_source.provider_created",
+        provider_id=str(provider.id),
+        slug=provider.slug,
+    )
     return provider_to_response(provider)
 
 
@@ -97,12 +105,18 @@ async def trigger_discovery(
     provider = await repositories.get_provider(provider_id)
     if provider is None:
         raise NotFoundError("Provider not found.", code="job_source_provider_not_found")
+    run = await repositories.create_discovery_run(
+        provider,
+        known_auth_type=payload.known_auth_type,
+        keywords=payload.keywords,
+    )
     task = discover_provider_task.delay(
         str(provider.id),
+        str(run.id),
         payload.known_auth_type,
         payload.keywords,
     )
-    return RunConfigResponse(task_id=str(task.id))
+    return RunConfigResponse(task_id=task.id)
 
 
 async def list_provider_drafts(
@@ -122,7 +136,7 @@ async def validate_draft(user: User, draft_id: str) -> RunConfigResponse:
     if draft is None:
         raise NotFoundError("Draft not found.", code="job_source_draft_not_found")
     task = validate_provider_draft_task.delay(str(draft.id))
-    return RunConfigResponse(task_id=str(task.id))
+    return RunConfigResponse(task_id=task.id)
 
 
 async def approve_config_draft(user: User, draft_id: str) -> JobSourceConfigDraftResponse:
@@ -207,7 +221,9 @@ def _require_staff(user: User) -> None:
         raise ForbiddenError("Admin privileges are required.", code="admin_required")
 
 
-def provider_to_response(provider: JobSourceProvider) -> JobSourceProviderResponse:
+def provider_to_response(
+    provider: JobSourceProvider,
+) -> JobSourceProviderResponse:
     return JobSourceProviderResponse(
         id=provider.id,
         slug=provider.slug,
@@ -222,7 +238,9 @@ def provider_to_response(provider: JobSourceProvider) -> JobSourceProviderRespon
     )
 
 
-def draft_to_response(draft: JobSourceConfigDraft) -> JobSourceConfigDraftResponse:
+def draft_to_response(
+    draft: JobSourceConfigDraft,
+) -> JobSourceConfigDraftResponse:
     return JobSourceConfigDraftResponse(
         id=draft.id,
         provider_id=draft.provider.id,
