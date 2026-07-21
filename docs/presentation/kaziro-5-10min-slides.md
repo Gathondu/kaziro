@@ -29,7 +29,7 @@ flowchart LR
   agents[Agent_Pipeline]
   db[(PostgreSQL_pgvector)]
   redis[(Redis)]
-  rapidapi[RapidAPI_Providers]
+  sources[Approved_Job_Source_APIs]
   firecrawl[Firecrawl]
   openrouter[OpenRouter_Models]
   storage[Supabase_Storage]

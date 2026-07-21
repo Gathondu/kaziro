@@ -191,6 +191,14 @@ class Settings(BaseSettings):
     USER_CHANNEL_PREFIX: str = Field(
         default="user:", description="PREFIX appended to a user channel"
     )
+    JOB_SOURCE_DISCOVERY_URL: str = Field(
+        default="http://localhost:3100",
+        description="URL for the external job source discovery service.",
+    )
+    JOB_SOURCE_DISCOVERY_TIMEOUT_SECONDS: int = Field(
+        default=45,
+        description="Timeout for calls from Django/Celery to the external discovery service.",
+    )
 
     # -- LangSmith ----------------------------------------------------------
     LANGSMITH_TRACING: bool = False

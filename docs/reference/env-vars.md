@@ -31,8 +31,9 @@ to `.env.example`.
 | `RESEND_TIMEOUT_SECONDS` | No | `10` | Resend API timeout. |
 | `OPENROUTER_API_KEY` | Yes for LLM calls | - | OpenRouter API key. |
 | `FIRECRAWL_API_KEY` | Yes for company research | - | Firecrawl API key. |
-| `RAPIDAPI_KEY` | Yes for job fetches | - | RapidAPI key. |
-| `RAPIDAPI_HOST` | No | provider-specific | RapidAPI host. |
+| `JOB_SOURCE_DISCOVERY_URL` | No | `http://localhost:3100` | External job source discovery service URL. |
+| `JOB_SOURCE_DISCOVERY_TIMEOUT_SECONDS` | No | `45` | Timeout for external discovery-service calls. |
+| Provider credential env vars | Provider-specific | - | API keys referenced by approved provider configs; secrets are not stored in config JSON. |
 | `LLM_MODEL_PARSER` | No | configured default | Parser agent model. |
 | `LLM_MODEL_EVALUATOR` | No | configured default | Evaluator agent model. |
 | `LLM_MODEL_RESEARCH` | No | configured default | Research agent model. |

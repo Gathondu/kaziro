@@ -213,7 +213,7 @@ Tests **never** call live external services. Always mock:
 
 - OpenRouter / embedding calls — VCR cassettes (or `pytest-mock` for unit tests).
 - Firecrawl — `respx` route fixtures.
-- RapidAPI — `respx` route fixtures.
+- Provider job APIs — HTTP route fixtures.
 - Supabase Storage — local stub or mocked S3 (`moto`).
 - Email sending (Phase 6+) — capture via `mailcatcher` in dev.
 

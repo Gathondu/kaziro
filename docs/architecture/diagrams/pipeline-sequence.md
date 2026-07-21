@@ -24,7 +24,7 @@ sequenceDiagram
 
   Sched->>Cel: cron tick (per user config)
   Cel->>Fetch: fetch_jobs_for_config(config_id)
-  Fetch->>Fetch: call RapidAPI (JSearch)
+  Fetch->>Fetch: call approved provider APIs
   Fetch->>DB: insert raw_jobs (deduped on external_job_id)
   Fetch-->>Cel: list of new raw_job_ids
 
@@ -78,7 +78,7 @@ sequenceDiagram
 
 | Stage             | Typical p50 latency       | Bounded by                              |
 | ----------------- | ------------------------- | --------------------------------------- |
-| Fetch (one user)  | 2 – 5 s                   | RapidAPI response                       |
+| Fetch (one user)  | 2 – 10 s                  | Approved provider API responses         |
 | Parse (one job)   | 3 – 8 s                   | OpenRouter `LLM_MODEL_PARSER` call      |
 | Evaluate (one job × one user) | 25 – 60 s     | 3 sequential `LLM_MODEL_EVALUATOR` calls |
 | Research (one job)| 10 – 30 s (cache miss)    | 2 parallel Firecrawl scrapes + `LLM_MODEL_RESEARCH` |

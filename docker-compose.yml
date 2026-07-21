@@ -15,6 +15,7 @@ x-backend-env: &backend-env
   REDIS_URL: redis://redis:6379/0
   CELERY_BROKER_URL: redis://redis:6379/1
   CELERY_RESULT_BACKEND: redis://redis:6379/2
+  JOB_SOURCE_DISCOVERY_URL: ${JOB_SOURCE_DISCOVERY_URL:-http://host.docker.internal:3100}
 
 services:
   postgres:
@@ -85,7 +86,7 @@ services:
       - .env
     environment:
       <<: *backend-env
-    command: [ "uv", "run", "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "default,parser,evaluator,research,document,maintenance,notification" ]
+    command: [ "uv", "run", "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "default,parser,evaluator,research,document,maintenance,notification,discovery" ]
     depends_on:
       redis:
         condition: service_healthy

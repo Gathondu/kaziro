@@ -8,8 +8,8 @@ defined here in code, docs, and UI copy.
 
 ## Domain entities
 
-- **Job** — a single posting we ingest from an external job board (via
-  RapidAPI). Stored in `raw_jobs` (raw payload) and `job_postings`
+- **Job** — a single posting we ingest from an approved job-source provider.
+  Stored in `raw_jobs` (raw payload) and `job_postings`
   (normalised, parsed schema with embedding).
 - **Job posting** — the parsed, normalised representation of a job (title,
   company, location, description, requirements, embedding).
@@ -33,7 +33,11 @@ defined here in code, docs, and UI copy.
 
 ## Pipeline stages
 
-- **Fetch** — ingest jobs from RapidAPI based on a `job_search_config`.
+- **Fetch** — ingest jobs from approved provider configs based on a
+  `job_search_config`.
+- **Job source provider** — an external API source with public documentation,
+  a generated config draft, smoke-test validation, and admin approval before
+  activation.
 - **Parser** — LLM-driven extraction of structured `JobPostingSchema`
   + embedding. See [`docs/design/agents/parser-agent.md`](../design/agents/parser-agent.md).
 - **Evaluator** — three-pass scoring (Draft / Critic / Judge) producing a

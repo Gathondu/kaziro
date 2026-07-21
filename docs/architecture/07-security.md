@@ -58,7 +58,7 @@ CREATE POLICY "users write own applications"
 
 ## 2. Secrets management
 
-- All API keys (`OPENROUTER_API_KEY`, `RAPIDAPI_KEY`, `FIRECRAWL_API_KEY`,
+- All API keys (`OPENROUTER_API_KEY`, provider API keys, `FIRECRAWL_API_KEY`,
   `SUPABASE_SERVICE_KEY`, `SECRET_KEY`) live in environment variables only.
 - **Never** stored in the database, source code, or commit history.
 - Local dev: `.env` files (git-ignored). Templated by `.env.example`.
@@ -94,7 +94,7 @@ CREATE POLICY "users write own applications"
 ## 4. Input validation & injection prevention
 
 - **Pydantic v2** validates every request body, query parameter, and
-  external payload (RapidAPI, Firecrawl, scraped content) before any
+  external payload (provider APIs, Firecrawl, scraped content) before any
   processing.
 - **SQL injection**: ORM only — `select()` with bound parameters. **Never**
   hand-construct SQL strings. The rule is enforced both by code review and

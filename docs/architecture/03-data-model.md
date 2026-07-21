@@ -34,6 +34,9 @@ erDiagram
   users ||--o{ application_docs : "owns"
   users ||--o{ applications : "owns"
 
+  job_source_providers ||--o{ job_source_config_drafts : "has"
+  job_source_config_drafts ||--o{ job_source_validation_runs : "validates"
+  job_source_providers ||--o{ raw_jobs : "supplies"
   job_search_configs ||--o{ raw_jobs : produces
   raw_jobs ||--|| job_postings : "parses_to"
   job_postings ||--o{ job_evaluations : "evaluated_as"
@@ -117,7 +120,9 @@ A user may have multiple active configs (e.g., `senior backend remote` and
 | --------------- | ------------------------- | -------- | -------------------------------------- |
 | `user_id`       | UUID FK→users             | NOT NULL |                                        |
 | `config_id`     | UUID FK→job_search_configs | NOT NULL |                                        |
-| `source_api`    | TEXT                      | NOT NULL | `rapidapi`, `linkedin`, …              |
+| `provider_id`   | UUID FK→job_source_providers | NOT NULL | Approved source provider             |
+| `external_job_id` | TEXT                    | NOT NULL | Provider-specific dedupe key           |
+| `source_api`    | TEXT                      | NOT NULL | Provider slug snapshot                 |
 | `raw_payload`   | JSONB                     | NOT NULL | Full upstream payload                  |
 | `fetched_at`    | TIMESTAMPTZ               | NOT NULL |                                        |
 | `parse_status`  | parse_status_enum         | NOT NULL | `PENDING \| PARSED \| FAILED`          |
@@ -133,7 +138,42 @@ class ParseStatus(str, enum.Enum):
     FAILED  = "FAILED"
 ```
 
-### 3.5 `job_postings`
+### 3.5 `job_source_providers`
+
+| Column               | Type        | Nullable | Description                                  |
+| -------------------- | ----------- | -------- | -------------------------------------------- |
+| `slug`               | TEXT UNIQUE | NOT NULL | Stable provider identifier                    |
+| `display_name`       | TEXT        | NOT NULL | Admin-facing name                             |
+| `docs_url`           | TEXT        | NOT NULL | Public API documentation URL                  |
+| `status`             | TEXT        | NOT NULL | `draft \| active \| disabled`                 |
+| `robots_notes`       | TEXT        | NULL     | Manual compliance notes                       |
+| `terms_notes`        | TEXT        | NULL     | Manual terms-of-service notes                 |
+| `last_discovered_at` | TIMESTAMPTZ | NULL     | Last successful discovery task timestamp      |
+
+### 3.6 `job_source_config_drafts`
+
+| Column              | Type       | Nullable | Description                                      |
+| ------------------- | ---------- | -------- | ------------------------------------------------ |
+| `provider_id`       | UUID FK    | NOT NULL | Source provider                                  |
+| `config`            | JSONB      | NOT NULL | Validated provider endpoint config; no secrets   |
+| `status`            | TEXT       | NOT NULL | `generated \| validation_failed \| validated \| approved \| rejected` |
+| `confidence_score`  | FLOAT      | NOT NULL | Discovery confidence from 0 to 1                 |
+| `evidence_urls`     | JSONB      | NOT NULL | Docs/spec URLs used during generation            |
+| `validation_errors` | JSONB      | NOT NULL | Smoke-test or schema-validation errors           |
+| `approved_at`       | TIMESTAMPTZ | NULL    | Set when an admin activates the draft            |
+
+### 3.7 `job_source_validation_runs`
+
+| Column              | Type       | Nullable | Description                                      |
+| ------------------- | ---------- | -------- | ------------------------------------------------ |
+| `draft_id`          | UUID FK    | NOT NULL | Config draft being validated                     |
+| `status`            | TEXT       | NOT NULL | Validation result                                |
+| `request_url`       | TEXT       | NOT NULL | Smoke-test URL with no secrets persisted         |
+| `response_status`   | INTEGER    | NULL     | Provider HTTP status                             |
+| `response_metadata` | JSONB      | NOT NULL | Safe response metadata such as jobs seen         |
+| `errors`            | JSONB      | NOT NULL | User-safe validation errors                      |
+
+### 3.8 `job_postings`
 
 | Column                  | Type             | Nullable | Description                              |
 | ----------------------- | ---------------- | -------- | ---------------------------------------- |
@@ -154,7 +194,7 @@ class ParseStatus(str, enum.Enum):
 | `description_embedding` | VECTOR(2048)     | NULL     | For semantic search                      |
 | `parsed_at`             | TIMESTAMPTZ      | NOT NULL |                                          |
 
-### 3.6 `job_evaluations`
+### 3.9 `job_evaluations`
 
 | Column                  | Type                | Nullable | Description                                |
 | ----------------------- | ------------------- | -------- | ------------------------------------------ |
@@ -179,7 +219,7 @@ The ``dimension_scores`` JSONB may include a reserved object ``_kaziro`` with
 **Generate documents** on an evaluator ``REJECT`` promotes the evaluation to
 ``MAYBE`` and clears ``_kaziro`` rejection metadata.
 
-### 3.7 `company_summaries`
+### 3.10 `company_summaries`
 
 | Column                  | Type                | Nullable | Description                                |
 | ----------------------- | ------------------- | -------- | ------------------------------------------ |
@@ -195,7 +235,7 @@ The ``dimension_scores`` JSONB may include a reserved object ``_kaziro`` with
 | `ai_summary`            | TEXT                | NULL     | 4-5 sentence narrative for the user        |
 | `summary_generated_at`  | TIMESTAMPTZ         | NOT NULL | Used for the 30-day cache check            |
 
-### 3.8 `application_docs`
+### 3.11 `application_docs`
 
 | Column                   | Type                  | Nullable | Description                              |
 | ------------------------ | --------------------- | -------- | ---------------------------------------- |
@@ -210,7 +250,7 @@ The ``dimension_scores`` JSONB may include a reserved object ``_kaziro`` with
 | `quality_notes`          | TEXT                  | NULL     | Issues flagged by quality check          |
 | `last_edited_at`         | TIMESTAMPTZ           | NOT NULL |                                          |
 
-### 3.9 `applications`
+### 3.12 `applications`
 
 | Column                | Type                       | Nullable | Description                            |
 | --------------------- | -------------------------- | -------- | -------------------------------------- |
@@ -227,7 +267,7 @@ or document Celery task): for **GOOD_FIT** this follows the scheduled document
 stage; for **MAYBE** only after user-initiated generation. `POST /api/v1/applications`
 returns the existing row when an application is already linked (idempotent).
 
-### 3.10 `application_events`
+### 3.13 `application_events`
 
 | Column           | Type                  | Nullable | Description                              |
 | ---------------- | --------------------- | -------- | ---------------------------------------- |
@@ -251,6 +291,8 @@ declared in `__table_args__`. Critical indexes:
 | `job_evaluations`  | `UNIQUE (user_id, job_posting_id)`                        | One evaluation per pair                |
 | `applications`     | `(user_id, status)`                                       | Application tracker queries            |
 | `raw_jobs`         | `(user_id, parse_status)`                                 | Worker queue polling                   |
+| `raw_jobs`         | `UNIQUE (provider_id, external_job_id)`                   | Provider-level deduplication           |
+| `job_source_config_drafts` | `(provider_id, status)`                          | Active draft lookup                     |
 | `application_events` | `(application_id, event_date DESC)`                     | Timeline render order                  |
 
 **pgvector index gotcha**: the current embedding model emits 2048-dimensional

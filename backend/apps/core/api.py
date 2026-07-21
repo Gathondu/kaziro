@@ -8,7 +8,7 @@ from ninja import NinjaAPI
 from apps.accounts.views import auth_router
 from apps.core.exceptions import register_exception_handlers
 from apps.core.schemas import Envelope, MetaPayload, envelope
-from apps.jobs.views import job_configs_router
+from apps.jobs.views import job_configs_router, job_sources_router
 from apps.notifications.views import notifications_router
 from apps.profiles.views import profile_router
 from config.settings import get_settings
@@ -24,6 +24,7 @@ register_exception_handlers(api)
 api.add_router("/auth", auth_router)
 api.add_router("/profile", profile_router)
 api.add_router("/job-configs", job_configs_router)
+api.add_router("/job-sources", job_sources_router)
 api.add_router("/notifications", notifications_router)
 
 

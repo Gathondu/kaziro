@@ -25,7 +25,7 @@ flowchart TB
 
   subgraph external [External Services]
     supa["Supabase<br/>(Auth + Postgres + Storage)"]
-    rapid["RapidAPI<br/>(JSearch / LinkedIn Jobs)"]
+    sources["Job source APIs<br/>(approved provider configs)"]
     firecrawl["Firecrawl API<br/>(web scraping)"]
     openrouter["OpenRouter API<br/>(LLM + embeddings)"]
   end
@@ -53,6 +53,6 @@ flowchart TB
 | System         | Purpose                                                              |
 | -------------- | -------------------------------------------------------------------- |
 | **Supabase**   | Hosted Postgres + pgvector + Auth (JWT) + Storage (object store).    |
-| **RapidAPI**   | Source of raw job postings (JSearch / LinkedIn Jobs endpoints).      |
+| **Job source APIs** | Source of raw job postings through approved provider configs. |
 | **Firecrawl**  | JS-rendered web scraping for company websites and job pages.         |
 | **OpenRouter** | All LLM and embedding calls (default chat `nvidia/nemotron-3-super-120b-a12b:free`; default embeddings `nvidia/llama-nemotron-embed-vl-1b-v2:free`). |

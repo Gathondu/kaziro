@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from ninja import Schema
-from pydantic import Field, field_validator, model_validator
+from pydantic import AnyHttpUrl, Field, field_validator, model_validator
 
 from apps.jobs.models import FETCH_CRON_DAILY, FETCH_CRON_WEEKLY
 
@@ -69,6 +70,82 @@ class RunConfigResponse(Schema):
     task_id: str
 
 
+class JobSourceProviderPayload(Schema):
+    slug: str = Field(max_length=64, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    display_name: str = Field(max_length=255)
+    docs_url: AnyHttpUrl
+    robots_notes: str = ""
+    terms_notes: str = ""
+
+
+class JobSourceProviderResponse(Schema):
+    id: uuid.UUID
+    slug: str
+    display_name: str
+    docs_url: str
+    status: str
+    robots_notes: str
+    terms_notes: str
+    last_discovered_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class DiscoveryRequestPayload(Schema):
+    known_auth_type: Literal["none", "bearer", "static_header", "query_param_key"] | None = None
+    keywords: list[str] = Field(default_factory=list, max_length=20)
+
+
+class DraftConfigAuth(Schema):
+    type: Literal["none", "bearer", "static_header", "query_param_key"]
+    header_name: str | None = None
+    query_param_name: str | None = None
+    credential_env_var: str | None = None
+
+
+class DraftConfigPagination(Schema):
+    type: Literal["none", "page", "offset", "cursor"] = "none"
+    page_param: str | None = None
+    page_size_param: str | None = None
+    default_page_size: int = Field(default=10, ge=1, le=100)
+
+
+class ProviderConfigDraftPayload(Schema):
+    base_url: AnyHttpUrl
+    endpoint_path: str = Field(min_length=1, max_length=1024)
+    method: Literal["GET"] = "GET"
+    query_params: dict[str, str] = Field(default_factory=dict)
+    pagination: DraftConfigPagination = Field(default_factory=DraftConfigPagination)
+    auth: DraftConfigAuth = Field(default_factory=lambda: DraftConfigAuth(type="none"))
+    response_mapping: dict[str, str] = Field(default_factory=dict)
+    confidence_score: float = Field(ge=0, le=1)
+    evidence_urls: list[str] = Field(default_factory=list, max_length=20)
+
+
+class JobSourceConfigDraftResponse(Schema):
+    id: uuid.UUID
+    provider_id: uuid.UUID
+    config: dict[str, object]
+    status: str
+    confidence_score: float
+    evidence_urls: list[str]
+    validation_errors: list[object]
+    approved_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class JobSourceValidationRunResponse(Schema):
+    id: uuid.UUID
+    draft_id: uuid.UUID
+    status: str
+    request_url: str
+    response_status: int | None = None
+    response_metadata: dict[str, object]
+    errors: list[object]
+    created_at: datetime
+
+
 def schedule_presets() -> list[SchedulePreset]:
     return [
         SchedulePreset(
@@ -85,8 +162,16 @@ def schedule_presets() -> list[SchedulePreset]:
 
 
 __all__ = [
+    "DiscoveryRequestPayload",
+    "DraftConfigAuth",
+    "DraftConfigPagination",
     "JobConfigPayload",
     "JobConfigResponse",
+    "JobSourceConfigDraftResponse",
+    "JobSourceProviderPayload",
+    "JobSourceProviderResponse",
+    "JobSourceValidationRunResponse",
+    "ProviderConfigDraftPayload",
     "RunConfigResponse",
     "SchedulePreset",
     "schedule_presets",

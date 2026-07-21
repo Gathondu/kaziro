@@ -29,6 +29,7 @@ QUEUE_RESEARCH: Final[str] = "research"
 QUEUE_DOCUMENT: Final[str] = "document"
 QUEUE_MAINTENANCE: Final[str] = "maintenance"
 QUEUE_NOTIFICATION: Final[str] = "notification"
+QUEUE_DISCOVERY: Final[str] = "discovery"
 
 ALL_QUEUES: Final[tuple[str, ...]] = (
     QUEUE_DEFAULT,
@@ -38,6 +39,7 @@ ALL_QUEUES: Final[tuple[str, ...]] = (
     QUEUE_DOCUMENT,
     QUEUE_MAINTENANCE,
     QUEUE_NOTIFICATION,
+    QUEUE_DISCOVERY,
 )
 
 
@@ -88,6 +90,7 @@ app = celery_app
 __all__ = [
     "ALL_QUEUES",
     "QUEUE_DEFAULT",
+    "QUEUE_DISCOVERY",
     "QUEUE_DOCUMENT",
     "QUEUE_EVALUATOR",
     "QUEUE_MAINTENANCE",

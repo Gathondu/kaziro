@@ -36,7 +36,7 @@ Kaziro is not only a job board view. It is a pipeline: fetch jobs, evaluate them
 - API: Django Ninja with `/api/v1` resource routes and root `/auth/*` proxy routes.
 - Async execution: Celery tasks orchestrate multi-stage agent workflows.
 - Data layer: PostgreSQL + pgvector; Redis for queueing, pub/sub, and rate limiting.
-- External integrations: RapidAPI (job fetch), Firecrawl (research), OpenRouter models.
+- External integrations: approved job-source APIs (fetch), Firecrawl (research), OpenRouter models.
 
 ### Diagram: System context
 
@@ -50,7 +50,7 @@ flowchart LR
   agents[Agent_Pipeline]
   db[(PostgreSQL_pgvector)]
   redis[(Redis)]
-  rapidapi[RapidAPI_Providers]
+  sources[Approved_Job_Source_APIs]
   firecrawl[Firecrawl]
   openrouter[OpenRouter_Models]
   storage[Supabase_Storage]

@@ -8,7 +8,7 @@
 
 ## Purpose
 
-Normalises raw RapidAPI job payloads into the structured `JobPosting` table
+Normalises raw provider job payloads into the structured `JobPosting` table
 format and generates a 2048-dim text embedding for semantic search.
 
 ## Framework & model

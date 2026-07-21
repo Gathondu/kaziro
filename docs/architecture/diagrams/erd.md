@@ -14,6 +14,9 @@ erDiagram
   users ||--o{ application_docs : owns
   users ||--o{ applications : owns
 
+  job_source_providers ||--o{ job_source_config_drafts : proposes
+  job_source_config_drafts ||--o{ job_source_validation_runs : validates
+  job_source_providers ||--o{ raw_jobs : supplies
   job_search_configs ||--o{ raw_jobs : produces
   raw_jobs ||--o| job_postings : "parses_to"
   job_postings ||--o{ job_evaluations : "evaluated_as"
@@ -66,6 +69,38 @@ erDiagram
     timestamptz fetched_at
     enum parse_status
     int retry_count
+  }
+
+  job_source_providers {
+    uuid id PK
+    text slug UK
+    text display_name
+    text docs_url
+    text status
+    text robots_notes
+    text terms_notes
+    timestamptz last_discovered_at
+  }
+
+  job_source_config_drafts {
+    uuid id PK
+    uuid provider_id FK
+    jsonb config
+    text status
+    float confidence_score
+    jsonb evidence_urls
+    jsonb validation_errors
+    timestamptz approved_at
+  }
+
+  job_source_validation_runs {
+    uuid id PK
+    uuid draft_id FK
+    text status
+    text request_url
+    int response_status
+    jsonb response_metadata
+    jsonb errors
   }
 
   job_postings {
@@ -156,6 +191,9 @@ erDiagram
 | ------------------------------------------------- | --------------- |
 | Any `user_id` →  `users.id`                       | `CASCADE`       |
 | `raw_jobs.config_id` → `job_search_configs.id`    | `CASCADE`       |
+| `raw_jobs.provider_id` → `job_source_providers.id` | `PROTECT`      |
+| `job_source_config_drafts.provider_id` → `job_source_providers.id` | `CASCADE` |
+| `job_source_validation_runs.draft_id` → `job_source_config_drafts.id` | `CASCADE` |
 | `job_postings.raw_job_id` → `raw_jobs.id`         | `RESTRICT`      |
 | `job_evaluations.job_posting_id` → `job_postings.id` | `CASCADE`    |
 | `company_summaries.job_posting_id` → `job_postings.id` | `CASCADE`  |

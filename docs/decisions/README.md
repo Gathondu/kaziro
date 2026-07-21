@@ -16,6 +16,7 @@ ADRs capture architecturally significant decisions and their trade-offs.
 | [ADR-0010](ADR-0010-agents-md-hierarchy.md) | Accepted | Layered AGENTS.md hierarchy |
 | [ADR-0011](ADR-0011-default-open-models-nemotron.md) | Accepted | Use Nemotron as the default OpenRouter model family |
 | [ADR-0012](ADR-0012-canonical-django-ninja-nextjs-architecture.md) | Accepted | Django Ninja and Next.js as the canonical architecture |
+| [ADR-0013](ADR-0013-api-docs-job-source-discovery.md) | Accepted | API documentation driven job source discovery |
 
 ## Adding A New ADR
 
