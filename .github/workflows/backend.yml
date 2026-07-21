@@ -91,7 +91,7 @@ jobs:
         working-directory: backend
 
       - name: Pyrefly type check
-        run: uv run pyrefly check .
+        run: uv run pyrefly check . --min-severity warn
         working-directory: backend
 
       - name: Django system checks

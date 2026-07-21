@@ -37,7 +37,7 @@ async def signup(request: HttpRequest, payload: SignupPayload) -> dict[str, obje
 @auth_router.post("/login", response=Envelope[TokenData])
 async def login(request: HttpRequest, payload: LoginPayload) -> dict[str, object]:
     token = await services.login(
-        identifier=str(payload.identifier),
+        identifier=payload.identifier,
         password=payload.password.get_secret_value(),
     )
     return envelope(token)
@@ -63,7 +63,7 @@ async def resend_confirmation(
     request: HttpRequest,
     payload: ResendConfirmationPayload,
 ) -> dict[str, object]:
-    sent = await services.resend_confirmation(str(payload.email))
+    sent = await services.resend_confirmation(payload.email)
     return envelope(ResendConfirmationResponse(confirmation_sent=sent))
 
 
@@ -74,7 +74,7 @@ async def me(request: HttpRequest) -> dict[str, object]:
 
 async def _signup(payload: SignupPayload) -> SignupResponse:
     return await services.signup(
-        email=str(payload.email),
+        email=payload.email,
         password=payload.password.get_secret_value(),
         username=payload.username,
     )
