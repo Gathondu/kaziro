@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api/client";
 import type {
+  ApplicationDocText,
   JobEvaluation,
   JobListFilters,
   JobPosting,
@@ -53,6 +54,21 @@ export const regenerateDocuments = (
   apiClient.post<TriggerJobResponse>(
     `/api/v1/jobs/${id}/regenerate-documents`,
     { part },
+    token,
+  );
+
+export const updateJobDocuments = (
+  token: string,
+  id: string,
+  tailoredCvText: string,
+  coverLetterText: string,
+) =>
+  apiClient.put<ApplicationDocText>(
+    `/api/v1/jobs/${id}/documents`,
+    {
+      tailored_cv_text: tailoredCvText,
+      cover_letter_text: coverLetterText,
+    },
     token,
   );
 

@@ -14,11 +14,13 @@ from apps.core.schemas import Envelope, PageMeta, envelope
 from apps.documents.models import ApplicationDoc
 from apps.jobs import posting_services
 from apps.jobs.posting_schemas import (
+    ApplicationDocTextResponse,
     ImportJobUrlPayload,
     JobEvaluationResponse,
     JobPostingResponse,
     RegenerateDocumentsPayload,
     TriggerJobResponse,
+    UpdateJobDocumentsPayload,
 )
 
 jobs_router = Router(tags=["jobs"])
@@ -109,6 +111,26 @@ async def regenerate_documents(
             cast(User, request.auth),  # type: ignore
             job_id,
             payload.part,
+        )
+    )
+
+
+@jobs_router.put(
+    "/{job_id}/documents",
+    auth=jwt_auth,
+    response=Envelope[ApplicationDocTextResponse],
+)
+async def update_documents(
+    request: HttpRequest,
+    job_id: str,
+    payload: UpdateJobDocumentsPayload,
+) -> dict[str, object]:
+    return envelope(
+        await posting_services.update_documents(
+            cast(User, request.auth),  # type: ignore
+            job_id,
+            tailored_cv_text=payload.tailored_cv_text,
+            cover_letter_text=payload.cover_letter_text,
         )
     )
 

@@ -72,6 +72,11 @@ class RegenerateDocumentsPayload(Schema):
     part: Literal["all", "cv", "cover_letter"] = "all"
 
 
+class UpdateJobDocumentsPayload(Schema):
+    tailored_cv_text: str = Field(min_length=1, max_length=100_000)
+    cover_letter_text: str = Field(min_length=1, max_length=100_000)
+
+
 class TriggerJobResponse(Schema):
     task_id: str
     duplicate: bool = False
@@ -85,4 +90,5 @@ __all__ = [
     "JobPostingResponse",
     "RegenerateDocumentsPayload",
     "TriggerJobResponse",
+    "UpdateJobDocumentsPayload",
 ]

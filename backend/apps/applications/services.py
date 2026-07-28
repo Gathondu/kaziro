@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -19,15 +15,15 @@ from apps.applications.schemas import (
     ApplicationEventResponse,
     ApplicationResponse,
 )
-from apps.core.exceptions import BadRequestError, ConflictError, NotFoundError
+from apps.core.exceptions import BadRequestError, NotFoundError
 from apps.documents.models import ApplicationDoc
+from apps.documents.services import update_document_content
 from apps.jobs.models import JobEvaluation
 from apps.jobs.posting_services import (
     evaluation_to_response,
     get_job,
     posting_to_response,
 )
-from apps.pipeline.document_agent import _render_pdf
 
 ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     ApplicationStatus.DRAFT: {
@@ -88,8 +84,9 @@ async def create_application(user: User, job_posting_id: str) -> ApplicationResp
             "Generate application documents first.",
             code="application_documents_required",
         )
-    if await Application.objects.filter(user=user, job_posting=posting).aexists():
-        raise ConflictError("Application already exists.", code="application_exists")
+    existing = await Application.objects.filter(user=user, job_posting=posting).afirst()
+    if existing is not None:
+        return await to_response(existing, user)
     application = await Application.objects.acreate(
         user=user,
         job_posting=posting,
@@ -158,25 +155,11 @@ async def update_documents(
 ) -> ApplicationResponse:
     application = await get_application(user, application_id)
     document = await ApplicationDoc.objects.aget(id=application.application_doc_id)
-    cv_pdf, cover_pdf = await asyncio.gather(
-        asyncio.to_thread(_render_pdf, "Tailored CV", tailored_cv_text),
-        asyncio.to_thread(_render_pdf, "Cover Letter", cover_letter_text),
+    await update_document_content(
+        document,
+        tailored_cv_text=tailored_cv_text,
+        cover_letter_text=cover_letter_text,
     )
-    base = f"applications/{user.id}/{document.job_evaluation_id}"
-    document.cv_pdf_path = await asyncio.to_thread(
-        _replace_file,
-        f"{base}/cv.pdf",
-        cv_pdf,
-    )
-    document.cover_letter_pdf_path = await asyncio.to_thread(
-        _replace_file,
-        f"{base}/cover-letter.pdf",
-        cover_pdf,
-    )
-    document.tailored_cv_text = tailored_cv_text
-    document.cover_letter_text = cover_letter_text
-    document.last_edited_at = timezone.now()
-    await document.asave()
     await _event(
         application,
         user,
@@ -264,12 +247,6 @@ async def _event(
         to_status=to_status,
         notes=notes,
     )
-
-
-def _replace_file(path: str, payload: bytes) -> str:
-    if default_storage.exists(path):
-        default_storage.delete(path)
-    return default_storage.save(path, ContentFile(payload))
 
 
 __all__ = [

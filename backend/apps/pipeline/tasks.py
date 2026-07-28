@@ -305,11 +305,25 @@ async def _run_document_pipeline(
     create_notification_task.delay(
         user_id,
         "documents_failed" if errors else "documents_ready",
-        "Application documents need attention" if errors else "Application documents are ready",
+        "Application documents need attention"
+        if errors
+        else (
+            "Tailored CV is ready"
+            if scope == "cv"
+            else "Cover letter is ready"
+            if scope == "cover_letter"
+            else "Application documents are ready"
+        ),
         (
             "Kaziro could not generate the requested application documents."
             if errors
-            else "Your tailored CV and cover letter are ready to review."
+            else (
+                "Your tailored CV is ready to review."
+                if scope == "cv"
+                else "Your cover letter is ready to review."
+                if scope == "cover_letter"
+                else "Your tailored CV and cover letter are ready to review."
+            )
         ),
         summary,
     )

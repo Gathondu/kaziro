@@ -6,14 +6,14 @@ import {
   ExternalLink,
   FileText,
   RefreshCw,
-  Send,
   Sparkles,
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { JobDocumentsModal } from "@/components/jobs/JobDocumentsModal";
+import { createApplication } from "@/lib/api/applications";
 import {
   getJob,
   markJobNotInterested,
@@ -25,6 +25,7 @@ import { useToastStore } from "@/lib/stores/toast";
 
 export default function JobDetailPage() {
   const id = String(useParams().id);
+  const router = useRouter();
   const token = useAuthStore((state) => state.token?.access_token ?? "");
   const pushToast = useToastStore((state) => state.push);
   const queryClient = useQueryClient();
@@ -51,6 +52,16 @@ export default function JobDetailPage() {
       pushToast("success", message);
       void queryClient.invalidateQueries({ queryKey: ["jobs", id] });
       void queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
+    onError: (error: Error) => pushToast("error", error.message),
+  });
+  const addToBoard = useMutation({
+    mutationFn: () => createApplication(token, id),
+    onSuccess: (application) => {
+      pushToast("success", "Application added to your board.");
+      void queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["applications"] });
+      router.push(`/applications/${application.id}`);
     },
     onError: (error: Error) => pushToast("error", error.message),
   });
@@ -131,12 +142,26 @@ export default function JobDetailPage() {
                 >
                   <FileText className="size-4" /> View documents
                 </button>
-                <Link
-                  className="btn btn-primary btn-sm"
-                  href={`/jobs/${id}/apply`}
-                >
-                  Prepare application <Send className="size-4" />
-                </Link>
+                {evaluation.application_id ? (
+                  <Link
+                    className="btn btn-primary btn-sm"
+                    href={`/applications/${evaluation.application_id}`}
+                  >
+                    View on board
+                  </Link>
+                ) : (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    disabled={addToBoard.isPending}
+                    onClick={() => addToBoard.mutate()}
+                    type="button"
+                  >
+                    {addToBoard.isPending ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : null}
+                    Add to board
+                  </button>
+                )}
               </>
             ) : (
               <button
@@ -264,10 +289,12 @@ export default function JobDetailPage() {
           </section>
         </aside>
       </div>
-      {evaluation?.application_doc ? (
+      {documentsOpen && evaluation?.application_doc ? (
         <JobDocumentsModal
           applicationDocument={evaluation.application_doc}
+          applicationId={evaluation.application_id}
           jobId={id}
+          key={`${evaluation.application_doc.tailored_cv_text}:${evaluation.application_doc.cover_letter_text}`}
           onClose={() => setDocumentsOpen(false)}
           open={documentsOpen}
         />

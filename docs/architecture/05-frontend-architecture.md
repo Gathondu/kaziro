@@ -60,3 +60,7 @@ domain-specific UI states rather than raw exceptions.
 - Application routes are authenticated.
 - Forms should provide field-level errors, pending states, and recovery paths.
 - Reusable controls belong in `src/components/ui/`.
+- Generated CV and cover-letter review uses one shared editable documents
+  modal from job and application details. Jobs with documents are added
+  directly to the application board; the board detail focuses on status,
+  private notes, timeline, and reopening the documents modal.

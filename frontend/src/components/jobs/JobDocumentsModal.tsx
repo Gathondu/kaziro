@@ -6,13 +6,15 @@ import {
   Download,
   FileText,
   RefreshCw,
+  Save,
   Send,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createApplication } from "@/lib/api/applications";
 import { downloadAuthenticatedFile } from "@/lib/api/client";
-import { regenerateDocuments } from "@/lib/api/jobs";
+import { regenerateDocuments, updateJobDocuments } from "@/lib/api/jobs";
 import type { ApplicationDocText } from "@/lib/api/types";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useToastStore } from "@/lib/stores/toast";
@@ -21,6 +23,7 @@ type DocumentTab = "cover_letter" | "cv";
 
 type JobDocumentsModalProps = {
   applicationDocument: ApplicationDocText;
+  applicationId?: string | null;
   jobId: string;
   onClose: () => void;
   open: boolean;
@@ -28,6 +31,7 @@ type JobDocumentsModalProps = {
 
 export function JobDocumentsModal({
   applicationDocument,
+  applicationId = null,
   jobId,
   onClose,
   open,
@@ -35,7 +39,12 @@ export function JobDocumentsModal({
   const token = useAuthStore((state) => state.token?.access_token ?? "");
   const pushToast = useToastStore((state) => state.push);
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<DocumentTab>("cover_letter");
+  const [cvDraft, setCvDraft] = useState(applicationDocument.tailored_cv_text);
+  const [letterDraft, setLetterDraft] = useState(
+    applicationDocument.cover_letter_text,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -57,13 +66,34 @@ export function JobDocumentsModal({
     },
     onError: (error: Error) => pushToast("error", error.message),
   });
+  const save = useMutation({
+    mutationFn: () => updateJobDocuments(token, jobId, cvDraft, letterDraft),
+    onSuccess: () => {
+      pushToast("success", "Document changes saved.");
+      void queryClient.invalidateQueries({ queryKey: ["jobs", jobId] });
+      void queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+    onError: (error: Error) => pushToast("error", error.message),
+  });
+  const addToBoard = useMutation({
+    mutationFn: async () => {
+      await updateJobDocuments(token, jobId, cvDraft, letterDraft);
+      return createApplication(token, jobId);
+    },
+    onSuccess: (application) => {
+      pushToast("success", "Application added to your board.");
+      void queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["applications"] });
+      onClose();
+      router.push(`/applications/${application.id}`);
+    },
+    onError: (error: Error) => pushToast("error", error.message),
+  });
 
   if (!open) return null;
 
   const isCoverLetter = activeTab === "cover_letter";
-  const text = isCoverLetter
-    ? applicationDocument.cover_letter_text
-    : applicationDocument.tailored_cv_text;
+  const text = isCoverLetter ? letterDraft : cvDraft;
   const pdfAvailable = isCoverLetter
     ? applicationDocument.cover_letter_pdf_available
     : applicationDocument.cv_pdf_available;
@@ -104,7 +134,7 @@ export function JobDocumentsModal({
               Application documents
             </h2>
             <p className="mt-1 text-xs text-base-content/60">
-              Review, copy, download, or regenerate either document.
+              Review and edit the generated content before using it.
             </p>
           </div>
           <button
@@ -183,22 +213,60 @@ export function JobDocumentsModal({
           <textarea
             className="textarea textarea-bordered h-[55vh] w-full resize-none whitespace-pre-wrap font-sans text-sm leading-6"
             id="generated-document"
-            readOnly
+            onChange={(event) =>
+              isCoverLetter
+                ? setLetterDraft(event.target.value)
+                : setCvDraft(event.target.value)
+            }
             value={text}
           />
         </div>
 
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-base-300 px-5 py-4">
           <p className="text-xs text-base-content/60">
-            Open the application workspace to edit these documents before adding
-            the job to your board.
+            Changes update both the editable content and downloadable PDFs.
           </p>
-          <Link
-            className="btn btn-primary btn-sm"
-            href={`/jobs/${jobId}/apply`}
-          >
-            Prepare application <Send className="size-4" />
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="btn btn-outline btn-sm"
+              disabled={save.isPending || addToBoard.isPending}
+              onClick={() => save.mutate()}
+              type="button"
+            >
+              {save.isPending ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                <Save className="size-4" />
+              )}
+              Save changes
+            </button>
+            {applicationId ? (
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  onClose();
+                  router.push(`/applications/${applicationId}`);
+                }}
+                type="button"
+              >
+                View on board <Send className="size-4" />
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={save.isPending || addToBoard.isPending}
+                onClick={() => addToBoard.mutate()}
+                type="button"
+              >
+                {addToBoard.isPending ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+                Add to board
+              </button>
+            )}
+          </div>
         </footer>
       </section>
     </div>

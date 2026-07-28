@@ -10,6 +10,7 @@ from django.db.models import Q
 from apps.accounts.models import User
 from apps.core.exceptions import BadRequestError, NotFoundError
 from apps.documents.models import ApplicationDoc
+from apps.documents.services import update_document_content
 from apps.jobs.models import (
     CompanySummary,
     EvaluationClassification,
@@ -165,6 +166,57 @@ async def trigger_regeneration(
         )
     task = run_document_pipeline_for_posting.delay(job_id, str(user.id), scope)
     return TriggerJobResponse(task_id=str(task.id))
+
+
+async def update_documents(
+    user: User,
+    job_id: str,
+    *,
+    tailored_cv_text: str,
+    cover_letter_text: str,
+) -> ApplicationDocTextResponse:
+    await get_job(user, job_id)
+    evaluation = await JobEvaluation.objects.filter(
+        user=user,
+        job_posting_id=uuid.UUID(job_id),
+    ).afirst()
+    if evaluation is None:
+        raise NotFoundError("Evaluation not found.", code="evaluation_not_found")
+    document = await ApplicationDoc.objects.filter(
+        user=user,
+        job_evaluation=evaluation,
+    ).afirst()
+    if document is None:
+        raise NotFoundError("Document not found.", code="document_not_found")
+    await update_document_content(
+        document,
+        tailored_cv_text=tailored_cv_text,
+        cover_letter_text=cover_letter_text,
+    )
+
+    from apps.applications.models import (
+        Application,
+        ApplicationEvent,
+        ApplicationEventType,
+    )
+
+    application = await Application.objects.filter(
+        user=user,
+        application_doc=document,
+    ).afirst()
+    if application is not None:
+        await ApplicationEvent.objects.acreate(
+            application=application,
+            actor_user=user,
+            event_type=ApplicationEventType.DOCUMENTS_UPDATED,
+            notes="Application documents updated.",
+        )
+    return ApplicationDocTextResponse(
+        tailored_cv_text=document.tailored_cv_text,
+        cover_letter_text=document.cover_letter_text,
+        cv_pdf_available=bool(document.cv_pdf_path),
+        cover_letter_pdf_available=bool(document.cover_letter_pdf_path),
+    )
 
 
 async def mark_not_interested(user: User, job_id: str) -> JobEvaluationResponse:

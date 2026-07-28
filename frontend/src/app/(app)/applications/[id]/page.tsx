@@ -1,18 +1,17 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Download, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { JobDocumentsModal } from "@/components/jobs/JobDocumentsModal";
 import {
   deleteApplication,
   getApplication,
-  updateApplicationDocs,
   updateApplicationNotes,
   updateApplicationStatus,
 } from "@/lib/api/applications";
-import { downloadAuthenticatedFile } from "@/lib/api/client";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useToastStore } from "@/lib/stores/toast";
 
@@ -37,17 +36,13 @@ export default function ApplicationDetailPage() {
     enabled: Boolean(token),
   });
   const [notesDraft, setNotes] = useState<string>();
-  const [cvDraft, setCv] = useState<string>();
-  const [letterDraft, setLetter] = useState<string>();
+  const [documentsOpen, setDocumentsOpen] = useState(false);
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["applications"] });
     void queryClient.invalidateQueries({ queryKey: ["applications", id] });
   };
   const save = useMutation({
-    mutationFn: async () => {
-      await updateApplicationDocs(token, id, cv, letter);
-      return updateApplicationNotes(token, id, notes);
-    },
+    mutationFn: () => updateApplicationNotes(token, id, notes),
     onSuccess: () => {
       refresh();
       pushToast("success", "Application saved.");
@@ -85,8 +80,6 @@ export default function ApplicationDetailPage() {
     );
   const item = application.data;
   const notes = notesDraft ?? item.notes;
-  const cv = cvDraft ?? item.application_doc.tailored_cv_text;
-  const letter = letterDraft ?? item.application_doc.cover_letter_text;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -115,34 +108,10 @@ export default function ApplicationDetailPage() {
           </select>
           <button
             className="btn btn-outline btn-sm"
-            onClick={() =>
-              void downloadAuthenticatedFile(
-                `/api/v1/applications/${id}/cv.pdf`,
-                token,
-                "tailored-cv.pdf",
-              )
-            }
+            onClick={() => setDocumentsOpen(true)}
+            type="button"
           >
-            <Download className="size-4" /> CV
-          </button>
-          <button
-            className="btn btn-outline btn-sm"
-            onClick={() =>
-              void downloadAuthenticatedFile(
-                `/api/v1/applications/${id}/cover-letter.pdf`,
-                token,
-                "cover-letter.pdf",
-              )
-            }
-          >
-            <Download className="size-4" /> Letter
-          </button>
-          <button
-            className="btn btn-primary btn-sm"
-            disabled={save.isPending}
-            onClick={() => save.mutate()}
-          >
-            <Save className="size-4" /> Save
+            <FileText className="size-4" /> View documents
           </button>
           <button
             className="btn btn-ghost btn-sm text-error"
@@ -155,56 +124,61 @@ export default function ApplicationDetailPage() {
           </button>
         </div>
       </div>
-      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1fr]">
-        <section className="space-y-5">
+      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+        <section className="rounded-2xl border border-base-300 bg-base-100 p-5">
           <label className="form-control">
-            <span className="label-text mb-2 font-semibold">Tailored CV</span>
-            <textarea
-              className="textarea textarea-bordered min-h-96 font-mono text-sm leading-6"
-              value={cv}
-              onChange={(event) => setCv(event.target.value)}
-            />
-          </label>
-          <label className="form-control">
-            <span className="label-text mb-2 font-semibold">Cover letter</span>
-            <textarea
-              className="textarea textarea-bordered min-h-96 text-sm leading-6"
-              value={letter}
-              onChange={(event) => setLetter(event.target.value)}
-            />
-          </label>
-        </section>
-        <aside className="space-y-5">
-          <label className="form-control rounded-2xl border border-base-300 bg-base-100 p-5">
             <span className="label-text mb-2 font-semibold">Private notes</span>
             <textarea
-              className="textarea textarea-bordered min-h-36"
+              className="textarea textarea-bordered min-h-48"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               placeholder="Interview details, contacts, follow-ups…"
             />
           </label>
-          <section className="rounded-2xl border border-base-300 bg-base-100 p-5">
-            <h2 className="font-semibold">Timeline</h2>
-            <ol className="mt-5 space-y-5 border-l border-base-300 pl-5">
-              {item.events?.map((event) => (
-                <li className="relative" key={event.id}>
-                  <span className="absolute -left-[1.55rem] top-1 size-2 rounded-full bg-primary" />
-                  <p className="text-sm font-semibold">
-                    {event.event_type.replaceAll("_", " ")}
-                  </p>
-                  <p className="text-xs text-base-content/55">
-                    {new Date(event.event_date).toLocaleString()}
-                  </p>
-                  {event.notes ? (
-                    <p className="mt-1 text-sm">{event.notes}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          </section>
-        </aside>
+          <button
+            className="btn btn-primary btn-sm mt-4"
+            disabled={save.isPending}
+            onClick={() => save.mutate()}
+            type="button"
+          >
+            {save.isPending ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <Save className="size-4" />
+            )}
+            Save notes
+          </button>
+        </section>
+        <section className="rounded-2xl border border-base-300 bg-base-100 p-5">
+          <h2 className="font-semibold">Timeline</h2>
+          <ol className="mt-5 space-y-5 border-l border-base-300 pl-5">
+            {item.events?.map((event) => (
+              <li className="relative" key={event.id}>
+                <span className="absolute -left-[1.55rem] top-1 size-2 rounded-full bg-primary" />
+                <p className="text-sm font-semibold">
+                  {event.event_type.replaceAll("_", " ")}
+                </p>
+                <p className="text-xs text-base-content/55">
+                  {new Date(event.event_date).toLocaleString()}
+                </p>
+                {event.notes ? (
+                  <p className="mt-1 text-sm">{event.notes}</p>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        </section>
       </div>
+      {documentsOpen ? (
+        <JobDocumentsModal
+          applicationDocument={item.application_doc}
+          applicationId={item.id}
+          jobId={item.job_posting_id}
+          key={`${item.application_doc.tailored_cv_text}:${item.application_doc.cover_letter_text}`}
+          onClose={() => setDocumentsOpen(false)}
+          open
+        />
+      ) : null}
     </main>
   );
 }

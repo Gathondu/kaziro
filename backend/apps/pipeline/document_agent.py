@@ -7,24 +7,15 @@ generates tailored text with OpenRouter, renders PDFs, and persists Django data.
 from __future__ import annotations
 
 import asyncio
-import io
 import json
 import uuid
 from typing import Any
 
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
-from reportlab.lib.pagesizes import A4  # type: ignore[import-untyped]
-from reportlab.lib.styles import getSampleStyleSheet  # type: ignore[import-untyped]
-from reportlab.platypus import (  # type: ignore[import-untyped]
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-)
 
 from apps.documents.models import ApplicationDoc
+from apps.documents.services import render_pdf, replace_storage_file
 from apps.jobs.models import CompanySummary, EvaluationClassification, JobEvaluation
 from apps.pipeline.llm import OpenRouterClient
 from apps.profiles.models import UserProfile
@@ -118,6 +109,15 @@ async def generate_node(state: DocumentState) -> DocumentState:
     )
     log.info("document.generate.start")
     try:
+        if state.regenerate_scope == "cv":
+            requested_output = '"tailored_cv_text": "plain text CV"'
+        elif state.regenerate_scope == "cover_letter":
+            requested_output = '"cover_letter_text": "plain text cover letter"'
+        else:
+            requested_output = (
+                '"tailored_cv_text": "plain text CV",\n'
+                '  "cover_letter_text": "plain text cover letter"'
+            )
         prompt = f"""TASK
 Generate truthful, tailored application documents for this candidate and job.
 
@@ -125,12 +125,12 @@ IMPORTANT RULES
 - Never invent experience, skills, employers, dates, qualifications, or company facts.
 - Use company facts only from the supplied research object.
 - Preserve factual master-CV content.
-- Scope is {state.regenerate_scope}; retain existing text for an unrequested side.
+- Generate only the requested scope: {state.regenerate_scope}.
+- Do not generate or return content for an unrequested document.
 
 Respond in this exact JSON format:
 {{
-  "tailored_cv_text": "plain text CV",
-  "cover_letter_text": "plain text cover letter",
+  {requested_output},
   "quality_passed": true,
   "quality_notes": "brief checks performed"
 }}
@@ -175,21 +175,34 @@ async def persist_node(state: DocumentState) -> DocumentState:
     )
     log.info("document.persist.start")
     try:
-        cv_pdf, cover_pdf = await asyncio.gather(
-            asyncio.to_thread(_render_pdf, "Tailored CV", state.tailored_cv_text),
-            asyncio.to_thread(_render_pdf, "Cover Letter", state.cover_letter_text),
-        )
+        existing = await ApplicationDoc.objects.filter(
+            job_evaluation_id=uuid.UUID(state.evaluation_id),
+        ).afirst()
         base = f"applications/{state.user_id}/{state.evaluation_id}"
-        cv_path = await asyncio.to_thread(
-            _replace_storage_file,
-            f"{base}/cv.pdf",
-            cv_pdf,
-        )
-        cover_path = await asyncio.to_thread(
-            _replace_storage_file,
-            f"{base}/cover-letter.pdf",
-            cover_pdf,
-        )
+        cv_path = existing.cv_pdf_path if existing else ""
+        cover_path = existing.cover_letter_pdf_path if existing else ""
+        if state.regenerate_scope in {"all", "cv"}:
+            cv_pdf = await asyncio.to_thread(
+                render_pdf,
+                "Tailored CV",
+                state.tailored_cv_text,
+            )
+            cv_path = await asyncio.to_thread(
+                replace_storage_file,
+                f"{base}/cv.pdf",
+                cv_pdf,
+            )
+        if state.regenerate_scope in {"all", "cover_letter"}:
+            cover_pdf = await asyncio.to_thread(
+                render_pdf,
+                "Cover Letter",
+                state.cover_letter_text,
+            )
+            cover_path = await asyncio.to_thread(
+                replace_storage_file,
+                f"{base}/cover-letter.pdf",
+                cover_pdf,
+            )
         document, _ = await ApplicationDoc.objects.aupdate_or_create(
             job_evaluation_id=uuid.UUID(state.evaluation_id),
             defaults={
@@ -263,25 +276,6 @@ async def run_document_agent(
         )
     )
     return result if isinstance(result, DocumentState) else DocumentState.model_validate(result)
-
-
-def _render_pdf(title: str, text: str) -> bytes:
-    buffer = io.BytesIO()
-    document = SimpleDocTemplate(buffer, pagesize=A4)
-    styles = getSampleStyleSheet()
-    story: list[Any] = [Paragraph(title, styles["Title"]), Spacer(1, 12)]
-    for paragraph in text.split("\n"):
-        if paragraph.strip():
-            story.append(Paragraph(paragraph.replace("&", "&amp;"), styles["BodyText"]))
-            story.append(Spacer(1, 6))
-    document.build(story)
-    return buffer.getvalue()
-
-
-def _replace_storage_file(path: str, payload: bytes) -> str:
-    if default_storage.exists(path):
-        default_storage.delete(path)
-    return default_storage.save(path, ContentFile(payload))
 
 
 __all__ = [
