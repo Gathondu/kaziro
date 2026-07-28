@@ -52,4 +52,20 @@ async def get_for_user(user: User, notification_id: str) -> Notification | None:
     return await Notification.objects.filter(user=user, id=notification_id).afirst()
 
 
-__all__ = ["create", "get_for_user", "list_for_user", "unread_count"]
+async def list_after(
+    user: User,
+    notification_id: str,
+    *,
+    limit: int = 100,
+) -> list[Notification]:
+    previous = await get_for_user(user, notification_id)
+    if previous is None:
+        return []
+    queryset = Notification.objects.filter(
+        user=user,
+        created_at__gt=previous.created_at,
+    ).order_by("created_at")[:limit]
+    return [notification async for notification in queryset]
+
+
+__all__ = ["create", "get_for_user", "list_after", "list_for_user", "unread_count"]

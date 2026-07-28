@@ -35,7 +35,18 @@ class ProfileResponse(Schema):
 class CvUploadResponse(Schema):
     storage_path: str
     text_chars: int
+    embedding_dims: int = 0
+    signed_url: str | None = None
     has_master_cv: bool = True
 
 
-__all__ = ["CvUploadResponse", "ProfilePayload", "ProfileResponse"]
+class CvDownloadResponse(Schema):
+    signed_url: str
+
+
+__all__ = [
+    "CvDownloadResponse",
+    "CvUploadResponse",
+    "ProfilePayload",
+    "ProfileResponse",
+]

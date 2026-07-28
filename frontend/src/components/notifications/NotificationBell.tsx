@@ -100,6 +100,13 @@ export function NotificationBell() {
               seenIds.current.add(nextNotification.id);
               pushToast("info", payload.message ?? nextNotification.title);
             }
+            void queryClient.invalidateQueries({ queryKey: ["jobs"] });
+            void queryClient.invalidateQueries({
+              queryKey: ["applications"],
+            });
+            void queryClient.invalidateQueries({
+              queryKey: ["job-configs"],
+            });
             break;
           case "MARK_SINGLE_READ":
             updateNotificationCache((current) =>

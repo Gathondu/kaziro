@@ -52,3 +52,14 @@ export function refresh(refreshToken: string): Promise<TokenData> {
 export function getMe(token: string): Promise<UserAccount> {
   return apiClient.get<UserAccount>("/api/v1/auth/me", token);
 }
+
+export const forgotPassword = (email: string) =>
+  apiClient.post<{ message: string }>("/api/v1/auth/forgot-password", {
+    email,
+  });
+
+export const resetPassword = (token: string, newPassword: string) =>
+  apiClient.post<{ message: string }>("/api/v1/auth/reset-password", {
+    token,
+    new_password: newPassword,
+  });

@@ -43,7 +43,7 @@ queues, observability, and Python integration.
 **Chosen option**: Celery + Redis.
 
 Celery is the de-facto Python task queue. Redis (which we already need for
-caching and Pub/Sub for WebSocket fan-out) doubles as the broker, so we
+caching and Pub/Sub for SSE fan-out) doubles as the broker, so we
 add zero additional infra at MVP. Celery Beat handles cron scheduling.
 
 ### Positive consequences

@@ -35,6 +35,19 @@ class ConfirmEmailPayload(Schema):
     token: str = Field(min_length=16)
 
 
+class ForgotPasswordPayload(Schema):
+    email: EmailStr
+
+
+class ResetPasswordPayload(Schema):
+    token: str = Field(min_length=16)
+    new_password: SecretStr = Field(min_length=8, max_length=128)
+
+
+class MessageResponse(Schema):
+    message: str
+
+
 class ChangePasswordPayload(Schema):
     current_password: SecretStr
     new_password: SecretStr = Field(min_length=8, max_length=128)
@@ -84,11 +97,14 @@ __all__ = [
     "ChangePasswordPayload",
     "ConfirmEmailPayload",
     "ConfirmationResponse",
+    "ForgotPasswordPayload",
     "LoginPayload",
     "MeResponse",
+    "MessageResponse",
     "RefreshPayload",
     "ResendConfirmationPayload",
     "ResendConfirmationResponse",
+    "ResetPasswordPayload",
     "SignupPayload",
     "SignupResponse",
     "TokenData",

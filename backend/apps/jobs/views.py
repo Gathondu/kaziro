@@ -43,6 +43,24 @@ async def create_config(request: HttpRequest, payload: JobConfigPayload) -> dict
     return envelope(await services.create_config(cast(User, request.auth), payload))  # type: ignore
 
 
+@job_configs_router.put("/{config_id}", auth=jwt_auth, response=Envelope[JobConfigResponse])
+async def update_config(
+    request: HttpRequest,
+    config_id: str,
+    payload: JobConfigPayload,
+) -> dict[str, object]:
+    return envelope(
+        await services.update_config(cast(User, request.auth), config_id, payload)  # type: ignore
+    )
+
+
+@job_configs_router.delete("/{config_id}", auth=jwt_auth, response=Envelope[JobConfigResponse])
+async def disable_config(request: HttpRequest, config_id: str) -> dict[str, object]:
+    return envelope(
+        await services.disable_config(cast(User, request.auth), config_id)  # type: ignore
+    )
+
+
 @job_configs_router.post("/{config_id}/run", auth=jwt_auth, response=Envelope[RunConfigResponse])
 async def run_config(request: HttpRequest, config_id: str) -> dict[str, object]:
     return envelope(await services.run_config(cast(User, request.auth), config_id))  # type: ignore

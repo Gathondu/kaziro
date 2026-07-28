@@ -1,6 +1,5 @@
 import { apiClient, apiStreamClient } from "@/lib/api/client";
 import type {
-  NotificationItem,
   NotificationListResponse,
   NotificationStreamPayload,
 } from "@/lib/api/types";
@@ -37,17 +36,12 @@ export async function markNotificationRead(
   token: string,
   notificationId: string,
 ): Promise<void> {
-  await apiClient.post<NotificationItem>(
+  await apiClient.postEmpty(
     `/api/v1/notifications/${notificationId}/read`,
-    {},
     token,
   );
 }
 
 export async function markAllNotificationsRead(token: string): Promise<void> {
-  await apiClient.post<NotificationListResponse>(
-    "/api/v1/notifications/read-all",
-    {},
-    token,
-  );
+  await apiClient.postEmpty("/api/v1/notifications/read-all", token);
 }

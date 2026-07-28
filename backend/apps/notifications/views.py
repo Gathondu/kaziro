@@ -32,13 +32,14 @@ async def stream_response(request: HttpRequest) -> StreamingHttpResponse:
         services.subscribe_to_notifications(
             cast(User, request.auth),  # type: ignore
             shutdown_event,
+            request.headers.get("Last-Event-ID"),
         ),
         content_type="text/event-stream",
     )
-    # Performance and architectural headers for production load balancers (Nginx, AWS ALB)
+    # Connection is a hop-by-hop header and must be managed by the WSGI/ASGI
+    # server or reverse proxy, not the Django application.
     response["Cache-Control"] = "no-cache, no-transform"
-    response["Connection"] = "keep-alive"
-    response["X-Accel-Buffering"] = "no"  # Prevents Nginx from proxy-buffering stream chunks
+    response["X-Accel-Buffering"] = "no"
     return response
 
 

@@ -24,13 +24,13 @@ flowchart LR
   user[User]
   fe[Frontend_Next.js]
   api[Django Ninja_API]
-  ws[WS_Notifications]
+  ws[SSE_Notifications]
   celery[Celery_Workers]
   agents[Agent_Pipeline]
   db[(PostgreSQL_pgvector)]
   redis[(Redis)]
   sources[Approved_Job_Source_APIs]
-  firecrawl[Firecrawl]
+  scrapper[Scrapper]
   openrouter[OpenRouter_Models]
   storage[Supabase_Storage]
 
@@ -44,7 +44,7 @@ flowchart LR
   agents --> db
   agents --> redis
   agents --> rapidapi
-  agents --> firecrawl
+  agents --> scrapper
   agents --> openrouter
   agents --> storage
   ws --> fe
@@ -123,7 +123,7 @@ sequenceDiagram
   participant Orchestrator
   participant Agents
   participant Redis
-  participant WS
+  participant WS as SSE
 
   User->>Frontend: Click "Re-run evaluation"
   Frontend->>API: POST /api/v1/jobs/{id}/trigger-evaluation
@@ -150,7 +150,7 @@ sequenceDiagram
   - `GOOD_FIT`: research + documents
   - `MAYBE`: research only
   - `REJECT`: stop after evaluation
-- Notifications route: `WS /api/v1/ws/notifications?token=...`
+- Notifications route: `GET /api/v1/notifications/stream` with bearer authentication
 
 ---
 

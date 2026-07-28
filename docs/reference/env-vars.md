@@ -1,7 +1,7 @@
 # Environment Variables
 
 **Status**: Living
-**Last updated**: 2026-06-29
+**Last updated**: 2026-07-27
 
 Secrets belong in `.env` or platform secret stores. Commit only safe examples
 to `.env.example`.
@@ -30,8 +30,9 @@ to `.env.example`.
 | `RESEND_REPLY_TO` | No | - | Optional reply-to address. |
 | `RESEND_TIMEOUT_SECONDS` | No | `10` | Resend API timeout. |
 | `OPENROUTER_API_KEY` | Yes for LLM calls | - | OpenRouter API key. |
-| `FIRECRAWL_API_KEY` | Yes for company research | - | Firecrawl API key. |
 | `JOB_SOURCE_DISCOVERY_URL` | No | `http://localhost:3100` | External discovery-service URL. Production uses the private Docker address `http://scrapper:3100`. |
+| `SCRAPPER_COMPANY_RESEARCH_URL` | No | `JOB_SOURCE_DISCOVERY_URL` | Optional separate Scrapper base URL used for company research and raw extraction. |
+| `SCRAPPER_API_KEY` | Yes outside local development | - | Shared credential sent to every Scrapper non-health endpoint. |
 | `JOB_SOURCE_DISCOVERY_TIMEOUT_SECONDS` | No | `45` | Timeout for external discovery-service calls. |
 | Provider credential env vars | Provider-specific | - | API keys referenced by `auth.credential_env_var` or `request_headers[].value_env_var`; secrets are not stored in config JSON. |
 | `LLM_MODEL_PARSER` | No | configured default | Parser agent model. |
@@ -46,8 +47,11 @@ to `.env.example`.
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_API_URL` | No | `http://localhost:8000` | Browser-visible API origin. |
-| `NEXT_PUBLIC_WS_URL` | No | `ws://localhost:8000/ws` | Browser-visible realtime origin. |
 | `NEXT_PUBLIC_SITE_URL` | No | `http://localhost:3000` | Public site origin. |
+
+Realtime notifications use the normal `NEXT_PUBLIC_API_URL` through
+authenticated `GET /api/v1/notifications/stream`; no separate browser-visible
+realtime origin is required.
 
 ## Production
 

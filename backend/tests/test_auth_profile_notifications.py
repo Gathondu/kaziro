@@ -204,6 +204,22 @@ class AuthProfileNotificationTests(TransactionTestCase):
         # pyrefly: ignore [missing-attribute]
         assert notification.user_id == user.id
 
+    async def test_notification_stream_uses_proxy_safe_headers(self) -> None:
+        user = await self._confirmed_user(email="stream@example.com")
+        token = issue_token_pair(user).access_token
+
+        response = await self.async_client.get(
+            "/api/v1/notifications/stream",
+            headers=auth_header(token),
+        )
+
+        assert response.status_code == 200
+        assert response["Content-Type"] == "text/event-stream"
+        assert response["Cache-Control"] == "no-cache, no-transform"
+        assert response["X-Accel-Buffering"] == "no"
+        assert "Connection" not in response.headers
+        response.close()
+
     async def test_job_source_admin_flow_requires_validated_draft(self) -> None:
         staff = await self._confirmed_user(email="staff@example.com", is_staff=True)
         token = issue_token_pair(staff).access_token

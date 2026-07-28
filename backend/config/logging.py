@@ -162,7 +162,7 @@ def configure_logging(source: Settings | None = None) -> None:
         celery_logger.propagate = True
 
     # -------------------------------------------------------------
-    # DJANGO CHANNELS / DAPHNE WEBSOCKET LOGS
+    # DJANGO ASGI SERVER LOGS
     # -------------------------------------------------------------
     for channels_logger_name in ("daphne", "channels"):
         channels_logger = logging.getLogger(channels_logger_name)

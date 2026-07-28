@@ -10,7 +10,7 @@
 The Evaluator agent decides whether a job is `GOOD_FIT`, `MAYBE`, or
 `REJECT` for a user. This single decision triggers expensive downstream
 work (research + document generation) for `GOOD_FIT` jobs. False positives
-cost real money (LLM calls + Firecrawl) and false negatives cost the user
+cost real money (LLM calls + Scrapper research) and false negatives cost the user
 opportunities. Calibration matters.
 
 Single-pass evaluation with one LLM call has known weaknesses:

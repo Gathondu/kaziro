@@ -7,7 +7,8 @@ import {
   BriefcaseBusiness,
   UserRoundCheck,
 } from "lucide-react";
-import { listJobConfigs } from "@/lib/api/jobConfigs";
+import { listJobs } from "@/lib/api/jobs";
+import { listApplications } from "@/lib/api/applications";
 import { listNotifications } from "@/lib/api/notifications";
 import { getProfile } from "@/lib/api/profile";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -15,11 +16,6 @@ import { useAuthStore } from "@/lib/stores/auth";
 export default function DashboardPage() {
   const token = useAuthStore((state) => state.token?.access_token ?? null);
   const user = useAuthStore((state) => state.user);
-  const jobConfigs = useQuery({
-    queryKey: ["job-configs"],
-    queryFn: () => listJobConfigs(token ?? ""),
-    enabled: Boolean(token),
-  });
   const notifications = useQuery({
     queryKey: ["notifications", "all"],
     queryFn: () => listNotifications(token ?? "", false),
@@ -31,17 +27,35 @@ export default function DashboardPage() {
     enabled: Boolean(token),
     retry: 1,
   });
+  const jobs = useQuery({
+    queryKey: ["jobs", "dashboard"],
+    queryFn: () => listJobs(token ?? ""),
+    enabled: Boolean(token),
+  });
+  const applications = useQuery({
+    queryKey: ["applications"],
+    queryFn: () => listApplications(token ?? ""),
+    enabled: Boolean(token),
+  });
 
   const metrics = [
     {
-      label: "Search configs",
-      value: jobConfigs.data?.length ?? 0,
+      label: "Good-fit jobs",
+      value:
+        jobs.data?.filter(
+          (job) => job.evaluation?.final_classification === "GOOD_FIT",
+        ).length ?? 0,
       icon: BriefcaseBusiness,
     },
     {
       label: "Unread updates",
       value: notifications.data?.unread_count ?? 0,
       icon: Bell,
+    },
+    {
+      label: "Applications",
+      value: applications.data?.length ?? 0,
+      icon: Activity,
     },
     {
       label: "Profile",
@@ -63,7 +77,7 @@ export default function DashboardPage() {
           the Django backend.
         </p>
       </div>
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
           <article
             className="rounded-2xl border border-base-300 bg-base-100 p-5 shadow-marketing-card"

@@ -51,7 +51,7 @@ backend/tests/
 | `sample_profile`  | function | Filled `UserProfile` for the `sample_user`                 |
 | `sample_job`      | function | Pre-parsed `JobPosting` for evaluation tests               |
 | `mock_llm`        | function | Mock `ChatOpenRouter` and `OpenAIEmbeddings` via VCR      |
-| `mock_firecrawl`  | function | `respx` route returning canned markdown                    |
+| `mock_scrapper`   | function | `respx` route returning provenance-preserving evidence     |
 | `auth_headers`    | function | `{ Authorization: Bearer <fake JWT> }` for `sample_user`   |
 
 Fixture pattern:
@@ -169,7 +169,7 @@ keep them deterministic.
 
 - 100 concurrent users browsing `/jobs`.
 - 50 concurrent triggers of `/jobs/{id}/trigger-evaluation`.
-- 200 concurrent WebSocket connections (notifications channel).
+- 200 concurrent SSE connections (notification streams).
 
 SLO targets:
 
@@ -177,7 +177,7 @@ SLO targets:
 | ------------------------------- | --------------------- |
 | `/jobs` p95                     | < 250 ms              |
 | `/jobs/{id}/trigger-evaluation` p95 (enqueue only, not full pipeline) | < 100 ms |
-| WebSocket connect p95            | < 200 ms              |
+| SSE connect p95                  | < 200 ms              |
 | 5xx rate                         | < 0.1%                |
 
 Pipeline throughput (full agent chain) is measured separately from
@@ -212,7 +212,7 @@ test_evaluator_classifies_as_reject_when_skills_dont_match
 Tests **never** call live external services. Always mock:
 
 - OpenRouter / embedding calls — VCR cassettes (or `pytest-mock` for unit tests).
-- Firecrawl — `respx` route fixtures.
+- Scrapper — authenticated `respx` evidence fixtures.
 - Provider job APIs — HTTP route fixtures.
 - Supabase Storage — local stub or mocked S3 (`moto`).
 - Email sending (Phase 6+) — capture via `mailcatcher` in dev.

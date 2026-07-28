@@ -60,7 +60,7 @@ flowchart LR
   agents["LangGraph agents"]
   db[("PostgreSQL + pgvector")]
   rapid["Job APIs"]
-  firecrawl["Firecrawl"]
+  scrapper["Scrapper service"]
   openrouter["OpenRouter"]
 
   user --> frontend --> api
@@ -69,7 +69,7 @@ flowchart LR
   broker --> workers --> agents
   agents --> db
   agents --> rapid
-  agents --> firecrawl
+  agents --> scrapper
   agents --> openrouter
 ```
 

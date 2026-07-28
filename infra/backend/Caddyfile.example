@@ -1,0 +1,14 @@
+api.kaziro.example {
+	encode zstd gzip
+
+	@notification_stream path /api/v1/notifications/stream
+	handle @notification_stream {
+		reverse_proxy backend:8000 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy backend:8000
+	}
+}

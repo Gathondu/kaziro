@@ -120,6 +120,11 @@ export function LoginForm() {
             <span className="text-xs text-error">{fieldErrors.password}</span>
           ) : null}
         </label>
+        <div className="flex justify-end">
+          <Link className="link link-primary text-sm" href="/forgot-password">
+            Forgot password?
+          </Link>
+        </div>
         {formError ? (
           <div className="space-y-2" role="alert">
             <p className="text-sm text-error">{formError}</p>

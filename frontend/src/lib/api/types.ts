@@ -144,3 +144,106 @@ export type NotificationStreamPayload =
       notification_id: string;
       message?: string;
     };
+
+export type CompanySummary = {
+  company_name: string;
+  selected_website: string | null;
+  mission: string;
+  values: string;
+  culture: string;
+  tech_stack: string;
+  team_size_approx: string;
+  recent_news: string;
+  ai_summary: string;
+  field_citations: Record<string, string[]>;
+  source_urls: string[];
+  retrieved_at: string;
+};
+
+export type ApplicationDocText = {
+  tailored_cv_text: string;
+  cover_letter_text: string;
+  cv_pdf_available: boolean;
+  cover_letter_pdf_available: boolean;
+};
+
+export type JobEvaluation = {
+  id: string;
+  job_posting_id: string;
+  application_id: string | null;
+  final_classification: string;
+  overall_score: number;
+  final_feedback: string;
+  dimension_scores: Record<string, unknown>;
+  rejection_source: string | null;
+  evaluated_at: string;
+  application_doc: ApplicationDocText | null;
+};
+
+export type JobPosting = {
+  id: string;
+  external_job_id: string;
+  title: string;
+  company_name: string;
+  company_website: string | null;
+  location: string;
+  remote_flag: boolean;
+  salary_min: number | null;
+  salary_max: number | null;
+  employment_type: string;
+  description: string;
+  requirements: string[];
+  application_url: string | null;
+  posted_date: string | null;
+  parsed_at: string;
+  evaluation: JobEvaluation | null;
+  company_summary: CompanySummary | null;
+};
+
+export type JobListFilters = {
+  cursor?: string;
+  classification?: string[];
+  minScore?: number;
+  remoteOnly?: boolean;
+  postedAfter?: string;
+  keyword?: string;
+};
+
+export type TriggerJobResponse = {
+  task_id: string;
+  duplicate: boolean;
+};
+
+export type ApplicationDocument = {
+  id: string;
+  tailored_cv_text: string;
+  cover_letter_text: string;
+  cv_pdf_available: boolean;
+  cover_letter_pdf_available: boolean;
+  quality_passed: boolean;
+  quality_notes: string;
+};
+
+export type ApplicationEvent = {
+  id: string;
+  event_type: string;
+  event_date: string;
+  from_status: string;
+  to_status: string;
+  notes: string;
+};
+
+export type ApplicationItem = {
+  id: string;
+  job_posting_id: string;
+  application_doc_id: string;
+  status: string;
+  applied_at: string | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  job_posting: JobPosting;
+  application_doc: ApplicationDocument;
+  evaluation: JobEvaluation;
+  events?: ApplicationEvent[];
+};

@@ -37,11 +37,11 @@ flowchart TD
   postingsT[("job_postings<br/>+ pgvector")]
   evaluator["Evaluator Agent<br/>3-pass (nvidia/nemotron-3-super)"]
   evalT[("job_evaluations")]
-  research["Research Agent<br/>Firecrawl + nvidia/nemotron-3-super"]
+  research["Research Agent<br/>Scrapper evidence + structured synthesis"]
   companyT[("company_summaries")]
   document["Document Agent<br/>nvidia/nemotron-3-super"]
   docsT[("application_docs")]
-  ws["WebSocket notifier"]
+  ws["SSE notifier"]
 
   scheduler --> fetch --> rawT
   rawT --> parser --> postingsT
@@ -133,7 +133,8 @@ The full audit trail (all three passes' outputs) is persisted to
 
 **Type**: LangGraph agent with tool use.
 **Model**: `settings.LLM_MODEL_RESEARCH` (default `nvidia/nemotron-3-super-120b-a12b:free`).
-**Tools**: Firecrawl scrape (`POST /v1/scrape`).
+**Tools**: authenticated Scrapper company research
+(`POST /research/company`) and evidence-only structured synthesis.
 **Code**: [`backend/apps/pipeline/tasks.py`](../../backend/apps/pipeline/tasks.py).
 **Detailed spec**: [`design/agents/research-agent.md`](../design/agents/research-agent.md).
 
@@ -154,7 +155,7 @@ check_cache ──fresh?──→ END
   bounds total latency.
 - **Company site resolution**: stored `company_website` values are trusted only
   when the company name matches the URL domain and the domain is not a known
-  job-board / ATS host. Missing or rejected values trigger a Firecrawl web
+  job-board / ATS host. Missing or rejected values trigger bounded Scrapper web
   search for the official company website before scraping.
 - Output: `mission`, `values`, `culture`, `tech_stack`, `team_size_approx`,
   `recent_news`, `ai_summary`, plus `raw_scraped_content` truncated to 50 KB.
@@ -201,7 +202,7 @@ catches and logs its own exceptions; downstream stages run only if the
 upstream returned a usable result.
 
 **Notifications**: after evaluation completion and after document generation,
-the orchestrator publishes a JSON message to the user's WebSocket channel via
+the orchestrator publishes a durable notification to the user's SSE channel via
 `backend/apps/notifications/` services and Celery tasks.
 
 ```python
@@ -260,11 +261,12 @@ This payload is logged at INFO and exposed to the admin pipeline dashboard
 | Embedding API error                    | Non-fatal — job persisted without vector; semantic search ignores rows with NULL vector |
 | Evaluator pass-1/3 LLM error           | Routes to `error_end`; no row written to `job_evaluations`                             |
 | Evaluator pass-2 critic error          | **Non-fatal** — falls back to pass-1 scores, critique = "Critic failed: …"             |
-| Firecrawl scrape failure               | Non-fatal — empty content, brief generated from whatever was scraped                   |
+| Partial Scrapper failure               | Preserve successful evidence and warnings; synthesize supported fields                 |
+| Total Scrapper failure                 | Persist diagnostics, notify the user, and stop document generation                     |
 | `company_website` missing              | Scrapes only the application URL                                                       |
 | Doc-agent CV missing                   | `MASTER_CV` renders as `Not provided`; full profile context remains in prompts         |
 | PDF render failure                     | Non-fatal — text persisted, PDF paths empty; user can re-render from UI                |
-| WebSocket publish failure              | Logged at WARNING; pipeline continues                                                  |
+| Redis notification publish failure     | Logged at WARNING; durable notification remains replayable over SSE                     |
 
 ## 7. Where to extend
 

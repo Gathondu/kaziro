@@ -211,6 +211,26 @@ class Settings(BaseSettings):
         default=45,
         description="Timeout for calls from Django/Celery to the external discovery service.",
     )
+    SCRAPPER_API_KEY: SecretStr | None = Field(
+        default=None,
+        description="Shared credential sent to the external Scrapper service.",
+    )
+    SCRAPPER_COMPANY_RESEARCH_URL: str | None = Field(
+        default=None,
+        description="Optional separate Scrapper base URL for company research.",
+    )
+    SCRAPPER_COMPANY_RESEARCH_TIMEOUT_SECONDS: int = 120
+
+    # -- OpenRouter / agents ----------------------------------------------
+    OPENROUTER_API_KEY: SecretStr | None = None
+    OPENROUTER_API_BASE: str = "https://openrouter.ai/api/v1"
+    OPENROUTER_TIMEOUT_SECONDS: int = 60
+    LLM_MODEL_PARSER: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    LLM_MODEL_EVALUATOR: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    LLM_MODEL_RESEARCH: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    LLM_MODEL_DOCUMENT: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    LLM_EMBEDDING_MODEL: str = "nvidia/llama-nemotron-embed-vl-1b-v2:free"
+    LLM_EMBEDDING_DIM: int = 2048
 
     # -- LangSmith ----------------------------------------------------------
     LANGSMITH_TRACING: bool = False

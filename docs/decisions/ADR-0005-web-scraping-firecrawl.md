@@ -1,6 +1,6 @@
 # ADR-0005: Firecrawl for company-website scraping
 
-**Status**: Accepted
+**Status**: Superseded by ADR-0014
 **Date**: 2026-04-22
 **Deciders**: Founding engineering team
 **Tags**: backend, agents, integrations

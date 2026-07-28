@@ -49,7 +49,7 @@ eval_results = await asyncio.gather(*[evaluate_with_sem(jid) for jid in parsed_i
 ```
 
 Stages 3 and 4 run **sequentially per job** to keep agent context clean
-and avoid Firecrawl / LLM rate limits across many parallel scrapes.
+and avoid Scrapper / LLM rate limits across many parallel research jobs.
 
 ## Error isolation
 
@@ -85,7 +85,7 @@ await notify_user(user_id, {
 })
 ```
 
-The WebSocket hub forwards these to the connected browser, which renders
+The SSE stream forwards these to the connected browser, which renders
 toasts and updates the dashboard counters. Future events
 (`fetch_complete`, `research_complete`) are emitted similarly when added.
 

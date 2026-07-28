@@ -16,6 +16,7 @@ x-backend-env: &backend-env
   CELERY_BROKER_URL: redis://redis:6379/1
   CELERY_RESULT_BACKEND: redis://redis:6379/2
   JOB_SOURCE_DISCOVERY_URL: ${JOB_SOURCE_DISCOVERY_URL:-http://host.docker.internal:3100}
+  SCRAPPER_COMPANY_RESEARCH_URL: ${SCRAPPER_COMPANY_RESEARCH_URL:-http://host.docker.internal:3100}
 
 services:
   postgres:
@@ -116,7 +117,6 @@ services:
       - .env
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
-      NEXT_PUBLIC_WS_URL: ws://localhost:8000/ws
     ports:
       - "3000:3000"
     depends_on:

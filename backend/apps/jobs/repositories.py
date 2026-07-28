@@ -35,6 +35,20 @@ async def create_for_user(user: User, **fields: object) -> JobSearchConfig:
     return await JobSearchConfig.objects.acreate(user=user, **fields)
 
 
+async def update_for_user(
+    user: User,
+    config_id: str,
+    **fields: object,
+) -> JobSearchConfig | None:
+    config = await get_for_user(user, config_id)
+    if config is None:
+        return None
+    for field, value in fields.items():
+        setattr(config, field, value)
+    await config.asave()
+    return config
+
+
 async def list_providers() -> list[JobSourceProvider]:
     queryset = JobSourceProvider.objects.order_by("slug")
     return [provider async for provider in queryset]
@@ -114,4 +128,5 @@ __all__ = [
     "list_for_user",
     "list_providers",
     "save_provider",
+    "update_for_user",
 ]

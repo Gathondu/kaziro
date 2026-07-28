@@ -19,7 +19,8 @@ sequenceDiagram
   participant Res as Research Agent
   participant Doc as Document Agent
   participant DB as PostgreSQL + pgvector
-  participant WS as WebSocket hub
+  participant SSE as SSE stream
+  participant Scrapper
   participant Browser
 
   Sched->>Cel: cron tick (per user config)
@@ -43,16 +44,16 @@ sequenceDiagram
     Eval->>Eval: pass3 judge (LLM_MODEL_EVALUATOR)
     Eval->>DB: insert job_evaluations
     Eval-->>Cel: classification + score
-    Cel->>WS: publish evaluation_complete
-    WS-->>Browser: toast (classification + score)
+    Cel->>SSE: persist + publish evaluation_complete
+    SSE-->>Browser: toast (classification + score)
 
     alt classification is GOOD_FIT
       Cel->>Res: run_research_agent(job_posting_id)
       Res->>DB: check_cache (≤ 30 days?)
 
       alt cache miss
-        Res->>Res: scrape company website (Firecrawl)
-        Res->>Res: scrape job page (Firecrawl)
+        Res->>Scrapper: research company and job evidence
+        Scrapper-->>Res: sources + provenance + warnings
         Res->>Res: generate brief (LLM_MODEL_RESEARCH)
         Res->>DB: insert company_summaries
       end
@@ -66,8 +67,8 @@ sequenceDiagram
       Doc->>Doc: render PDFs
       Doc->>DB: insert application_docs
       Doc-->>Cel: done
-      Cel->>WS: publish documents_ready
-      WS-->>Browser: toast ("Open editor")
+      Cel->>SSE: persist + publish documents_ready
+      SSE-->>Browser: toast ("Open editor")
     else MAYBE or REJECT
       Note over Cel,Doc: Scheduled batch skips research and documents
     end
@@ -81,7 +82,7 @@ sequenceDiagram
 | Fetch (one user)  | 2 – 10 s                  | Approved provider API responses         |
 | Parse (one job)   | 3 – 8 s                   | OpenRouter `LLM_MODEL_PARSER` call      |
 | Evaluate (one job × one user) | 25 – 60 s     | 3 sequential `LLM_MODEL_EVALUATOR` calls |
-| Research (one job)| 10 – 30 s (cache miss)    | 2 parallel Firecrawl scrapes + `LLM_MODEL_RESEARCH` |
+| Research (one job)| 10 – 30 s (cache miss)    | bounded Scrapper crawl + `LLM_MODEL_RESEARCH` |
 | Document          | 30 – 60 s                 | 2 generative `LLM_MODEL_DOCUMENT` calls + quality check |
 | **Full pipeline per job** | **~70 – 160 s**   | Dominated by evaluator + document       |
 

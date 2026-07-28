@@ -32,3 +32,9 @@ export async function uploadCvPdf(
     token,
   );
 }
+
+export const getCvUrl = (token: string) =>
+  apiClient.get<{ url: string }>("/api/v1/profile/cv-url", token);
+
+export const disableAccount = (token: string) =>
+  apiClient.postEmpty("/api/v1/profile/account/disable", token);

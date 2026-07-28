@@ -15,7 +15,11 @@ from django.utils import timezone
 
 from apps.accounts import repositories
 from apps.accounts.auth import create_jwt_token, decode_jwt_token
-from apps.accounts.email import EmailDeliveryError, send_confirmation_email
+from apps.accounts.email import (
+    EmailDeliveryError,
+    send_confirmation_email,
+    send_password_reset_email,
+)
 from apps.accounts.models import User
 from apps.accounts.schemas import (
     ConfirmationResponse,
@@ -169,6 +173,51 @@ async def refresh(refresh_token: str) -> TokenData:
     return issue_token_pair(user)
 
 
+async def request_password_reset(email: str) -> None:
+    user = await repositories.get_by_email(email)
+    if user is None or not user.is_active:
+        return
+    token = _new_confirmation_token()
+    user.password_reset_token_hash = token.token_hash
+    user.password_reset_expires_at = timezone.now() + timedelta(hours=1)
+    await user.asave(update_fields=["password_reset_token_hash", "password_reset_expires_at"])
+    reset_url = f"{settings.frontend_url}/reset-password?token={token.raw}"
+    try:
+        await send_password_reset_email(
+            to_email=user.email,
+            username=user.username,
+            reset_url=reset_url,
+        )
+    except EmailDeliveryError as exc:
+        if settings.is_production:
+            raise UpstreamError(
+                "Could not send password reset email.",
+                code="email_delivery_failed",
+            ) from exc
+    log.info("auth.password_reset_requested", user_id=str(user.id))
+
+
+async def reset_password(token: str, new_password: str) -> None:
+    _validate_password(new_password)
+    user = await User.objects.filter(password_reset_token_hash=_hash_token(token)).afirst()
+    if (
+        user is None
+        or user.password_reset_expires_at is None
+        or user.password_reset_expires_at < timezone.now()
+    ):
+        raise BadRequestError(
+            "Password reset link is invalid or expired.",
+            code="invalid_password_reset_token",
+        )
+    await sync_to_async(user.set_password, thread_sensitive=True)(new_password)
+    user.password_reset_token_hash = ""
+    user.password_reset_expires_at = None
+    await user.asave(
+        update_fields=["password", "password_reset_token_hash", "password_reset_expires_at"]
+    )
+    log.info("auth.password_reset_completed", user_id=str(user.id))
+
+
 def issue_token_pair(user: User) -> TokenData:
     return TokenData(
         access_token=create_jwt_token(user, "access"),
@@ -242,6 +291,8 @@ __all__ = [
     "login",
     "me",
     "refresh",
+    "request_password_reset",
     "resend_confirmation",
+    "reset_password",
     "signup",
 ]

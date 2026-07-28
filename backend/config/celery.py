@@ -9,7 +9,9 @@ from threading import Thread
 from typing import Any, Final
 
 from celery import Celery
+from celery.schedules import crontab
 from django.db import connections
+from kombu import Queue
 
 from config.langsmith import apply_langsmith_from_settings
 from config.logging import configure_logging
@@ -72,7 +74,7 @@ celery_app = Celery("kaziro_django")
 celery_app.config_from_object("django.conf:settings", namespace="CELERY")
 celery_app.conf.update(
     task_default_queue=QUEUE_DEFAULT,
-    # task_routes=TASK_ROUTES,
+    task_queues=tuple(Queue(queue_name) for queue_name in ALL_QUEUES),
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
@@ -82,6 +84,12 @@ celery_app.conf.update(
     task_acks_late=True,
     worker_prefetch_multiplier=1,
     broker_connection_retry_on_startup=True,
+    beat_schedule={
+        "enqueue-active-job-pipelines-hourly": {
+            "task": "apps.pipeline.enqueue_active_pipelines",
+            "schedule": crontab(minute=0),
+        },
+    },
 )
 
 celery_app.autodiscover_tasks()

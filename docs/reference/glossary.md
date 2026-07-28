@@ -42,7 +42,8 @@ defined here in code, docs, and UI copy.
   + embedding. See [`docs/design/agents/parser-agent.md`](../design/agents/parser-agent.md).
 - **Evaluator** — three-pass scoring (Draft / Critic / Judge) producing a
   classification. See [`docs/design/agents/evaluator-agent.md`](../design/agents/evaluator-agent.md).
-- **Research** — company-context gathering via Firecrawl + LLM brief.
+- **Research** — model-free company evidence gathering by Scrapper followed by
+  evidence-only LLM synthesis in Kaziro.
   See [`docs/design/agents/research-agent.md`](../design/agents/research-agent.md).
 - **Document** — CV + cover-letter generation per application.
   See [`docs/design/agents/document-agent.md`](../design/agents/document-agent.md).
@@ -121,7 +122,7 @@ The Evaluator scores each job along weighted dimensions
 - **TTI** — Time To Interactive (web perf metric).
 - **TTL** — Time To Live (cache).
 - **VCR** — `vcrpy` — HTTP record/replay library used for LLM tests.
-- **WS** — WebSocket.
+- **SSE** — Server-Sent Events used for authenticated one-way notifications.
 
 ## Internal jargon
 

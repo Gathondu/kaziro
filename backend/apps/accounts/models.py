@@ -25,6 +25,8 @@ class User(AbstractUser):
     email_confirmation_token_hash = models.CharField(max_length=64, blank=True)
     email_confirmation_sent_at = models.DateTimeField(blank=True, null=True)
     email_confirmation_expires_at = models.DateTimeField(blank=True, null=True)
+    password_reset_token_hash = models.CharField(max_length=64, blank=True)
+    password_reset_expires_at = models.DateTimeField(blank=True, null=True)
 
     REQUIRED_FIELDS: ClassVar[list[str]] = [
         "email",

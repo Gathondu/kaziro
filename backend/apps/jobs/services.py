@@ -71,6 +71,36 @@ async def run_config(user: User, config_id: str) -> RunConfigResponse:
     return RunConfigResponse(task_id=task_id)
 
 
+async def update_config(
+    user: User,
+    config_id: str,
+    payload: JobConfigPayload,
+) -> JobConfigResponse:
+    config = await repositories.update_for_user(
+        user,
+        config_id,
+        name=payload.name or "",
+        keywords=_clean_list(payload.keywords),
+        location=payload.location or "",
+        remote_only=payload.remote_only,
+        salary_min=payload.salary_min,
+        salary_max=payload.salary_max,
+        employment_types=_clean_list(payload.employment_types),
+        fetch_schedule_cron=payload.fetch_schedule_cron,
+        is_active=payload.is_active,
+    )
+    if config is None:
+        raise NotFoundError("Job config not found.", code="job_config_not_found")
+    return to_response(config)
+
+
+async def disable_config(user: User, config_id: str) -> JobConfigResponse:
+    config = await repositories.update_for_user(user, config_id, is_active=False)
+    if config is None:
+        raise NotFoundError("Job config not found.", code="job_config_not_found")
+    return to_response(config)
+
+
 async def list_providers(user: User) -> list[JobSourceProviderResponse]:
     _require_staff(user)
     return [provider_to_response(provider) for provider in await repositories.list_providers()]
@@ -159,7 +189,7 @@ async def approve_config_draft(user: User, draft_id: str) -> JobSourceConfigDraf
 def to_response(config: JobSearchConfig) -> JobConfigResponse:
     return JobConfigResponse(
         id=config.id,
-        user_id=config.user.id,
+        user_id=config.user_id,  # type: ignore
         name=config.name or None,
         keywords=config.keywords or [],
         location=config.location or None,
@@ -183,7 +213,7 @@ async def _enqueue_notification(user: User, config: JobSearchConfig) -> str:
         {"config_id": str(config.id)},
     )
     try:
-        return str(object=create_notification_task.delay(*args).id)
+        return create_notification_task.delay(*args).id
     except Exception:
         log.warning(
             "job_config.enqueue_notification_failed",
@@ -202,7 +232,7 @@ async def _enqueue_notification(user: User, config: JobSearchConfig) -> str:
 
 async def _enqueue_pipeline(user: User, config: JobSearchConfig) -> str:
     try:
-        return str(object=run_pipeline_for_config.delay(str(config.id), str(user.id)).id)
+        return run_pipeline_for_config.delay(str(config.id), str(user.id)).id
     except Exception:
         log.warning(
             "job_config.enqueue_pipeline_failed",
@@ -263,6 +293,7 @@ __all__ = [
     "approve_config_draft",
     "create_config",
     "create_provider",
+    "disable_config",
     "draft_to_response",
     "list_configs",
     "list_provider_drafts",
@@ -272,5 +303,6 @@ __all__ = [
     "schedule_presets",
     "to_response",
     "trigger_discovery",
+    "update_config",
     "validate_draft",
 ]

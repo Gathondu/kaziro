@@ -58,7 +58,7 @@ CREATE POLICY "users write own applications"
 
 ## 2. Secrets management
 
-- All API keys (`OPENROUTER_API_KEY`, provider API keys, `FIRECRAWL_API_KEY`,
+- All API keys (`OPENROUTER_API_KEY`, provider API keys, `SCRAPPER_API_KEY`,
   `SUPABASE_SERVICE_KEY`, `SECRET_KEY`) live in environment variables only.
 - **Never** stored in the database, source code, or commit history.
 - Local dev: `.env` files (git-ignored). Templated by `.env.example`.
@@ -94,7 +94,7 @@ CREATE POLICY "users write own applications"
 ## 4. Input validation & injection prevention
 
 - **Pydantic v2** validates every request body, query parameter, and
-  external payload (provider APIs, Firecrawl, scraped content) before any
+  external payload (provider APIs, Scrapper evidence, scraped content) before any
   processing.
 - **SQL injection**: ORM only — `select()` with bound parameters. **Never**
   hand-construct SQL strings. The rule is enforced both by code review and
@@ -120,8 +120,8 @@ CREATE POLICY "users write own applications"
   production.
 - CORS allowlist explicit per environment (`https://app.kaziro.io` only in
   prod). No wildcard origins.
-- WebSocket connections require token-in-query auth and are rate-limited
-  per IP.
+- SSE connections use the normal bearer header, never URL tokens, and are
+  isolated to the authenticated user's durable records and Redis channel.
 - Internal services (Celery workers, Redis) reachable only inside the
   cluster network — Kubernetes `NetworkPolicy` restricts ingress.
 - `/metrics` is reachable only from the Prometheus scrape pod via a

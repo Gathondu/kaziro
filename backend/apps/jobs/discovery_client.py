@@ -91,7 +91,7 @@ def _post_json_sync(url: str, payload: dict[str, object], timeout: int) -> dict[
         url,
         data=body,
         method="POST",
-        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        headers=_scrapper_headers(),
     )
     try:
         with urlopen(request, timeout=timeout) as response:
@@ -108,6 +108,14 @@ def _post_json_sync(url: str, payload: dict[str, object], timeout: int) -> dict[
             code="job_source_discovery_invalid_payload",
         )
     return parsed
+
+
+def _scrapper_headers() -> dict[str, str]:
+    settings = get_settings()
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if settings.SCRAPPER_API_KEY is not None:
+        headers["X-Scrapper-Key"] = settings.SCRAPPER_API_KEY.get_secret_value()
+    return headers
 
 
 __all__ = ["DiscoveryResult", "discover_provider_config"]

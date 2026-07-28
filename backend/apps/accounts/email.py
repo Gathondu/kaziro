@@ -59,6 +59,43 @@ async def send_confirmation_email(
     return EmailDeliveryResult(sent=True, provider_id=provider_id)
 
 
+async def send_password_reset_email(
+    *,
+    to_email: str,
+    username: str,
+    reset_url: str,
+) -> EmailDeliveryResult:
+    api_key = settings.RESEND_API_KEY.get_secret_value() if settings.RESEND_API_KEY else None
+    if api_key is None:
+        if settings.is_production:
+            raise EmailDeliveryError("Resend API key is not configured.")
+        log.warning("email.password_reset.skipped_missing_resend_key")
+        return EmailDeliveryResult(sent=False)
+    resend.api_key = api_key
+    payload: resend.Emails.SendParams = {
+        "from": settings.RESEND_FROM_EMAIL,
+        "to": [to_email],
+        "subject": "Reset your Kaziro password",
+        "text": (
+            f"Hi {username},\n\nReset your Kaziro password:\n{reset_url}\n\n"
+            "If you did not request this, ignore this email."
+        ),
+        "html": (
+            f"<p>Hi {username},</p><p>Reset your Kaziro password.</p>"
+            f'<p><a href="{reset_url}">Reset password</a></p>'
+            "<p>If you did not request this, ignore this email.</p>"
+        ),
+    }
+    if settings.RESEND_REPLY_TO:
+        payload["reply_to"] = settings.RESEND_REPLY_TO
+    try:
+        response: resend.Emails.SendResponse = await resend.Emails.send_async(payload)
+    except (TimeoutException, ResendError) as exc:
+        raise EmailDeliveryError("Could not send password reset email.") from exc
+    provider_id = getattr(response, "id", None) or response.get("id")
+    return EmailDeliveryResult(sent=bool(provider_id), provider_id=provider_id)
+
+
 def _confirmation_text(username: str, confirmation_url: str) -> str:
     return (
         f"Hi {username},\n\n"
@@ -77,4 +114,9 @@ def _confirmation_html(username: str, confirmation_url: str) -> str:
     )
 
 
-__all__ = ["EmailDeliveryError", "EmailDeliveryResult", "send_confirmation_email"]
+__all__ = [
+    "EmailDeliveryError",
+    "EmailDeliveryResult",
+    "send_confirmation_email",
+    "send_password_reset_email",
+]

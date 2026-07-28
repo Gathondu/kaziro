@@ -32,11 +32,11 @@ Kaziro is not only a job board view. It is a pipeline: fetch jobs, evaluate them
 
 ### Slide bullets
 
-- Frontend: Next.js + TanStack Query + single WebSocket notification channel.
+- Frontend: Next.js + TanStack Query + one authenticated SSE notification stream.
 - API: Django Ninja with `/api/v1` resource routes and root `/auth/*` proxy routes.
 - Async execution: Celery tasks orchestrate multi-stage agent workflows.
 - Data layer: PostgreSQL + pgvector; Redis for queueing, pub/sub, and rate limiting.
-- External integrations: approved job-source APIs (fetch), Firecrawl (research), OpenRouter models.
+- External integrations: approved job-source APIs, Scrapper evidence extraction, OpenRouter models.
 
 ### Diagram: System context
 
@@ -45,13 +45,13 @@ flowchart LR
   user[User]
   fe[Frontend_Next.js]
   api[Django Ninja_API]
-  ws[WS_Notifications]
+  ws[SSE_Notifications]
   celery[Celery_Workers]
   agents[Agent_Pipeline]
   db[(PostgreSQL_pgvector)]
   redis[(Redis)]
   sources[Approved_Job_Source_APIs]
-  firecrawl[Firecrawl]
+  scrapper[Scrapper]
   openrouter[OpenRouter_Models]
   storage[Supabase_Storage]
 
@@ -65,7 +65,7 @@ flowchart LR
   agents --> db
   agents --> redis
   agents --> rapidapi
-  agents --> firecrawl
+  agents --> scrapper
   agents --> openrouter
   agents --> storage
   ws --> fe
@@ -156,7 +156,7 @@ sequenceDiagram
   participant Orchestrator
   participant Agents
   participant Redis
-  participant WS
+  participant WS as SSE
 
   User->>Frontend: Click "Re-run evaluation"
   Frontend->>API: POST /api/v1/jobs/{id}/trigger-evaluation
@@ -172,7 +172,7 @@ sequenceDiagram
 
 ### Speaker notes
 
-For mixed audience, emphasize that the user gets immediate acknowledgment (`202 Accepted`) and then asynchronous completion signals through WebSocket toasts and refreshed data.
+For mixed audience, emphasize that the user gets immediate acknowledgment (`202 Accepted`) and then asynchronous completion signals through SSE toasts and refreshed data.
 
 ## 5) What Changed Recently (Current-State Alignment)
 
@@ -185,7 +185,7 @@ For mixed audience, emphasize that the user gets immediate acknowledgment (`202 
   - `GOOD_FIT`: research + documents
   - `MAYBE`: research only
   - `REJECT`: stop after evaluation
-- WebSocket endpoint is `/api/v1/ws/notifications?token=...`, backed by Redis pub/sub.
+- SSE endpoint is `/api/v1/notifications/stream`, authenticated by bearer header and backed by durable rows plus Redis pub/sub.
 
 ### Speaker notes
 

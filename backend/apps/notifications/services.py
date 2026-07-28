@@ -46,9 +46,26 @@ async def list_notifications(user: User, *, unread_only: bool = False) -> Notifi
     )
 
 
-async def subscribe_to_notifications(user: User, shutdown_event: asyncio.Event | None = None):
-    snapshot = await list_notifications(user)
-    yield f"data: {json.dumps({'action': 'SYNC', **snapshot.model_dump()}, default=str)}\n\n"
+async def subscribe_to_notifications(
+    user: User,
+    shutdown_event: asyncio.Event | None = None,
+    last_event_id: str | None = None,
+):
+    if last_event_id:
+        for notification in await repositories.list_after(user, last_event_id):
+            response = to_response(notification)
+            payload = {
+                "action": "NEW_ALERT",
+                "message": notification.title,
+                "notification": response.model_dump(),
+            }
+            yield (
+                f"id: {notification.id}\nevent: {notification.event_type}\n"
+                f"data: {json.dumps(payload, default=str)}\n\n"
+            )
+    else:
+        snapshot = await list_notifications(user)
+        yield f"event: sync\ndata: {json.dumps({'action': 'SYNC', **snapshot.model_dump()}, default=str)}\n\n"
     async for chunk in repositories.subscribe_to_users_notifications(user.id, shutdown_event):
         yield chunk
 

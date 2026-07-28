@@ -42,3 +42,13 @@ export async function runJobConfig(
     token,
   );
 }
+
+export const updateJobConfig = (
+  token: string,
+  id: string,
+  payload: JobConfigPayload,
+) =>
+  apiClient.put<JobConfigResponse>(`/api/v1/job-configs/${id}`, payload, token);
+
+export const disableJobConfig = (token: string, id: string) =>
+  apiClient.delete<JobConfigResponse>(`/api/v1/job-configs/${id}`, token);

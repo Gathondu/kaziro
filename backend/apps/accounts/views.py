@@ -11,11 +11,14 @@ from apps.accounts.models import User
 from apps.accounts.schemas import (
     ConfirmationResponse,
     ConfirmEmailPayload,
+    ForgotPasswordPayload,
     LoginPayload,
     MeResponse,
+    MessageResponse,
     RefreshPayload,
     ResendConfirmationPayload,
     ResendConfirmationResponse,
+    ResetPasswordPayload,
     SignupPayload,
     SignupResponse,
     TokenData,
@@ -65,6 +68,26 @@ async def resend_confirmation(
 ) -> dict[str, object]:
     sent = await services.resend_confirmation(payload.email)
     return envelope(ResendConfirmationResponse(confirmation_sent=sent))
+
+
+@auth_router.post("/forgot-password", response=Envelope[MessageResponse])
+async def forgot_password(
+    request: HttpRequest,
+    payload: ForgotPasswordPayload,
+) -> dict[str, object]:
+    await services.request_password_reset(payload.email)
+    return envelope(
+        MessageResponse(message="If that account exists, a password reset link has been sent.")
+    )
+
+
+@auth_router.post("/reset-password", response=Envelope[MessageResponse])
+async def reset_password(
+    request: HttpRequest,
+    payload: ResetPasswordPayload,
+) -> dict[str, object]:
+    await services.reset_password(payload.token, payload.new_password.get_secret_value())
+    return envelope(MessageResponse(message="Password reset completed."))
 
 
 @auth_router.get("/me", auth=jwt_auth, response=Envelope[MeResponse])

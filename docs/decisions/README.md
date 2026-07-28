@@ -8,7 +8,8 @@ ADRs capture architecturally significant decisions and their trade-offs.
 | [ADR-0002](ADR-0002-database-postgres-pgvector.md) | Accepted | PostgreSQL + pgvector as the unified data store |
 | [ADR-0003](ADR-0003-auth-supabase.md) | Accepted | Managed identity and storage services |
 | [ADR-0004](ADR-0004-task-queue-celery-redis.md) | Accepted | Celery + Redis for asynchronous work |
-| [ADR-0005](ADR-0005-web-scraping-firecrawl.md) | Accepted | Firecrawl for company website scraping |
+| [ADR-0005](ADR-0005-web-scraping-firecrawl.md) | Superseded | Historical Firecrawl decision; replaced by ADR-0014 |
+| [ADR-0014](ADR-0014-sse-and-scrapper-research.md) | Accepted | SSE notifications and Scrapper-owned research |
 | [ADR-0006](ADR-0006-evaluator-three-pass.md) | Accepted | Three-pass evaluator pipeline |
 | [ADR-0007](ADR-0007-nextjs-react-frontend.md) | Accepted | Next.js and React for the frontend |
 | [ADR-0008](ADR-0008-email-sending-mvp-draft-only.md) | Accepted | MVP generates documents only |

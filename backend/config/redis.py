@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import Any, cast
 
 import redis.asyncio as aioredis
@@ -12,7 +13,6 @@ from config.settings import get_settings
 log = get_logger(__name__)
 
 _redis_client: aioredis.Redis | None = None
-_pub_sub_client: PubSub | None = None
 settings = get_settings()
 
 
@@ -38,25 +38,15 @@ async def close_redis():
     await client.aclose()
 
 
-def _pubsub_client() -> PubSub:
-    global _pub_sub_client
-    client = get_redis()
-
-    if _pub_sub_client is None:
-        _pub_sub_client = client.pubsub()
-    return _pub_sub_client
-
-
 async def subscribe(channel: str) -> PubSub:
-    client = _pubsub_client()
+    client = get_redis().pubsub()
     await client.subscribe(channel)
     log.info("redis.channel.subscribed", channel=channel)
     return client
 
 
-async def unsubscribe(channel: str) -> None:
+async def unsubscribe(client: PubSub, channel: str) -> None:
     try:
-        client = _pubsub_client()
         await client.unsubscribe(channel)
         await client.aclose()
         log.info("redis.pubsub.resource_cleanup", channel=channel)
@@ -83,8 +73,20 @@ async def get_message(client: PubSub, channel: str, shutdown_event: asyncio.Even
             message = await client.get_message(ignore_subscribe_messages=True, timeout=1.0)
 
             if message:
-                payload = message["data"]
-                yield f"data: {payload}\n\n"
+                payload = str(message["data"])
+                event_id = ""
+                event_type = "notification"
+                try:
+                    decoded = json.loads(payload)
+                    notification = decoded.get("notification", {})
+                    event_id = str(notification.get("id", ""))
+                    event_type = str(
+                        notification.get("event_type") or decoded.get("action") or "notification"
+                    )
+                except json.JSONDecodeError, AttributeError:
+                    pass
+                id_line = f"id: {event_id}\n" if event_id else ""
+                yield f"{id_line}event: {event_type}\ndata: {payload}\n\n"
             else:
                 yield ": heartbeat\n\n"
     except asyncio.CancelledError:
@@ -97,7 +99,7 @@ async def get_message(client: PubSub, channel: str, shutdown_event: asyncio.Even
             channel=channel,
         )
     finally:
-        await unsubscribe(channel)
+        await unsubscribe(client, channel)
 
 
 __all__ = [

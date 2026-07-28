@@ -6,8 +6,10 @@ from django.http import HttpRequest
 from ninja import NinjaAPI
 
 from apps.accounts.views import auth_router
+from apps.applications.views import applications_router
 from apps.core.exceptions import register_exception_handlers
 from apps.core.schemas import Envelope, MetaPayload, envelope
+from apps.jobs.posting_views import jobs_router
 from apps.jobs.views import job_configs_router, job_sources_router
 from apps.notifications.views import notifications_router
 from apps.profiles.views import profile_router
@@ -25,6 +27,8 @@ api.add_router("/auth", auth_router)
 api.add_router("/profile", profile_router)
 api.add_router("/job-configs", job_configs_router)
 api.add_router("/job-sources", job_sources_router)
+api.add_router("/jobs", jobs_router)
+api.add_router("/applications", applications_router)
 api.add_router("/notifications", notifications_router)
 
 
