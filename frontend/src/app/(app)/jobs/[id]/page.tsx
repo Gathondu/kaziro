@@ -94,7 +94,7 @@ export default function JobDetailPage() {
               <RefreshCw className="size-4" /> Regenerate
             </button>
           ) : null}
-          {evaluation?.final_classification === "GOOD_FIT" &&
+          {evaluation?.final_classification === "good_fit" &&
           evaluation.application_doc ? (
             <Link className="btn btn-primary btn-sm" href={`/jobs/${id}/apply`}>
               Prepare application <Send className="size-4" />

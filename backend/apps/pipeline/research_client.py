@@ -9,7 +9,10 @@ from urllib.request import Request, urlopen
 from pydantic import BaseModel, Field
 
 from apps.core.exceptions import UpstreamError
+from config.logging import get_logger
 from config.settings import get_settings
+
+log = get_logger(__name__)
 
 
 class ResearchSource(BaseModel):
@@ -113,7 +116,23 @@ def _post_json(url: str, payload: dict[str, object], timeout: int) -> dict[str, 
     try:
         with urlopen(request, timeout=timeout) as response:
             value = json.loads(response.read().decode())
-    except (HTTPError, URLError, OSError, json.JSONDecodeError) as exc:
+    except HTTPError as exc:
+        upstream_message = _http_error_message(exc)
+        log.error(
+            "company_research.http_error",
+            status_code=exc.code,
+            error=upstream_message,
+        )
+        raise UpstreamError(
+            "Company research service is unavailable.",
+            code="company_research_unavailable",
+        ) from exc
+    except (URLError, OSError, json.JSONDecodeError) as exc:
+        log.error(
+            "company_research.request_failed",
+            error=exc.__class__.__name__,
+            message=str(exc)[:512],
+        )
         raise UpstreamError(
             "Company research service is unavailable.",
             code="company_research_unavailable",
@@ -124,6 +143,17 @@ def _post_json(url: str, payload: dict[str, object], timeout: int) -> dict[str, 
             code="company_research_invalid_payload",
         )
     return value
+
+
+def _http_error_message(exc: HTTPError) -> str:
+    try:
+        payload = json.loads(exc.read().decode())
+    except OSError, UnicodeDecodeError, json.JSONDecodeError:
+        return exc.reason[:512] if isinstance(exc.reason, str) else "HTTP request failed"
+    if not isinstance(payload, dict):
+        return "HTTP request failed"
+    message = payload.get("message") or payload.get("error") or "HTTP request failed"
+    return str(message)[:512]
 
 
 __all__ = [

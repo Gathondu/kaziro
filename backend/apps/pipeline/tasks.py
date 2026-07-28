@@ -59,6 +59,18 @@ def run_evaluator_for_user(job_posting_id: str, user_id: str) -> dict[str, objec
     return run_async(lambda: run_evaluator_agent(job_posting_id, user_id)).model_dump(mode="json")
 
 
+@app.task(
+    name="apps.pipeline.run_evaluation_pipeline",
+    queue=QUEUE_DEFAULT,
+    **settings.CELERY_RETRY_KWARGS,
+)
+def run_evaluation_pipeline_for_posting(
+    job_posting_id: str,
+    user_id: str,
+) -> dict[str, object]:
+    return run_async(lambda: _run_evaluation_pipeline(job_posting_id, user_id))
+
+
 @app.task(name="apps.pipeline.run_research", queue=QUEUE_RESEARCH)
 def run_research_for_posting(job_posting_id: str) -> dict[str, object]:
     return run_async(lambda: run_research_agent(job_posting_id)).model_dump(mode="json")
@@ -190,6 +202,56 @@ async def _run_single_job_pipeline(raw_job_id: str, user_id: str) -> dict[str, o
     return summary
 
 
+async def _run_evaluation_pipeline(
+    job_posting_id: str,
+    user_id: str,
+) -> dict[str, object]:
+    summary: dict[str, object] = {
+        "job_posting_id": job_posting_id,
+        "user_id": user_id,
+        "evaluated": False,
+        "researched": False,
+        "documents_generated": False,
+        "errors": [],
+    }
+    errors = summary["errors"]
+    assert isinstance(errors, list)
+
+    evaluated = await run_evaluator_agent(job_posting_id, user_id)
+    if evaluated.error or not evaluated.evaluation_id:
+        errors.append(evaluated.error or "Evaluator returned no evaluation")
+    else:
+        summary["evaluated"] = True
+        if evaluated.classification == EvaluationClassification.GOOD_FIT:
+            research = await run_research_agent(job_posting_id)
+            if research.error or not research.summary_id:
+                errors.append(research.error or "Research returned no summary")
+            else:
+                summary["researched"] = True
+                document = await run_document_agent(evaluated.evaluation_id, user_id)
+                if document.error or not document.document_id:
+                    errors.append(document.error or "Document generation returned no document")
+                else:
+                    summary["documents_generated"] = True
+
+    create_notification_task.delay(
+        user_id,
+        "job_evaluation_failed" if errors else "job_evaluation_completed",
+        "Job evaluation needs attention" if errors else "Job evaluation completed",
+        (
+            "The job could not complete every evaluation stage."
+            if errors
+            else (
+                "Evaluation and application documents are ready."
+                if summary["documents_generated"]
+                else "Evaluation is ready."
+            )
+        ),
+        summary,
+    )
+    return summary
+
+
 def _queue_single_notification(
     user_id: str,
     summary: dict[str, object],
@@ -255,6 +317,7 @@ __all__ = [
     "healthcheck",
     "regenerate_documents",
     "run_document_for_evaluation",
+    "run_evaluation_pipeline_for_posting",
     "run_evaluator_for_user",
     "run_parser_for_raw_job",
     "run_pipeline_for_config",

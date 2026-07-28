@@ -95,10 +95,9 @@ export default function JobsPage() {
           onChange={(event) => setClassification(event.target.value)}
         >
           <option value="">All classifications</option>
-          <option value="GOOD_FIT">Good fit</option>
-          <option value="MAYBE">Maybe</option>
-          <option value="NOT_A_FIT">Not a fit</option>
-          <option value="NOT_INTERESTED">Not interested</option>
+          <option value="good_fit">Good fit</option>
+          <option value="maybe">Maybe</option>
+          <option value="reject">Not a fit</option>
         </select>
         <label className="label cursor-pointer gap-2 rounded-xl border border-base-300 px-4">
           <input

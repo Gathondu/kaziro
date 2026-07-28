@@ -27,7 +27,7 @@ from apps.jobs.posting_schemas import (
 from apps.pipeline.research_client import extract_page
 from apps.pipeline.tasks import (
     regenerate_documents,
-    run_evaluator_for_user,
+    run_evaluation_pipeline_for_posting,
     run_single_job_pipeline,
 )
 
@@ -132,7 +132,7 @@ async def import_job_url(user: User, url: str, company_url: str | None) -> Trigg
 
 async def trigger_evaluation(user: User, job_id: str) -> TriggerJobResponse:
     await get_job(user, job_id)
-    task = run_evaluator_for_user.delay(job_id, str(user.id))
+    task = run_evaluation_pipeline_for_posting.delay(job_id, str(user.id))
     return TriggerJobResponse(task_id=task.id)
 
 

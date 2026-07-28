@@ -66,7 +66,7 @@ Detailed sequence is in
 - Triggered by Celery Beat hourly (UTC minute 0): `enqueue_active_pipelines`
   enqueues `run_pipeline_for_config` only when each active config's
   `fetch_schedule_cron` matches that tick (preset **daily** `0 6 * * *` or
-  **weekly** `0 6 * * *`). Users can also trigger a run immediately via
+  **weekly** `0 6 * * 1`). Users can also trigger a run immediately via
   `POST /api/v1/job-configs/{id}/run`.
 - Reads `keywords`, `location`, `remote_only`, `salary_min/max`,
   `employment_types` from the user's config.
@@ -146,9 +146,9 @@ check_cache ──fresh?──→ END
 
 - **Scheduled / batch pipeline**: research and documents run only for
   `GOOD_FIT`. `MAYBE` / `REJECT` stop after evaluation (no auto documents).
-- **Manual re-run** (`POST /jobs/{id}/trigger-evaluation`): `MAYBE` runs
-  research only (company brief); documents are created from the job UI or
-  backfill task, not automatically.
+- **Manual re-run** (`POST /jobs/{id}/trigger-evaluation`): runs evaluation
+  and, for `GOOD_FIT`, continues through research and document generation.
+  `MAYBE` and `REJECT` stop after evaluation.
 - **Cache**: if a `company_summaries` row exists for the same `job_posting_id`
   and is younger than 30 days, the agent short-circuits.
 - **Fan-in**: the parallel scrape uses `asyncio.gather` so the slowest URL
