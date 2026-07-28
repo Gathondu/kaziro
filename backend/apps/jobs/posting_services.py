@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.db.models import Q
 
 from apps.accounts.models import User
-from apps.core.exceptions import NotFoundError
+from apps.core.exceptions import BadRequestError, NotFoundError
 from apps.documents.models import ApplicationDoc
 from apps.jobs.models import (
     CompanySummary,
@@ -26,7 +26,7 @@ from apps.jobs.posting_schemas import (
 )
 from apps.pipeline.research_client import extract_page
 from apps.pipeline.tasks import (
-    regenerate_documents,
+    run_document_pipeline_for_posting,
     run_evaluation_pipeline_for_posting,
     run_single_job_pipeline,
 )
@@ -142,8 +142,29 @@ async def trigger_regeneration(
     scope: str,
 ) -> TriggerJobResponse:
     await get_job(user, job_id)
-    task_id = await regenerate_documents(job_id, str(user.id), scope)
-    return TriggerJobResponse(task_id=task_id)
+    evaluation = await JobEvaluation.objects.filter(
+        user=user,
+        job_posting_id=uuid.UUID(job_id),
+        final_classification=EvaluationClassification.GOOD_FIT,
+    ).afirst()
+    if evaluation is None:
+        raise BadRequestError(
+            "A good-fit evaluation is required before generating documents.",
+            code="good_fit_evaluation_required",
+        )
+    if (
+        scope != "all"
+        and not await ApplicationDoc.objects.filter(
+            job_evaluation=evaluation,
+            user=user,
+        ).aexists()
+    ):
+        raise BadRequestError(
+            "Generate both application documents before regenerating one document.",
+            code="application_documents_required",
+        )
+    task = run_document_pipeline_for_posting.delay(job_id, str(user.id), scope)
+    return TriggerJobResponse(task_id=str(task.id))
 
 
 async def mark_not_interested(user: User, job_id: str) -> JobEvaluationResponse:

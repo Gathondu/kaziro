@@ -8,6 +8,7 @@ from urllib.request import Request, urlopen
 
 from django.db import IntegrityError
 
+from apps.jobs.deduplication import stable_job_external_id
 from apps.jobs.models import JobSearchConfig, JobSourceConfigDraft, RawJob
 from apps.jobs.source_config import SourceProviderConfig, validate_provider_config
 from config.logging import get_logger
@@ -25,14 +26,21 @@ async def fetch_jobs_for_config(config: JobSearchConfig) -> list[RawJob]:
         source_config = validate_provider_config(draft.config)
         jobs = await asyncio.to_thread(_fetch_provider_jobs, source_config, config)
         for payload in jobs:
-            external_id = _external_job_id(payload, source_config)
-            if not external_id:
+            upstream_id = _external_job_id(payload, source_config)
+            if not upstream_id:
                 log.warning(
                     "job_fetch.missing_external_id",
                     provider=draft.provider.slug,
                     job_config_id=str(config.id),
                 )
                 continue
+            application_url = _mapped_value(
+                payload,
+                source_config,
+                "application_url",
+                ("application_url", "apply_url", "job_apply_link", "url"),
+            )
+            external_id = stable_job_external_id(application_url, upstream_id)
             try:
                 raw_job = await RawJob.objects.acreate(
                     user=config.user,
@@ -302,6 +310,23 @@ def _external_job_id(payload: dict[str, object], source_config: SourceProviderCo
         if candidate and payload.get(candidate):
             return str(payload[candidate])
     return ""
+
+
+def _mapped_value(
+    payload: dict[str, object],
+    source_config: SourceProviderConfig,
+    logical_name: str,
+    fallback_keys: tuple[str, ...],
+) -> object:
+    configured_path = source_config.response_mapping.get(logical_name)
+    if configured_path:
+        value = _resolve_response_path(payload, configured_path)
+        if value not in (None, ""):
+            return value
+    return next(
+        (payload[key] for key in fallback_keys if payload.get(key) not in (None, "")),
+        "",
+    )
 
 
 def _set_param(

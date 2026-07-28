@@ -15,6 +15,7 @@ from django.db import models
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
+from apps.jobs.deduplication import normalize_job_url
 from apps.jobs.models import (
     DraftStatus,
     JobPosting,
@@ -131,25 +132,42 @@ async def persist_node(state: ParserState) -> ParserState:
                 "parser.posted_date.unrecognized",
                 posted_date=str(posted_date_value)[:128],
             )
-        posting, _ = await JobPosting.objects.aupdate_or_create(
-            raw_job=raw,
-            defaults={
-                "external_job_id": raw.external_job_id,
-                "title": state.parsed["title"],
-                "company_name": state.parsed["company_name"],
-                "company_website": state.parsed["company_website"],
-                "location": state.parsed["location"],
-                "remote_flag": state.parsed["remote_flag"],
-                "salary_min": state.parsed["salary_min"],
-                "salary_max": state.parsed["salary_max"],
-                "employment_type": state.parsed["employment_type"],
-                "description": state.parsed["description"],
-                "requirements": state.parsed["requirements"],
-                "application_url": state.parsed["application_url"],
-                "posted_date": parsed_date,
-                "description_embedding": state.embedding,
-            },
+        application_url = normalize_job_url(state.parsed["application_url"])
+        posting = (
+            await JobPosting.objects.filter(
+                raw_job__user_id=raw.user_id,
+                application_url=application_url,
+            )
+            .exclude(raw_job=raw)
+            .afirst()
+            if application_url
+            else None
         )
+        if posting is None:
+            posting, _ = await JobPosting.objects.aupdate_or_create(
+                raw_job=raw,
+                defaults={
+                    "external_job_id": raw.external_job_id,
+                    "title": state.parsed["title"],
+                    "company_name": state.parsed["company_name"],
+                    "company_website": state.parsed["company_website"],
+                    "location": state.parsed["location"],
+                    "remote_flag": state.parsed["remote_flag"],
+                    "salary_min": state.parsed["salary_min"],
+                    "salary_max": state.parsed["salary_max"],
+                    "employment_type": state.parsed["employment_type"],
+                    "description": state.parsed["description"],
+                    "requirements": state.parsed["requirements"],
+                    "application_url": application_url,
+                    "posted_date": parsed_date,
+                    "description_embedding": state.embedding,
+                },
+            )
+        else:
+            log.info(
+                "parser.duplicate_posting_reused",
+                job_posting_id=str(posting.id),
+            )
         raw.parse_status = RawJobParseStatus.PARSED
         raw.last_error = ""
         await raw.asave(update_fields=["parse_status", "last_error"])

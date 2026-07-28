@@ -71,6 +71,19 @@ def run_evaluation_pipeline_for_posting(
     return run_async(lambda: _run_evaluation_pipeline(job_posting_id, user_id))
 
 
+@app.task(
+    name="apps.pipeline.run_document_pipeline",
+    queue=QUEUE_DEFAULT,
+    **settings.CELERY_RETRY_KWARGS,
+)
+def run_document_pipeline_for_posting(
+    job_posting_id: str,
+    user_id: str,
+    scope: str = "all",
+) -> dict[str, object]:
+    return run_async(lambda: _run_document_pipeline(job_posting_id, user_id, scope))
+
+
 @app.task(name="apps.pipeline.run_research", queue=QUEUE_RESEARCH)
 def run_research_for_posting(job_posting_id: str) -> dict[str, object]:
     return run_async(lambda: run_research_agent(job_posting_id)).model_dump(mode="json")
@@ -252,6 +265,57 @@ async def _run_evaluation_pipeline(
     return summary
 
 
+async def _run_document_pipeline(
+    job_posting_id: str,
+    user_id: str,
+    scope: str,
+) -> dict[str, object]:
+    summary: dict[str, object] = {
+        "job_posting_id": job_posting_id,
+        "user_id": user_id,
+        "scope": scope,
+        "researched": False,
+        "documents_generated": False,
+        "errors": [],
+    }
+    errors = summary["errors"]
+    assert isinstance(errors, list)
+
+    evaluation = await JobEvaluation.objects.filter(
+        job_posting_id=uuid.UUID(job_posting_id),
+        user_id=user_id,
+        final_classification=EvaluationClassification.GOOD_FIT,
+    ).afirst()
+    if evaluation is None:
+        errors.append("A good-fit evaluation is required.")
+    else:
+        if scope == "all":
+            research = await run_research_agent(job_posting_id)
+            if research.error or not research.summary_id:
+                errors.append(research.error or "Research returned no summary")
+            else:
+                summary["researched"] = True
+        if not errors:
+            document = await run_document_agent(str(evaluation.id), user_id, scope)
+            if document.error or not document.document_id:
+                errors.append(document.error or "Document generation returned no document")
+            else:
+                summary["documents_generated"] = True
+
+    create_notification_task.delay(
+        user_id,
+        "documents_failed" if errors else "documents_ready",
+        "Application documents need attention" if errors else "Application documents are ready",
+        (
+            "Kaziro could not generate the requested application documents."
+            if errors
+            else "Your tailored CV and cover letter are ready to review."
+        ),
+        summary,
+    )
+    return summary
+
+
 def _queue_single_notification(
     user_id: str,
     summary: dict[str, object],
@@ -296,27 +360,11 @@ def _should_run(cron: str, now: datetime) -> bool:
     return False
 
 
-async def regenerate_documents(
-    job_posting_id: str,
-    user_id: str,
-    scope: str = "all",
-) -> str:
-    evaluation = await JobEvaluation.objects.filter(
-        job_posting_id=uuid.UUID(job_posting_id),
-        user_id=user_id,
-        final_classification=EvaluationClassification.GOOD_FIT,
-    ).afirst()
-    if evaluation is None:
-        raise ValueError("A GOOD_FIT evaluation is required.")
-    result = run_document_for_evaluation.delay(str(evaluation.id), user_id, scope)
-    return result.id
-
-
 __all__ = [
     "enqueue_active_pipelines",
     "healthcheck",
-    "regenerate_documents",
     "run_document_for_evaluation",
+    "run_document_pipeline_for_posting",
     "run_evaluation_pipeline_for_posting",
     "run_evaluator_for_user",
     "run_parser_for_raw_job",

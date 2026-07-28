@@ -254,7 +254,10 @@ class AuthProfileNotificationTests(TransactionTestCase):
                     "default_page_size": 10,
                 },
                 "auth": {"type": "none"},
-                "response_mapping": {"external_id": "id"},
+                "response_mapping": {
+                    "external_id": "id",
+                    "application_url": "application_url",
+                },
                 "confidence_score": 0.8,
                 "evidence_urls": ["https://example.com/docs"],
             },
@@ -314,18 +317,42 @@ class AuthProfileNotificationTests(TransactionTestCase):
 
         with patch(
             "apps.jobs.fetcher._get_json",
-            return_value=(
-                200,
-                {"jobs": [{"id": "job-1", "title": "Engineer"}]},
-                {},
-            ),
+            side_effect=[
+                (
+                    200,
+                    {
+                        "jobs": [
+                            {
+                                "id": "job-1",
+                                "title": "Engineer",
+                                "application_url": "https://jobs.example.com/engineer",
+                            }
+                        ]
+                    },
+                    {},
+                ),
+                (
+                    200,
+                    {
+                        "jobs": [
+                            {
+                                "id": "job-2",
+                                "title": "Engineer",
+                                "application_url": "https://jobs.example.com/engineer",
+                            }
+                        ]
+                    },
+                    {},
+                ),
+            ],
         ):
             first_run = await fetcher.fetch_jobs_for_config(config)
             second_run = await fetcher.fetch_jobs_for_config(config)
 
         assert len(first_run) == 1
         assert second_run == []
-        assert await RawJob.objects.filter(provider=provider, external_job_id="job-1").acount() == 1
+        stored = await RawJob.objects.aget(provider=provider)
+        assert stored.external_job_id.startswith("url:")
 
     def test_protected_routes_return_envelope_401(self) -> None:
         response = self.client.get("/api/v1/profile")

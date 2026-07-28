@@ -1,9 +1,19 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, RefreshCw, Send, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ExternalLink,
+  FileText,
+  RefreshCw,
+  Send,
+  Sparkles,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
+import { JobDocumentsModal } from "@/components/jobs/JobDocumentsModal";
 import {
   getJob,
   markJobNotInterested,
@@ -18,20 +28,29 @@ export default function JobDetailPage() {
   const token = useAuthStore((state) => state.token?.access_token ?? "");
   const pushToast = useToastStore((state) => state.push);
   const queryClient = useQueryClient();
+  const [documentsOpen, setDocumentsOpen] = useState(false);
   const job = useQuery({
     queryKey: ["jobs", id],
     queryFn: () => getJob(token, id),
     enabled: Boolean(token && id),
   });
   const action = useMutation({
-    mutationFn: async (kind: "evaluate" | "regenerate" | "dismiss") => {
+    mutationFn: async (kind: "evaluate" | "generate" | "dismiss") => {
       if (kind === "evaluate") await triggerJobEvaluation(token, id);
-      else if (kind === "regenerate") await regenerateDocuments(token, id);
+      else if (kind === "generate") await regenerateDocuments(token, id);
       else await markJobNotInterested(token, id);
+      return kind;
     },
-    onSuccess: () => {
-      pushToast("success", "Request accepted.");
+    onSuccess: (kind) => {
+      const message =
+        kind === "generate"
+          ? "Document generation queued. You will be notified when it is ready."
+          : kind === "evaluate"
+            ? "Evaluation queued. You will be notified when it is ready."
+            : "Job marked as not interested.";
+      pushToast("success", message);
       void queryClient.invalidateQueries({ queryKey: ["jobs", id] });
+      void queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
     onError: (error: Error) => pushToast("error", error.message),
   });
@@ -85,20 +104,14 @@ export default function JobDetailPage() {
           >
             <X className="size-4" /> Not interested
           </button>
-          {evaluation?.application_doc ? (
+          {evaluation ? (
             <button
               className="btn btn-outline btn-sm"
               disabled={action.isPending}
-              onClick={() => action.mutate("regenerate")}
+              onClick={() => action.mutate("evaluate")}
             >
-              <RefreshCw className="size-4" /> Regenerate
+              <RefreshCw className="size-4" /> Re-run evaluation
             </button>
-          ) : null}
-          {evaluation?.final_classification === "good_fit" &&
-          evaluation.application_doc ? (
-            <Link className="btn btn-primary btn-sm" href={`/jobs/${id}/apply`}>
-              Prepare application <Send className="size-4" />
-            </Link>
           ) : (
             <button
               className="btn btn-primary btn-sm"
@@ -108,6 +121,39 @@ export default function JobDetailPage() {
               Evaluate now
             </button>
           )}
+          {evaluation?.final_classification === "good_fit" ? (
+            evaluation.application_doc ? (
+              <>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => setDocumentsOpen(true)}
+                  type="button"
+                >
+                  <FileText className="size-4" /> View documents
+                </button>
+                <Link
+                  className="btn btn-primary btn-sm"
+                  href={`/jobs/${id}/apply`}
+                >
+                  Prepare application <Send className="size-4" />
+                </Link>
+              </>
+            ) : (
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={action.isPending}
+                onClick={() => action.mutate("generate")}
+                type="button"
+              >
+                {action.isPending ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                Generate documents
+              </button>
+            )
+          ) : null}
         </div>
       </div>
 
@@ -218,6 +264,14 @@ export default function JobDetailPage() {
           </section>
         </aside>
       </div>
+      {evaluation?.application_doc ? (
+        <JobDocumentsModal
+          applicationDocument={evaluation.application_doc}
+          jobId={id}
+          onClose={() => setDocumentsOpen(false)}
+          open={documentsOpen}
+        />
+      ) : null}
     </main>
   );
 }
