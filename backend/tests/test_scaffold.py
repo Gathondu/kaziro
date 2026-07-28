@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.core.files.storage import FileSystemStorage, storages
 from django.test import Client, SimpleTestCase
 
 
@@ -15,3 +16,6 @@ class ScaffoldSmokeTests(SimpleTestCase):
         payload = response.json()
         assert payload["data"]["stack"] == "django-ninja"
         assert payload["error"] is None
+
+    def test_default_media_storage_is_configured(self) -> None:
+        assert isinstance(storages["default"], FileSystemStorage)

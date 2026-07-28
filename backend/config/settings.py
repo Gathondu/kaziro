@@ -145,6 +145,9 @@ class Settings(BaseSettings):
     STATIC_URL: str = "static/"
     STATIC_ROOT: Path = _BASE_DIR / "staticfiles"
     STORAGES: dict[str, dict[str, str]] = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
         "staticfiles": {
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
