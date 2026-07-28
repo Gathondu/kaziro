@@ -4,19 +4,36 @@ import {
   createJobConfig,
   disableJobConfig,
   listJobConfigs,
+  listSchedulePresets,
   runJobConfig,
+  updateJobConfig,
 } from "@/lib/api/jobConfigs";
 import {
   disableAccount,
+  getCvFile,
   getProfile,
   putProfile,
   uploadCvPdf,
 } from "@/lib/api/profile";
-import type { ProfilePayload } from "@/lib/api/types";
+import type {
+  JobConfigPayload,
+  JobConfigResponse,
+  ProfilePayload,
+} from "@/lib/api/types";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useToastStore } from "@/lib/stores/toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Play, Plus, Power, Save, UserRound, X } from "lucide-react";
+import {
+  FileText,
+  Eye,
+  Pencil,
+  Play,
+  Plus,
+  Power,
+  Save,
+  UserRound,
+  X,
+} from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 export default function SettingsPage() {
@@ -26,10 +43,19 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"searches" | "profile">("searches");
   const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [cvPreviewOpen, setCvPreviewOpen] = useState(false);
+  const [editingConfig, setEditingConfig] = useState<JobConfigResponse | null>(
+    null,
+  );
   const modalNameInput = useRef<HTMLInputElement>(null);
   const configs = useQuery({
     queryKey: ["job-configs"],
     queryFn: () => listJobConfigs(token),
+    enabled: Boolean(token),
+  });
+  const schedulePresets = useQuery({
+    queryKey: ["job-config-schedule-presets"],
+    queryFn: () => listSchedulePresets(token),
     enabled: Boolean(token),
   });
   const profile = useQuery({
@@ -37,10 +63,20 @@ export default function SettingsPage() {
     queryFn: () => getProfile(token),
     enabled: Boolean(token),
   });
+  const cvPreview = useQuery({
+    queryKey: ["profile-cv-file"],
+    queryFn: () => getCvFile(token),
+    enabled: Boolean(token) && cvPreviewOpen,
+  });
   const [name, setName] = useState("");
   const [keywords, setKeywords] = useState("");
   const [location, setLocation] = useState("");
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [scheduleCron, setScheduleCron] = useState("0 6 * * *");
+  const [configIsActive, setConfigIsActive] = useState(true);
+  const [pendingConfigIds, setPendingConfigIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [profileDraft, setProfileForm] = useState<ProfilePayload>();
   const profileForm: ProfilePayload = profileDraft ?? {
     full_name: profile.data?.full_name ?? "",
@@ -62,28 +98,36 @@ export default function SettingsPage() {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [configModalOpen]);
 
-  const create = useMutation({
-    mutationFn: () =>
-      createJobConfig(token, {
-        name: name || null,
-        keywords: keywords
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean),
-        location: location || null,
-        remote_only: remoteOnly,
-        employment_types: [],
-        fetch_schedule_cron: "0 6 * * *",
-        is_active: true,
-      }),
-    onSuccess: () => {
-      setName("");
-      setKeywords("");
-      setLocation("");
-      setRemoteOnly(false);
+  useEffect(() => {
+    if (!cvPreviewOpen) return;
+    function closeOnEscape(event: KeyboardEvent): void {
+      if (event.key === "Escape") setCvPreviewOpen(false);
+    }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [cvPreviewOpen]);
+
+  const saveConfig = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string | null;
+      payload: JobConfigPayload;
+    }) =>
+      id
+        ? updateJobConfig(token, id, payload)
+        : createJobConfig(token, payload),
+    onSuccess: (_config, variables) => {
       setConfigModalOpen(false);
+      setEditingConfig(null);
       void queryClient.invalidateQueries({ queryKey: ["job-configs"] });
-      pushToast("success", "Search configuration created.");
+      pushToast(
+        "success",
+        variables.id
+          ? "Search configuration updated."
+          : "Search configuration created.",
+      );
     },
     onError: (error: Error) => pushToast("error", error.message),
   });
@@ -103,6 +147,13 @@ export default function SettingsPage() {
       pushToast("success", "Search configuration updated.");
     },
     onError: (error: Error) => pushToast("error", error.message),
+    onSettled: (_data, _error, variables) => {
+      setPendingConfigIds((current) => {
+        const next = new Set(current);
+        next.delete(variables.id);
+        return next;
+      });
+    },
   });
   const saveProfile = useMutation({
     mutationFn: () =>
@@ -139,7 +190,54 @@ export default function SettingsPage() {
 
   function submitConfig(event: FormEvent): void {
     event.preventDefault();
-    create.mutate();
+    saveConfig.mutate({
+      id: editingConfig?.id ?? null,
+      payload: {
+        name: name.trim() || null,
+        keywords: keywords
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
+        location: location.trim() || null,
+        remote_only: remoteOnly,
+        salary_min: editingConfig?.salary_min ?? null,
+        salary_max: editingConfig?.salary_max ?? null,
+        employment_types: editingConfig?.employment_types ?? [],
+        fetch_schedule_cron: scheduleCron,
+        is_active: configIsActive,
+      },
+    });
+  }
+
+  function openCreateConfig(): void {
+    setEditingConfig(null);
+    setName("");
+    setKeywords("");
+    setLocation("");
+    setRemoteOnly(false);
+    setScheduleCron(
+      schedulePresets.data?.[0]?.fetch_schedule_cron ?? "0 6 * * *",
+    );
+    setConfigIsActive(true);
+    saveConfig.reset();
+    setConfigModalOpen(true);
+  }
+
+  function openEditConfig(config: JobConfigResponse): void {
+    setEditingConfig(config);
+    setName(config.name ?? "");
+    setKeywords(config.keywords.join(", "));
+    setLocation(config.location ?? "");
+    setRemoteOnly(config.remote_only);
+    setScheduleCron(config.fetch_schedule_cron);
+    setConfigIsActive(config.is_active);
+    saveConfig.reset();
+    setConfigModalOpen(true);
+  }
+
+  function triggerConfigAction(id: string, action: "run" | "disable"): void {
+    setPendingConfigIds((current) => new Set(current).add(id));
+    configAction.mutate({ id, action });
   }
 
   return (
@@ -174,7 +272,7 @@ export default function SettingsPage() {
             </div>
             <button
               className="btn btn-primary gap-2"
-              onClick={() => setConfigModalOpen(true)}
+              onClick={openCreateConfig}
               type="button"
             >
               <Plus className="size-4" aria-hidden="true" />
@@ -184,48 +282,63 @@ export default function SettingsPage() {
           <section className="space-y-4">
             {configs.data?.map((config) => (
               <article
-                className="rounded-2xl border border-base-300 bg-base-100 p-5"
+                className="flex flex-col gap-4 rounded-2xl border border-base-300 bg-base-100 p-5 sm:flex-row sm:items-center sm:justify-between"
                 key={config.id}
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
                   <div>
                     <h2 className="font-semibold">
                       {config.name || config.keywords.join(", ")}
                     </h2>
                     <p className="mt-1 text-sm text-base-content/60">
                       {config.location || "Any location"} ·{" "}
-                      {config.fetch_schedule_cron}
+                      {schedulePresets.data?.find(
+                        (preset) =>
+                          preset.fetch_schedule_cron ===
+                          config.fetch_schedule_cron,
+                      )?.label ?? config.fetch_schedule_cron}
                     </p>
                   </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {config.keywords.map((keyword) => (
+                      <span className="badge badge-ghost" key={keyword}>
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
                   <span
                     className={`badge ${config.is_active ? "badge-success badge-outline" : "badge-ghost"}`}
                   >
                     {config.is_active ? "Active" : "Disabled"}
                   </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {config.keywords.map((keyword) => (
-                    <span className="badge badge-ghost" key={keyword}>
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-4 flex gap-2">
+                  <button
+                    aria-label={`Edit ${config.name || "job search"} config`}
+                    className="btn btn-ghost btn-sm"
+                    disabled={pendingConfigIds.has(config.id)}
+                    onClick={() => openEditConfig(config)}
+                    type="button"
+                  >
+                    <Pencil className="size-4" aria-hidden="true" /> Edit
+                  </button>
                   <button
                     className="btn btn-primary btn-sm"
-                    disabled={!config.is_active || configAction.isPending}
-                    onClick={() =>
-                      configAction.mutate({ id: config.id, action: "run" })
+                    disabled={
+                      !config.is_active || pendingConfigIds.has(config.id)
                     }
+                    onClick={() => triggerConfigAction(config.id, "run")}
+                    type="button"
                   >
                     <Play className="size-4" /> Run now
                   </button>
                   <button
                     className="btn btn-ghost btn-sm"
-                    disabled={!config.is_active || configAction.isPending}
-                    onClick={() =>
-                      configAction.mutate({ id: config.id, action: "disable" })
+                    disabled={
+                      !config.is_active || pendingConfigIds.has(config.id)
                     }
+                    onClick={() => triggerConfigAction(config.id, "disable")}
+                    type="button"
                   >
                     <Power className="size-4" /> Disable
                   </button>
@@ -248,7 +361,7 @@ export default function SettingsPage() {
               }}
             >
               <section
-                aria-labelledby="create-config-title"
+                aria-labelledby="config-dialog-title"
                 aria-modal="true"
                 className="w-full max-w-lg rounded-2xl border border-base-300 bg-base-100 p-6 shadow-2xl"
                 role="dialog"
@@ -257,16 +370,17 @@ export default function SettingsPage() {
                   <div>
                     <h2
                       className="text-xl font-semibold"
-                      id="create-config-title"
+                      id="config-dialog-title"
                     >
-                      Create job config
+                      {editingConfig ? "Edit job config" : "Create job config"}
                     </h2>
                     <p className="mt-1 text-sm text-base-content/60">
-                      Define the roles Kaziro should find for you.
+                      Define the roles Kaziro should find and when searches
+                      should run.
                     </p>
                   </div>
                   <button
-                    aria-label="Close create config dialog"
+                    aria-label={`Close ${editingConfig ? "edit" : "create"} config dialog`}
                     className="btn btn-ghost btn-circle btn-sm"
                     onClick={() => setConfigModalOpen(false)}
                     type="button"
@@ -308,24 +422,69 @@ export default function SettingsPage() {
                       value={location}
                     />
                   </label>
-                  <label className="label mt-4 w-fit cursor-pointer justify-start gap-3">
-                    <input
-                      checked={remoteOnly}
-                      className="checkbox checkbox-primary"
-                      onChange={(event) => setRemoteOnly(event.target.checked)}
-                      type="checkbox"
-                    />
-                    Remote only
+                  <label className="form-control mt-4">
+                    <span className="label-text mb-1">Search schedule</span>
+                    <select
+                      className="select select-bordered w-full"
+                      onChange={(event) => setScheduleCron(event.target.value)}
+                      value={scheduleCron}
+                    >
+                      {(
+                        schedulePresets.data ?? [
+                          {
+                            id: "daily",
+                            label: "Once per day (06:00 UTC)",
+                            fetch_schedule_cron: "0 6 * * *",
+                          },
+                          {
+                            id: "weekly",
+                            label: "Once per week (Monday 06:00 UTC)",
+                            fetch_schedule_cron: "0 6 * * 1",
+                          },
+                        ]
+                      ).map((preset) => (
+                        <option
+                          key={preset.id}
+                          value={preset.fetch_schedule_cron}
+                        >
+                          {preset.label}
+                        </option>
+                      ))}
+                    </select>
                   </label>
-                  {create.isError ? (
+                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+                    <label className="label w-fit cursor-pointer justify-start gap-3">
+                      <input
+                        checked={remoteOnly}
+                        className="checkbox checkbox-primary"
+                        onChange={(event) =>
+                          setRemoteOnly(event.target.checked)
+                        }
+                        type="checkbox"
+                      />
+                      Remote only
+                    </label>
+                    <label className="label w-fit cursor-pointer justify-start gap-3">
+                      <input
+                        checked={configIsActive}
+                        className="checkbox checkbox-primary"
+                        onChange={(event) =>
+                          setConfigIsActive(event.target.checked)
+                        }
+                        type="checkbox"
+                      />
+                      Active
+                    </label>
+                  </div>
+                  {saveConfig.isError ? (
                     <div className="alert alert-error mt-4" role="alert">
-                      {create.error.message}
+                      {saveConfig.error.message}
                     </div>
                   ) : null}
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       className="btn btn-ghost"
-                      disabled={create.isPending}
+                      disabled={saveConfig.isPending}
                       onClick={() => setConfigModalOpen(false)}
                       type="button"
                     >
@@ -333,10 +492,16 @@ export default function SettingsPage() {
                     </button>
                     <button
                       className="btn btn-primary"
-                      disabled={create.isPending}
+                      disabled={saveConfig.isPending}
                       type="submit"
                     >
-                      {create.isPending ? "Creating…" : "Create config"}
+                      {saveConfig.isPending
+                        ? editingConfig
+                          ? "Saving…"
+                          : "Creating…"
+                        : editingConfig
+                          ? "Save changes"
+                          : "Create config"}
                     </button>
                   </div>
                 </form>
@@ -488,11 +653,25 @@ export default function SettingsPage() {
                 <FileText className="size-5 text-primary" />
                 <h2 className="font-semibold">Master CV</h2>
               </div>
-              <p className="mt-2 text-sm text-base-content/60">
-                {profile.data?.has_master_cv
-                  ? "A master CV is available."
-                  : "Upload a PDF to tailor future applications."}
-              </p>
+              {profile.data?.has_master_cv ? (
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                  <p className="min-w-0 break-all text-sm text-base-content/60">
+                    {profile.data.cv_original_filename ?? "master-cv.pdf"}
+                  </p>
+                  <button
+                    className="btn btn-outline btn-sm shrink-0"
+                    onClick={() => setCvPreviewOpen(true)}
+                    type="button"
+                  >
+                    <Eye className="size-4" aria-hidden="true" />
+                    View CV
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-base-content/60">
+                  Upload a PDF to tailor future applications.
+                </p>
+              )}
               <input
                 className="file-input file-input-bordered mt-4 w-full"
                 type="file"
@@ -523,6 +702,79 @@ export default function SettingsPage() {
           </aside>
         </div>
       )}
+      {cvPreviewOpen ? (
+        <div
+          className="fixed inset-0 z-[80] grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setCvPreviewOpen(false);
+          }}
+        >
+          <section
+            aria-labelledby="cv-preview-title"
+            aria-modal="true"
+            className="flex h-[85vh] w-full max-w-5xl flex-col rounded-2xl border border-base-300 bg-base-100 p-4 shadow-2xl sm:p-6"
+            role="dialog"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="font-semibold" id="cv-preview-title">
+                  Master CV
+                </h2>
+                <p className="mt-1 truncate text-sm text-base-content/60">
+                  {profile.data?.cv_original_filename ?? "master-cv.pdf"}
+                </p>
+              </div>
+              <button
+                aria-label="Close CV preview"
+                className="btn btn-ghost btn-circle btn-sm"
+                onClick={() => setCvPreviewOpen(false)}
+                type="button"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="mt-4 min-h-0 flex-1 overflow-hidden rounded-xl border border-base-300 bg-base-200">
+              {cvPreview.isPending ? (
+                <div className="grid h-full place-items-center">
+                  <span
+                    aria-label="Loading CV preview"
+                    className="loading loading-spinner text-primary"
+                  />
+                </div>
+              ) : cvPreview.isError ? (
+                <div className="grid h-full place-items-center p-6 text-center">
+                  <div>
+                    <p className="font-medium">Unable to load the CV.</p>
+                    <p className="mt-1 text-sm text-base-content/60">
+                      {cvPreview.error.message}
+                    </p>
+                  </div>
+                </div>
+              ) : cvPreview.data ? (
+                <CvPreviewFrame
+                  blob={cvPreview.data}
+                  title={`CV preview: ${profile.data?.cv_original_filename ?? "master-cv.pdf"}`}
+                />
+              ) : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
+  );
+}
+
+function CvPreviewFrame({ blob, title }: { blob: Blob; title: string }) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(blob);
+    const frame = frameRef.current;
+    if (frame) frame.src = objectUrl;
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [blob]);
+
+  return (
+    <iframe className="h-full w-full bg-white" ref={frameRef} title={title} />
   );
 }

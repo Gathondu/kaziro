@@ -1,5 +1,6 @@
-import { apiClient } from "@/lib/api/client";
+import { apiClient, getAuthenticatedBlob } from "@/lib/api/client";
 import type {
+  CvDownloadResponse,
   CvUploadResponse,
   ProfilePayload,
   ProfileResponse,
@@ -34,7 +35,10 @@ export async function uploadCvPdf(
 }
 
 export const getCvUrl = (token: string) =>
-  apiClient.get<{ url: string }>("/api/v1/profile/cv-url", token);
+  apiClient.get<CvDownloadResponse>("/api/v1/profile/cv-url", token);
+
+export const getCvFile = (token: string) =>
+  getAuthenticatedBlob("/api/v1/profile/cv", token);
 
 export const disableAccount = (token: string) =>
   apiClient.postEmpty("/api/v1/profile/account/disable", token);

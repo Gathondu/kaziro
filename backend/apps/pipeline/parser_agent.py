@@ -7,7 +7,8 @@ configured OpenRouter embedding before persisting through the Django ORM.
 from __future__ import annotations
 
 import json
-from datetime import date
+import re
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from django.db import models
@@ -123,11 +124,13 @@ async def persist_node(state: ParserState) -> ParserState:
     log.info("parser.persist.start")
     try:
         raw = await RawJob.objects.aget(id=state.raw_job_id)
-        parsed_date = (
-            date.fromisoformat(str(state.parsed["posted_date"]))
-            if state.parsed.get("posted_date")
-            else None
-        )
+        posted_date_value = state.parsed.get("posted_date")
+        parsed_date = _parse_posted_date(posted_date_value, reference=raw.fetched_at)
+        if posted_date_value and parsed_date is None:
+            log.warning(
+                "parser.posted_date.unrecognized",
+                posted_date=str(posted_date_value)[:128],
+            )
         posting, _ = await JobPosting.objects.aupdate_or_create(
             raw_job=raw,
             defaults={
@@ -275,6 +278,58 @@ def _optional_int(value: Any) -> int | None:
         return int(value) if value not in (None, "") else None
     except TypeError, ValueError:
         return None
+
+
+_RELATIVE_DATE_PATTERN = re.compile(
+    r"(?P<amount>\d+|a|an)\+?\s+"
+    r"(?P<unit>minute|hour|day|week|month|year)s?\s+ago",
+    re.IGNORECASE,
+)
+
+
+def _parse_posted_date(value: Any, *, reference: datetime) -> date | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+
+    text = str(value).strip()
+    if not text:
+        return None
+
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        pass
+
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+    except ValueError:
+        pass
+
+    normalized = text.casefold()
+    if normalized in {"today", "just now", "just posted"}:
+        return reference.date()
+    if normalized == "yesterday":
+        return (reference - timedelta(days=1)).date()
+
+    relative_match = _RELATIVE_DATE_PATTERN.search(normalized)
+    if relative_match is None:
+        return None
+    amount_text = relative_match.group("amount")
+    amount = 1 if amount_text in {"a", "an"} else int(amount_text)
+    unit = relative_match.group("unit")
+    unit_durations = {
+        "minute": timedelta(minutes=amount),
+        "hour": timedelta(hours=amount),
+        "day": timedelta(days=amount),
+        "week": timedelta(weeks=amount),
+        "month": timedelta(days=30 * amount),
+        "year": timedelta(days=365 * amount),
+    }
+    return (reference - unit_durations[unit]).date()
 
 
 __all__ = ["ParserState", "build_parser_graph", "parser_graph", "run_parser_agent"]

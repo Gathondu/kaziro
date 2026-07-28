@@ -24,6 +24,7 @@ class UserProfile(models.Model):
     values_statement = models.TextField(blank=True)
     linkedin_url = models.URLField(blank=True)
     cv_storage_path = models.CharField(max_length=512, blank=True)
+    cv_original_filename = models.CharField(max_length=255, blank=True)
     master_cv_text = models.TextField(blank=True)
     profile_embedding = VectorField(dimensions=2048, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)

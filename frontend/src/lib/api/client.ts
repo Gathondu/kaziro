@@ -110,6 +110,29 @@ export async function downloadAuthenticatedFile(
   URL.revokeObjectURL(objectUrl);
 }
 
+export async function getAuthenticatedBlob(
+  path: string,
+  token: string,
+): Promise<Blob> {
+  const response = await fetch(`${apiOrigin}${path}`, {
+    headers: {
+      Accept: "application/pdf",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    const envelope = (await response
+      .json()
+      .catch(() => null)) as ApiEnvelope<never> | null;
+    throw new ApiError(
+      response.status,
+      envelope?.error?.code ?? "file_request_failed",
+      envelope?.error?.message ?? "Unable to load the requested file.",
+    );
+  }
+  return await response.blob();
+}
+
 type StreamOptions<TEventData> = {
   token?: string;
   signal?: AbortSignal;

@@ -69,14 +69,22 @@ export type ProfileResponse = ProfilePayload & {
   id: string;
   user_id: string;
   has_master_cv: boolean;
+  cv_original_filename?: string | null;
   created_at: string;
   updated_at: string;
 };
 
 export type CvUploadResponse = {
   storage_path: string;
+  original_filename: string;
   text_chars: number;
+  embedding_dims?: number;
+  signed_url?: string | null;
   has_master_cv: boolean;
+};
+
+export type CvDownloadResponse = {
+  signed_url: string;
 };
 
 export type JobConfigPayload = {

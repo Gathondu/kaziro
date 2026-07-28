@@ -66,12 +66,15 @@ async def upload_cv(user: User, file: UploadedFile) -> CvUploadResponse:
         raise BadRequestError("The PDF contains no extractable text.", code="cv_text_missing")
     embedding = await embedding_client.embedding(text[:20_000], settings.LLM_EMBEDDING_MODEL)
     saved_path = await asyncio.to_thread(_replace_file, storage_path, payload)
+    original_filename = _safe_original_filename(file.name)
     profile.cv_storage_path = saved_path
+    profile.cv_original_filename = original_filename
     profile.master_cv_text = text
     profile.profile_embedding = embedding
     await profile.asave(
         update_fields=[
             "cv_storage_path",
+            "cv_original_filename",
             "master_cv_text",
             "profile_embedding",
             "updated_at",
@@ -80,6 +83,7 @@ async def upload_cv(user: User, file: UploadedFile) -> CvUploadResponse:
     log.info("profile.cv_uploaded", user_id=str(user.id), profile_id=str(profile.id))
     return CvUploadResponse(
         storage_path=saved_path,
+        original_filename=original_filename,
         text_chars=len(text),
         embedding_dims=len(embedding),
         signed_url=default_storage.url(saved_path),
@@ -92,6 +96,22 @@ async def get_cv_url(user: User) -> CvDownloadResponse:
     if profile is None or not profile.cv_storage_path:
         raise NotFoundError("CV not found.", code="cv_not_found")
     return CvDownloadResponse(signed_url=default_storage.url(profile.cv_storage_path))
+
+
+async def get_cv_content(user: User) -> tuple[bytes, str]:
+    profile = await repositories.get_for_user(user)
+    if profile is None or not profile.cv_storage_path:
+        raise NotFoundError("CV not found.", code="cv_not_found")
+    exists = await asyncio.to_thread(default_storage.exists, profile.cv_storage_path)
+    if not exists:
+        raise NotFoundError("CV file not found.", code="cv_file_not_found")
+    content = await asyncio.to_thread(_read_storage_file, profile.cv_storage_path)
+    filename = (
+        profile.cv_original_filename
+        or _storage_filename(profile.cv_storage_path)
+        or "master-cv.pdf"
+    )
+    return content, filename
 
 
 async def disable_account(user: User) -> None:
@@ -115,6 +135,8 @@ def to_response(profile: UserProfile) -> ProfileResponse:
         values_statement=profile.values_statement or None,
         linkedin_url=profile.linkedin_url or None,
         has_master_cv=bool(profile.cv_storage_path),
+        cv_original_filename=profile.cv_original_filename
+        or _storage_filename(profile.cv_storage_path),
         created_at=profile.created_at,
         updated_at=profile.updated_at,
     )
@@ -122,6 +144,17 @@ def to_response(profile: UserProfile) -> ProfileResponse:
 
 def _clean_skills(skills: list[str]) -> list[str]:
     return [skill.strip() for skill in skills if skill.strip()]
+
+
+def _safe_original_filename(filename: str | None) -> str:
+    normalized = (filename or "").replace("\\", "/").rsplit("/", maxsplit=1)[-1].strip()
+    return (normalized or "master-cv.pdf")[:255]
+
+
+def _storage_filename(storage_path: str) -> str | None:
+    if not storage_path:
+        return None
+    return storage_path.replace("\\", "/").rsplit("/", maxsplit=1)[-1]
 
 
 def _is_pdf(file: UploadedFile) -> bool:
@@ -139,8 +172,14 @@ def _replace_file(path: str, payload: bytes) -> str:
     return default_storage.save(path, ContentFile(payload))
 
 
+def _read_storage_file(path: str) -> bytes:
+    with default_storage.open(path, "rb") as stored_file:
+        return stored_file.read()
+
+
 __all__ = [
     "disable_account",
+    "get_cv_content",
     "get_cv_url",
     "get_profile",
     "to_response",

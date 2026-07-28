@@ -28,12 +28,14 @@ class ProfileResponse(Schema):
     values_statement: str | None = None
     linkedin_url: str | None = None
     has_master_cv: bool
+    cv_original_filename: str | None = None
     created_at: datetime
     updated_at: datetime
 
 
 class CvUploadResponse(Schema):
     storage_path: str
+    original_filename: str
     text_chars: int
     embedding_dims: int = 0
     signed_url: str | None = None
