@@ -35,7 +35,7 @@ logs: ## Tail logs for every service.
 
 .PHONY: dev-backend
 dev-backend: ## Run the Django API on the host.
-	cd $(BACKEND_DIR) && $(UV) run python manage.py runserver 0.0.0.0:8000
+	cd $(BACKEND_DIR) && $(UV) run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload --timeout-graceful-shutdown 2
 
 .PHONY: dev-frontend
 dev-frontend: ## Run the Next.js dev server on the host.

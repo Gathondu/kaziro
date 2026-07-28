@@ -39,5 +39,5 @@ uv run ruff format --check .
 uv run python manage.py check
 uv run python manage.py migrate
 uv run python manage.py test
-uv run python manage.py runserver 0.0.0.0:8000
+uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload --timeout-graceful-shutdown 2
 ```

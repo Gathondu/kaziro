@@ -36,6 +36,11 @@ The backend must run as ASGI for long-lived SSE responses. The container uses
 Uvicorn with `config.asgi:application`; WSGI development servers are not a
 supported notification-stream runtime.
 
+Uvicorn must use a finite graceful-shutdown timeout because SSE connections
+are intentionally long-lived. Development uses two seconds for responsive
+reloads, while the container allows ten seconds for Redis subscription
+cleanup before Uvicorn cancels remaining connection tasks.
+
 The GitHub Actions deploy workflow copies the package to the server, writes
 the production env file from secrets, and runs the server deploy script.
 

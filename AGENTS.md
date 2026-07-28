@@ -51,7 +51,7 @@ most specific rule in each area.
 
 | You want to...        | Workspace   | Command                                                                                       |
 | --------------------- | ----------- | --------------------------------------------------------------------------------------------- |
-| Start the backend API | `backend/`  | `uv run python manage.py runserver 0.0.0.0:8000`                                              |
+| Start the backend API | `backend/`  | `uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload --timeout-graceful-shutdown 2` |
 | Start a Celery worker | `backend/`  | `uv run celery -A config.celery:app worker --loglevel=INFO`                                   |
 | Start Celery Beat     | `backend/`  | `uv run celery -A config.celery:app beat --loglevel=INFO --schedule=/tmp/celerybeat-schedule` |
 | Run backend checks    | `backend/`  | `uv run python manage.py check`                                                               |

@@ -48,7 +48,7 @@ Backend:
 cd backend
 uv sync
 uv run python manage.py migrate
-uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload --timeout-graceful-shutdown 2
 ```
 
 Frontend:
