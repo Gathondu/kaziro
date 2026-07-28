@@ -105,7 +105,15 @@ export default function SettingsPage() {
     onError: (error: Error) => pushToast("error", error.message),
   });
   const saveProfile = useMutation({
-    mutationFn: () => putProfile(token, profileForm),
+    mutationFn: () =>
+      putProfile(token, {
+        ...profileForm,
+        full_name: profileForm.full_name.trim(),
+        professional_summary: profileForm.professional_summary?.trim() || null,
+        domain: profileForm.domain?.trim() || null,
+        values_statement: profileForm.values_statement?.trim() || null,
+        linkedin_url: profileForm.linkedin_url?.trim() || null,
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["profile"] });
       pushToast("success", "Profile saved.");
@@ -337,8 +345,14 @@ export default function SettingsPage() {
           ) : null}
         </div>
       ) : (
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.75fr]">
-          <section className="rounded-2xl border border-base-300 bg-base-100 p-5">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <form
+            className="rounded-2xl border border-base-300 bg-base-100 p-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              saveProfile.mutate();
+            }}
+          >
             <div className="flex items-center gap-2">
               <UserRound className="size-5 text-primary" />
               <h2 className="font-semibold">Candidate profile</h2>
@@ -348,6 +362,8 @@ export default function SettingsPage() {
                 <span className="label-text mb-1">Full name</span>
                 <input
                   className="input input-bordered"
+                  maxLength={255}
+                  required
                   value={profileForm.full_name}
                   onChange={(event) =>
                     setProfileForm({
@@ -361,6 +377,7 @@ export default function SettingsPage() {
                 <span className="label-text mb-1">Professional domain</span>
                 <input
                   className="input input-bordered"
+                  maxLength={100}
                   value={profileForm.domain ?? ""}
                   onChange={(event) =>
                     setProfileForm({
@@ -370,12 +387,47 @@ export default function SettingsPage() {
                   }
                 />
               </label>
+              <label className="form-control">
+                <span className="label-text mb-1">Years of experience</span>
+                <input
+                  className="input input-bordered"
+                  max={60}
+                  min={0}
+                  placeholder="e.g. 10"
+                  type="number"
+                  value={profileForm.experience_years ?? ""}
+                  onChange={(event) =>
+                    setProfileForm({
+                      ...profileForm,
+                      experience_years:
+                        event.target.value === ""
+                          ? null
+                          : Number(event.target.value),
+                    })
+                  }
+                />
+              </label>
+              <label className="form-control">
+                <span className="label-text mb-1">LinkedIn profile</span>
+                <input
+                  className="input input-bordered"
+                  placeholder="https://www.linkedin.com/in/your-profile"
+                  type="url"
+                  value={profileForm.linkedin_url ?? ""}
+                  onChange={(event) =>
+                    setProfileForm({
+                      ...profileForm,
+                      linkedin_url: event.target.value,
+                    })
+                  }
+                />
+              </label>
               <label className="form-control sm:col-span-2 flex justify-between">
                 <span className="label-text mb-1">
                   Skills (comma separated)
                 </span>
-                <input
-                  className="input input-bordered"
+                <textarea
+                  className="textarea textarea-bordered min-h-24"
                   value={profileForm.skills.join(", ")}
                   onChange={(event) =>
                     setProfileForm({
@@ -388,23 +440,30 @@ export default function SettingsPage() {
                   }
                 />
               </label>
-              <label className="form-control sm:col-span-2 flex justify-between">
-                <span className="label-text mb-1">Professional summary</span>
-                <textarea
-                  className="textarea textarea-bordered min-h-32"
-                  value={profileForm.professional_summary ?? ""}
-                  onChange={(event) =>
-                    setProfileForm({
-                      ...profileForm,
-                      professional_summary: event.target.value,
-                    })
-                  }
-                />
+              <label className="form-control sm:col-span-2 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                <span className="label-text sm:pt-2">Professional summary</span>
+                <div className="flex w-full flex-col sm:max-w-md">
+                  <textarea
+                    className="textarea textarea-bordered min-h-72 w-full"
+                    maxLength={4000}
+                    value={profileForm.professional_summary ?? ""}
+                    onChange={(event) =>
+                      setProfileForm({
+                        ...profileForm,
+                        professional_summary: event.target.value,
+                      })
+                    }
+                  />
+                  <span className="mt-1 self-end text-right text-xs text-base-content/60">
+                    {(profileForm.professional_summary ?? "").length}/4000
+                  </span>
+                </div>
               </label>
               <label className="form-control sm:col-span-2 flex justify-between">
                 <span className="label-text mb-1">Values and preferences</span>
                 <textarea
                   className="textarea textarea-bordered"
+                  maxLength={2000}
                   value={profileForm.values_statement ?? ""}
                   onChange={(event) =>
                     setProfileForm({
@@ -418,11 +477,11 @@ export default function SettingsPage() {
             <button
               className="btn btn-primary mt-5"
               disabled={saveProfile.isPending}
-              onClick={() => saveProfile.mutate()}
+              type="submit"
             >
               <Save className="size-4" /> Save profile
             </button>
-          </section>
+          </form>
           <aside className="space-y-6">
             <section className="rounded-2xl border border-base-300 bg-base-100 p-5">
               <div className="flex items-center gap-2">

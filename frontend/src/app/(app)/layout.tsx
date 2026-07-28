@@ -45,7 +45,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <div className="min-h-screen bg-base-200 text-sm">
       <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-base-300 bg-base-100/90 shadow-marketing-header backdrop-blur-xl">
         <div className="flex h-full items-center justify-between gap-4 px-4">
           <Link
