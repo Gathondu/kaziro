@@ -5,5 +5,5 @@ repos:
         name: kaziro changed-file linters
         entry: python scripts/precommit_changed_linters.py
         language: system
-        pass_filenames: false
+        pass_filenames: true
         stages: [pre-commit]

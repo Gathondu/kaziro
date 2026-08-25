@@ -100,7 +100,7 @@ class Settings(BaseSettings):
     DEBUG: bool = Field(
         default=False,
         description="Django debug mode; do not enable in production.",
-        validation_alias=AliasChoices("DJANGO_DEBUG"),
+        validation_alias=AliasChoices("DJANGO_DEBUG", "DEBUG"),
     )
     ALLOWED_HOSTS: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["localhost", "127.0.0.1", "0.0.0.0"],
@@ -114,6 +114,14 @@ class Settings(BaseSettings):
         ],
         description="Comma-separated browser origins allowed to call the API.",
         validation_alias=AliasChoices("CORS_ORIGINS", "DJANGO_CORS_ORIGINS"),
+    )
+    CSRF_TRUSTED_ORIGINS: Annotated[list[AnyHttpUrl], NoDecode] = Field(
+        default_factory=lambda: [
+            AnyHttpUrl("http://localhost:8000"),
+            AnyHttpUrl("http://127.0.0.1:8000"),
+        ],
+        description="Comma-separated origins trusted for CSRF protection.",
+        validation_alias=AliasChoices("CSRF_TRUSTED_ORIGINS", "DJANGO_CSRF_TRUSTED_ORIGINS"),
     )
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     LOG_FORMAT: Literal["console", "json"] = "console"
@@ -316,6 +324,14 @@ class Settings(BaseSettings):
             return list(map(lambda item: item.rstrip("/"), cleaned_items))
         return value
 
+    @field_validator("CSRF_TRUSTED_ORIGINS", mode="before")
+    @classmethod
+    def _split_csv_csrf_origins(cls, value: object) -> object:
+        if isinstance(value, str) and not value.startswith("["):
+            cleaned_items: filter[str] = filter(None, map(str.strip, value.split(",")))
+            return list(map(lambda item: item.rstrip("/"), cleaned_items))
+        return value
+
     @field_validator("CELERY_BROKER_URL", "CELERY_RESULT_BACKEND", mode="before")
     @classmethod
     def _normalize_optional_dsn(cls, value: object) -> object:
@@ -353,6 +369,15 @@ class Settings(BaseSettings):
     @property
     def cors_allowed_origins(self) -> list[str]:
         return list(map(lambda origin: str(origin).rstrip("/"), self.CORS_ORIGINS))
+
+    @property
+    def csrf_trusted_origins(self) -> list[str]:
+        return list(
+            map(
+                lambda origin: str(origin).rstrip("/"),
+                self.CSRF_TRUSTED_ORIGINS,
+            )
+        )
 
     @property
     def frontend_url(self) -> str:
@@ -439,6 +464,7 @@ def _django_setting_exports(source: Settings) -> dict[str, Any]:
     exports["APP_ENV"] = source.APP_ENV.value
     exports["DATABASES"] = source.databases
     exports["CORS_ALLOWED_ORIGINS"] = source.cors_allowed_origins
+    exports["CSRF_TRUSTED_ORIGINS"] = source.csrf_trusted_origins
     exports["JWT_ISSUER"] = source.jwt_issuer
     exports["JWT_AUDIENCE"] = source.jwt_audience
     exports["CELERY_BROKER_URL"] = source.celery_broker_url

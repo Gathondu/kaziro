@@ -198,3 +198,23 @@ class JobSourceAdminActionTests(TestCase):
 
         assert not form.is_valid()
         assert "config" in form.errors
+
+    def test_draft_admin_shows_example_urls(self) -> None:
+        provider = JobSourceProvider.objects.create(
+            slug="example-jobs",
+            display_name="Example Jobs",
+            docs_url="https://example.com/docs",
+        )
+        draft = JobSourceConfigDraft.objects.create(
+            provider=provider,
+            config={
+                "base_url": "https://api.example.com",
+                "endpoint_path": "/jobs",
+                "examples": [{"name": "Search", "final_url": "https://api.example.com/jobs?q=dev"}],
+            },
+        )
+
+        response = self.client.get(f"/admin/jobs/jobsourceconfigdraft/{draft.id}/change/")
+
+        assert response.status_code == 200
+        assert "https://api.example.com/jobs?q=dev" in response.content.decode()

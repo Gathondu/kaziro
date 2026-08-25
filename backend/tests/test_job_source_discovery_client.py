@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+from io import BytesIO
 from unittest.mock import AsyncMock, patch
-
-from asgiref.sync import async_to_sync
-from django.test import SimpleTestCase, TransactionTestCase
+from urllib.error import HTTPError
 
 from apps.core.exceptions import UpstreamError
 from apps.jobs.discovery_client import (
@@ -11,8 +10,14 @@ from apps.jobs.discovery_client import (
     _normalize_discovery_response,
     _post_json_sync,
 )
-from apps.jobs.models import DiscoveryRunStatus, JobSourceDiscoveryRun, JobSourceProvider
+from apps.jobs.models import (
+    DiscoveryRunStatus,
+    JobSourceDiscoveryRun,
+    JobSourceProvider,
+)
 from apps.jobs.tasks import _discover_provider
+from asgiref.sync import async_to_sync
+from django.test import SimpleTestCase, TransactionTestCase
 
 
 class JobSourceDiscoveryClientTests(SimpleTestCase):
@@ -24,9 +29,20 @@ class JobSourceDiscoveryClientTests(SimpleTestCase):
                 "method": "GET",
                 "query_params": {"keywords": "query"},
                 "pagination": {"type": "page", "page_param": "page"},
-                "auth": {"type": "bearer", "credential_env_var": "EXAMPLE_API_KEY"},
-                "request_headers": [{"name": "X-RapidAPI-Host", "value": "example.p.rapidapi.com"}],
-                "smoke_test_params": {"query": "software engineer", "page": "1"},
+                "auth": {
+                    "type": "bearer",
+                    "credential_env_var": "EXAMPLE_API_KEY",
+                },
+                "request_headers": [
+                    {
+                        "name": "X-RapidAPI-Host",
+                        "value": "example.p.rapidapi.com",
+                    }
+                ],
+                "smoke_test_params": {
+                    "query": "software engineer",
+                    "page": "1",
+                },
                 "response_mapping": {"external_id": "id"},
                 "confidence_score": 0.7,
                 "evidence_urls": ["https://example.com/docs"],
@@ -42,7 +58,11 @@ class JobSourceDiscoveryClientTests(SimpleTestCase):
         assert result.config["base_url"] == "https://api.example.com/"
         assert result.config["endpoint_path"] == "/jobs"
         assert result.config["request_headers"] == [
-            {"name": "X-RapidAPI-Host", "value": "example.p.rapidapi.com", "value_env_var": None}
+            {
+                "name": "X-RapidAPI-Host",
+                "value": "example.p.rapidapi.com",
+                "value_env_var": None,
+            }
         ]
         assert result.config["smoke_test_params"] == {
             "query": "software engineer",
@@ -52,18 +72,80 @@ class JobSourceDiscoveryClientTests(SimpleTestCase):
         assert result.evidence_urls == ["https://example.com/openapi.json"]
         assert result.metadata["warnings"] == ["Review pagination."]
 
+    def test_normalizes_current_discovery_contract(self) -> None:
+        response = {
+            "draft": {
+                "base_url": "https://jsearch.p.rapidapi.com",
+                "endpoint_path": "/search",
+                "method": "GET",
+                "query_params": {},
+                "pagination": {"type": "none", "default_page_size": 10},
+                "auth": {
+                    "type": "static_header",
+                    "header_name": "X-RapidAPI-Key",
+                    "credential_env_var": "RAPIDAPI_KEY",
+                },
+                "request_headers": [
+                    {
+                        "name": "X-RapidAPI-Host",
+                        "value": "jsearch.p.rapidapi.com",
+                    }
+                ],
+                "smoke_test_params": {},
+                "response_list_path": "data",
+                "response_mapping": {},
+                "examples": [],
+                "confidence_score": 0.85,
+                "evidence_urls": [],
+            },
+            "confidence_score": 0.85,
+            "evidence_urls": [],
+            "warnings": [],
+        }
+
+        result = _normalize_discovery_response(response)
+
+        assert result.config["response_list_path"] == "data"
+        assert result.config["examples"] == []
+        assert result.evidence_urls == []
+        assert result.confidence_score == 0.85
+
     def test_rejects_response_without_nested_draft(self) -> None:
         with self.assertRaises(UpstreamError):
-            _normalize_discovery_response({"base_url": "https://api.example.com"})
+            _normalize_discovery_response(
+                {"base_url": "https://api.example.com"}
+            )
 
     def test_rejects_invalid_nested_draft(self) -> None:
         with self.assertRaises(UpstreamError):
-            _normalize_discovery_response({"draft": {"endpoint_path": "/jobs"}})
+            _normalize_discovery_response(
+                {"draft": {"endpoint_path": "/jobs"}}
+            )
 
     def test_maps_timeout_to_safe_upstream_error(self) -> None:
         with (
-            patch("apps.jobs.discovery_client.urlopen", side_effect=TimeoutError),
+            patch(
+                "apps.jobs.discovery_client.urlopen", side_effect=TimeoutError
+            ),
             self.assertRaises(UpstreamError),
+        ):
+            _post_json_sync("http://scrapper:3100/discover", {}, 1)
+
+    def test_preserves_http_error_details(self) -> None:
+        error = HTTPError(
+            "http://scrapper:3100/discover",
+            500,
+            "Internal Server Error",
+            # pyrefly: ignore [bad-argument-type]
+            hdrs=None,
+            fp=BytesIO(b'{"message":"crawler failed"}'),
+        )
+        with (
+            patch("apps.jobs.discovery_client.urlopen", side_effect=error),
+            self.assertRaisesRegex(
+                UpstreamError,
+                r"HTTP 500: \{\"message\":\"crawler failed\"\}",
+            ),
         ):
             _post_json_sync("http://scrapper:3100/discover", {}, 1)
 
@@ -75,7 +157,9 @@ class JobSourceDiscoveryTaskTests(TransactionTestCase):
             display_name="Example Jobs",
             docs_url="https://example.com/docs",
         )
-        self.discovery_run = JobSourceDiscoveryRun.objects.create(provider=self.provider)
+        self.discovery_run = JobSourceDiscoveryRun.objects.create(
+            provider=self.provider
+        )
 
     def test_successful_run_links_generated_draft_and_metadata(self) -> None:
         result = DiscoveryResult(

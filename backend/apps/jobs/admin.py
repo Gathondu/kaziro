@@ -7,6 +7,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import path, reverse
 from django.urls.resolvers import URLPattern
+from django.utils.html import format_html, format_html_join
 
 from apps.jobs.forms import DiscoveryRunForm, JobSourceConfigDraftAdminForm
 from apps.jobs.models import (
@@ -152,7 +153,13 @@ class JobSourceConfigDraftAdmin(admin.ModelAdmin):
     list_display = ("id", "provider", "status", "confidence_score", "approved_at", "created_at")
     list_filter = ("status", "provider")
     search_fields = ("provider__slug",)
-    readonly_fields = ("status", "approved_at", "created_at", "updated_at")
+    readonly_fields = (
+        "status",
+        "approved_at",
+        "created_at",
+        "updated_at",
+        "example_urls",
+    )
     actions = ("validate_drafts", "approve_validated_drafts")
     inlines = (JobSourceValidationRunInline,)
 
@@ -178,6 +185,27 @@ class JobSourceConfigDraftAdmin(admin.ModelAdmin):
         if obj and obj.status in {DraftStatus.APPROVED, DraftStatus.SUPERSEDED}:
             fields.extend(("provider", "config", "confidence_score", "evidence_urls"))
         return tuple(fields)
+
+    @admin.display(description="Example URLs")
+    def example_urls(self, obj: JobSourceConfigDraft) -> str:
+        examples = obj.config.get("examples", [])
+        if not isinstance(examples, list):
+            return "No example URLs returned."
+        urls = [
+            example["final_url"]
+            for example in examples
+            if isinstance(example, dict) and isinstance(example.get("final_url"), str)
+        ]
+        if not urls:
+            return "No example URLs returned."
+        return format_html(
+            "<ul>{}</ul>",
+            format_html_join(
+                "",
+                '<li><a href="{}" target="_blank" rel="noopener">{}</a></li>',
+                ((url, url) for url in urls),
+            ),
+        )
 
     def save_model(
         self,

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -59,24 +58,26 @@ export default function MarketingHome() {
     >
       <Header />
       <main className="flex-1">
-        <section className="border-b border-base-content/15 px-4 py-14 sm:py-18">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.88fr_1.12fr]">
-            <div>
-              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-primary sm:text-sm">
-                AI-assisted job search
-              </p>
-              <h1 className="text-5xl font-extralight tracking-normal text-base-content sm:text-6xl">
-                Kaziro
-              </h1>
-              <p className="mt-5 max-w-xl text-lg leading-relaxed text-base-content/90 sm:text-xl">
-                Find your next role with{" "}
-                <span className="marketing-hero-clarity-word text-5xl leading-none text-primary">
-                  clarity
+        <section className="border-b border-base-content/15 px-4 py-16 sm:py-24 lg:py-28">
+          <div className="mx-auto max-w-6xl">
+            <p className="mb-5 text-center text-xs font-semibold uppercase tracking-widest text-primary sm:text-sm">
+              AI-assisted job search
+            </p>
+            <div className="shadow-marketing-hero mx-auto max-w-280 rounded-3xl border border-base-content/20 bg-base-100/75 px-6 py-14 text-center backdrop-blur-sm sm:px-12 sm:py-16 lg:px-20">
+              <h1 className="text-5xl font-extralight tracking-tight text-base-content sm:text-6xl lg:text-7xl">
+                Find your next role with
+                <span className="block">
+                  <span className="marketing-hero-clarity-word inline-block text-primary">
+                    clarity
+                  </span>
                 </span>
-                . Kaziro scores fit, adds company context, and helps you ship
-                tailored applications.
+              </h1>
+              <p className="mx-auto mt-10 max-w-5xl text-lg leading-relaxed text-base-content/90 sm:text-xl">
+                Kaziro surfaces roles that fit your profile, explains the match,
+                adds company context, and helps you ship tailored applications —
+                less noise, more momentum.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mx-auto mt-8 flex max-w-5xl flex-wrap justify-center gap-3 border-t border-base-content/10 pt-5">
                 <Link className="landing-cta-primary" href="/signup">
                   Create account
                   <ArrowRight className="ml-2 size-4" aria-hidden="true" />
@@ -89,16 +90,6 @@ export default function MarketingHome() {
                 </Link>
               </div>
             </div>
-            <figure className="shadow-marketing-hero overflow-hidden rounded-3xl border border-base-content/20 bg-base-100 ring-1 ring-base-content/10">
-              <Image
-                alt="Kaziro dashboard preview with job fit cards and notifications"
-                className="h-auto w-full"
-                height={1000}
-                priority
-                src="/kaziro-product-preview.png"
-                width={1600}
-              />
-            </figure>
           </div>
         </section>
         <FeatureSection />
@@ -113,7 +104,7 @@ export default function MarketingHome() {
 function Header() {
   return (
     <header className="shadow-marketing-header sticky top-0 z-50 border-b border-base-content/15 bg-base-100/90 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+      <div className="mx-auto flex max-w-350 items-center justify-between gap-4 px-4 py-4">
         <Link
           className="text-xl font-bold tracking-tight text-primary"
           href="/"
@@ -158,7 +149,7 @@ function FeatureSection() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((item) => (
             <article
-              className="shadow-marketing-card group relative overflow-hidden rounded-2xl border border-base-content/10 bg-gradient-to-br from-base-100 via-base-100 to-base-200/80 p-6 ring-1 ring-base-content/5 transition motion-safe:hover:-translate-y-1"
+              className="shadow-marketing-card group relative overflow-hidden rounded-2xl border border-base-content/10 bg-linear-to-br from-base-100 via-base-100 to-base-200/80 p-6 ring-1 ring-base-content/5 transition motion-safe:hover:-translate-y-1"
               key={item.title}
             >
               <div className="landing-icon-well mb-4">
@@ -197,7 +188,7 @@ function WhySection() {
         <div className="grid gap-6 lg:grid-cols-3">
           {reasons.map((item, index) => (
             <article
-              className="shadow-marketing-card relative overflow-hidden rounded-2xl border border-base-content/20 bg-gradient-to-br from-base-100 to-base-200 p-8 ring-1 ring-base-content/10"
+              className="shadow-marketing-card relative overflow-hidden rounded-2xl border border-base-content/20 bg-linear-to-br from-base-100 to-base-200 p-8 ring-1 ring-base-content/10"
               key={item.title}
             >
               <span
@@ -279,7 +270,7 @@ function HowItWorks() {
 function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="border-t border-base-content/20 bg-gradient-to-b from-base-200 to-base-300/40 px-4 py-12">
+    <footer className="border-t border-base-content/20 bg-linear-to-b from-base-200 to-base-300/40 px-4 py-12">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-base-content">Kaziro</p>

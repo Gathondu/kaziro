@@ -135,6 +135,7 @@ async def persist_node(state: ParserState) -> ParserState:
         application_url = normalize_job_url(state.parsed["application_url"])
         posting = (
             await JobPosting.objects.filter(
+                # pyrefly: ignore [missing-attribute]
                 raw_job__user_id=raw.user_id,
                 application_url=application_url,
             )

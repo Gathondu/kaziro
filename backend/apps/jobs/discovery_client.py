@@ -4,12 +4,15 @@ import asyncio
 import json
 from dataclasses import dataclass
 from typing import Any
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from apps.core.exceptions import UpstreamError
 from apps.jobs.source_config import validate_provider_config
+from config.logging import get_logger
 from config.settings import get_settings
+
+log = get_logger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +56,10 @@ def _normalize_discovery_response(response: dict[str, Any]) -> DiscoveryResult:
     try:
         config = validate_provider_config(draft).model_dump(mode="json")
     except ValueError as exc:
+        log.warning(
+            "job_source.discovery_invalid_draft",
+            error=str(exc),
+        )
         raise UpstreamError(
             "Job source discovery returned an invalid provider draft.",
             code="job_source_discovery_invalid_payload",
@@ -97,6 +104,13 @@ def _post_json_sync(url: str, payload: dict[str, object], timeout: int) -> dict[
         with urlopen(request, timeout=timeout) as response:
             data = response.read().decode("utf-8")
             parsed = json.loads(data)
+    except HTTPError as exc:
+        response_body = exc.read().decode("utf-8", errors="replace").strip()
+        detail = response_body[:500] or "No response body."
+        raise UpstreamError(
+            f"Job source discovery returned HTTP {exc.code}: {detail}",
+            code="job_source_discovery_upstream_error",
+        ) from exc
     except (OSError, URLError, json.JSONDecodeError) as exc:
         raise UpstreamError(
             "Job source discovery service is unavailable.",
@@ -112,7 +126,10 @@ def _post_json_sync(url: str, payload: dict[str, object], timeout: int) -> dict[
 
 def _scrapper_headers() -> dict[str, str]:
     settings = get_settings()
-    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
     if settings.SCRAPPER_API_KEY is not None:
         headers["X-Scrapper-Key"] = settings.SCRAPPER_API_KEY.get_secret_value()
     return headers

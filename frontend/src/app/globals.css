@@ -167,9 +167,23 @@
   }
 
   .marketing-hero-clarity-word {
+    position: relative;
     font-family: "Handlee", cursive;
     font-style: normal;
     font-weight: 400;
+  }
+
+  .marketing-hero-clarity-word::after {
+    position: absolute;
+    right: -0.08em;
+    bottom: -0.1em;
+    left: 0.02em;
+    height: 0.07em;
+    border-radius: 9999px;
+    background-color: currentColor;
+    content: "";
+    transform: rotate(-3deg);
+    transform-origin: left center;
   }
 }
 

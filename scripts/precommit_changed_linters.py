@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import subprocess
 import re
+import subprocess
+import sys
 from pathlib import Path
 from shutil import which
 
@@ -64,11 +65,13 @@ def _run(command: list[str], cwd: Path | None = None) -> int:
         completed = subprocess.run(resolved, cwd=cwd or REPO_ROOT, check=False)
     except FileNotFoundError:
         # Last-resort fallback for Windows shell wrappers.
-        completed = subprocess.run(["cmd", "/c", *resolved], cwd=cwd or REPO_ROOT, check=False)
+        completed = subprocess.run(
+            ["cmd", "/c", *resolved], cwd=cwd or REPO_ROOT, check=False
+        )
     return completed.returncode
 
 
-def _staged_files() -> list[str]:
+def _staged_files(candidate_files: list[str] | None = None) -> list[str]:
     completed = subprocess.run(
         [
             "git",
@@ -86,7 +89,14 @@ def _staged_files() -> list[str]:
         print(completed.stdout)
         print(completed.stderr)
         return []
-    return [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+    staged_files = [
+        line.strip() for line in completed.stdout.splitlines() if line.strip()
+    ]
+    if candidate_files is None:
+        return staged_files
+
+    candidates = set(candidate_files)
+    return [path for path in staged_files if path in candidates]
 
 
 def _is_root_markdown(path: str) -> bool:
@@ -94,7 +104,7 @@ def _is_root_markdown(path: str) -> bool:
 
 
 def main() -> int:
-    staged = _staged_files()
+    staged = _staged_files(sys.argv[1:] or None)
     if not staged:
         print("No staged files. Skipping changed-file linters.")
         return 0
@@ -111,7 +121,10 @@ def main() -> int:
     )
     if backend_py:
         if (
-            _run(["uv", "run", "ruff", "check", *backend_py], cwd=REPO_ROOT / "backend")
+            _run(
+                ["uv", "run", "ruff", "check", *backend_py],
+                cwd=REPO_ROOT / "backend",
+            )
             != 0
         ):
             failed = True
@@ -123,7 +136,10 @@ def main() -> int:
             != 0
         ):
             failed = True
-        if _run(["uv", "run", "mypy", *backend_py], cwd=REPO_ROOT / "backend") != 0:
+        if (
+            _run(["uv", "run", "mypy", *backend_py], cwd=REPO_ROOT / "backend")
+            != 0
+        ):
             failed = True
 
     frontend_prettier = sorted(
@@ -149,7 +165,11 @@ def main() -> int:
         if (
             _run(
                 _node_tool(
-                    FRONTEND_ROOT / "node_modules" / "prettier" / "bin" / "prettier.cjs",
+                    FRONTEND_ROOT
+                    / "node_modules"
+                    / "prettier"
+                    / "bin"
+                    / "prettier.cjs",
                     "--check",
                     *frontend_prettier,
                 ),
@@ -169,7 +189,11 @@ def main() -> int:
         if (
             _run(
                 _node_tool(
-                    FRONTEND_ROOT / "node_modules" / "eslint" / "bin" / "eslint.js",
+                    FRONTEND_ROOT
+                    / "node_modules"
+                    / "eslint"
+                    / "bin"
+                    / "eslint.js",
                     *frontend_eslint,
                 ),
                 cwd=FRONTEND_ROOT,
@@ -185,7 +209,10 @@ def main() -> int:
         and (path.startswith("docs/") or _is_root_markdown(path))
     )
     if docs_md:
-        if _run(["pnpm", "dlx", "markdownlint-cli2", *docs_md], cwd=REPO_ROOT) != 0:
+        if (
+            _run(["pnpm", "dlx", "markdownlint-cli2", *docs_md], cwd=REPO_ROOT)
+            != 0
+        ):
             failed = True
 
     return 1 if failed else 0

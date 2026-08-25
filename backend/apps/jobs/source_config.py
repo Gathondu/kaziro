@@ -2,12 +2,25 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 _HEADER_NAME_PATTERN = r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$"
 _ENV_VAR_PATTERN = r"^[A-Z][A-Z0-9_]*$"
 _RESPONSE_LIST_PATH_PATTERN = r"^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$"
-_SENSITIVE_HEADER_PARTS = ("authorization", "api-key", "apikey", "token", "secret")
+_SENSITIVE_HEADER_PARTS = (
+    "authorization",
+    "api-key",
+    "apikey",
+    "token",
+    "secret",
+)
 
 
 class SourceAuthConfig(BaseModel):
@@ -54,6 +67,14 @@ class SourceRequestHeaderConfig(BaseModel):
         return self
 
 
+class SourceExampleConfig(BaseModel):
+    name: str = ""
+    description: str = ""
+    query: dict[str, str] = Field(default_factory=dict)
+    headers: list[SourceRequestHeaderConfig] = Field(default_factory=list)
+    final_url: str | None = None
+
+
 class SourceProviderConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -67,6 +88,7 @@ class SourceProviderConfig(BaseModel):
     smoke_test_params: dict[str, str] = Field(default_factory=dict)
     response_list_path: str | None = Field(default=None, pattern=_RESPONSE_LIST_PATH_PATTERN)
     response_mapping: dict[str, str] = Field(default_factory=dict)
+    examples: list[SourceExampleConfig] = Field(default_factory=list)
     confidence_score: float = Field(default=0, ge=0, le=1)
     evidence_urls: list[str] = Field(default_factory=list)
 
@@ -76,12 +98,15 @@ class SourceProviderConfig(BaseModel):
         return value if value.startswith("/") else f"/{value}"
 
 
-def validate_provider_config(config: dict[str, object]) -> SourceProviderConfig:
+def validate_provider_config(
+    config: dict[str, object],
+) -> SourceProviderConfig:
     return SourceProviderConfig.model_validate(config)
 
 
 __all__ = [
     "SourceAuthConfig",
+    "SourceExampleConfig",
     "SourcePaginationConfig",
     "SourceProviderConfig",
     "SourceRequestHeaderConfig",
