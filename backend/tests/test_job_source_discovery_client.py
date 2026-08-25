@@ -4,6 +4,9 @@ from io import BytesIO
 from unittest.mock import AsyncMock, patch
 from urllib.error import HTTPError
 
+from asgiref.sync import async_to_sync
+from django.test import SimpleTestCase, TransactionTestCase
+
 from apps.core.exceptions import UpstreamError
 from apps.jobs.discovery_client import (
     DiscoveryResult,
@@ -16,8 +19,6 @@ from apps.jobs.models import (
     JobSourceProvider,
 )
 from apps.jobs.tasks import _discover_provider
-from asgiref.sync import async_to_sync
-from django.test import SimpleTestCase, TransactionTestCase
 
 
 class JobSourceDiscoveryClientTests(SimpleTestCase):
@@ -110,23 +111,70 @@ class JobSourceDiscoveryClientTests(SimpleTestCase):
         assert result.evidence_urls == []
         assert result.confidence_score == 0.85
 
+    def test_normalizes_discovered_rapidapi_host_and_credential_env(
+        self,
+    ) -> None:
+        result = _normalize_discovery_response(
+            {
+                "draft": {
+                    "base_url": "https://jsearch.p.rapidapi.com",
+                    "endpoint_path": "/search",
+                    "auth": {
+                        "type": "static_header",
+                        "header_name": "X-RapidAPI-Key",
+                        "credential_env_var": "RAPIDAPI_HOST",
+                    },
+                    "request_headers": [
+                        {
+                            "name": "X-RapidAPI-Host",
+                            "value_env_var": "RAPIDAPI_HOST",
+                        }
+                    ],
+                },
+                "host": "discovered-jsearch.p.rapidapi.com",
+            }
+        )
+
+        # pyrefly: ignore [bad-index]
+        assert result.config["auth"]["credential_env_var"] == "RAPIDAPI_KEY"
+        assert result.config["request_headers"] == [
+            {
+                "name": "X-RapidAPI-Host",
+                "value": "discovered-jsearch.p.rapidapi.com",
+                "value_env_var": None,
+            }
+        ]
+
+    def test_non_rapidapi_config_keeps_discovered_auth_env(self) -> None:
+        result = _normalize_discovery_response(
+            {
+                "draft": {
+                    "base_url": "https://api.example.com",
+                    "endpoint_path": "/jobs",
+                    "auth": {
+                        "type": "bearer",
+                        "credential_env_var": "EXAMPLE_API_TOKEN",
+                    },
+                }
+            }
+        )
+
+        assert (
+            # pyrefly: ignore [bad-index]
+            result.config["auth"]["credential_env_var"] == "EXAMPLE_API_TOKEN"
+        )
+
     def test_rejects_response_without_nested_draft(self) -> None:
         with self.assertRaises(UpstreamError):
-            _normalize_discovery_response(
-                {"base_url": "https://api.example.com"}
-            )
+            _normalize_discovery_response({"base_url": "https://api.example.com"})
 
     def test_rejects_invalid_nested_draft(self) -> None:
         with self.assertRaises(UpstreamError):
-            _normalize_discovery_response(
-                {"draft": {"endpoint_path": "/jobs"}}
-            )
+            _normalize_discovery_response({"draft": {"endpoint_path": "/jobs"}})
 
     def test_maps_timeout_to_safe_upstream_error(self) -> None:
         with (
-            patch(
-                "apps.jobs.discovery_client.urlopen", side_effect=TimeoutError
-            ),
+            patch("apps.jobs.discovery_client.urlopen", side_effect=TimeoutError),
             self.assertRaises(UpstreamError),
         ):
             _post_json_sync("http://scrapper:3100/discover", {}, 1)
@@ -157,9 +205,7 @@ class JobSourceDiscoveryTaskTests(TransactionTestCase):
             display_name="Example Jobs",
             docs_url="https://example.com/docs",
         )
-        self.discovery_run = JobSourceDiscoveryRun.objects.create(
-            provider=self.provider
-        )
+        self.discovery_run = JobSourceDiscoveryRun.objects.create(provider=self.provider)
 
     def test_successful_run_links_generated_draft_and_metadata(self) -> None:
         result = DiscoveryResult(

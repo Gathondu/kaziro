@@ -10,7 +10,10 @@ from django.db import IntegrityError
 
 from apps.jobs.deduplication import stable_job_external_id
 from apps.jobs.models import JobSearchConfig, JobSourceConfigDraft, RawJob
-from apps.jobs.source_config import SourceProviderConfig, validate_provider_config
+from apps.jobs.source_config import (
+    SourceProviderConfig,
+    validate_provider_config,
+)
 from config.logging import get_logger
 from config.settings import get_configured_env
 
@@ -84,7 +87,15 @@ async def validate_draft_with_smoke_request(
             _get_json, request_url, headers, 20
         )
     except OSError as exc:
-        return False, diagnostic_url, diagnostic_headers, None, {}, {}, [str(exc)]
+        return (
+            False,
+            diagnostic_url,
+            diagnostic_headers,
+            None,
+            {},
+            {},
+            [str(exc)],
+        )
     jobs = _extract_jobs(payload, source_config)
     metadata: dict[str, object] = {
         "payload_type": type(payload).__name__,
@@ -144,11 +155,19 @@ def build_request(
     if job_config is not None:
         _set_param(params, query_map, "keywords", " ".join(job_config.keywords or []))
         _set_param(params, query_map, "location", job_config.location)
-        _set_param(params, query_map, "remote_only", str(job_config.remote_only).lower())
+        _set_param(
+            params,
+            query_map,
+            "remote_only",
+            str(job_config.remote_only).lower(),
+        )
         _set_param(params, query_map, "salary_min", job_config.salary_min)
         _set_param(params, query_map, "salary_max", job_config.salary_max)
         _set_param(
-            params, query_map, "employment_types", ",".join(job_config.employment_types or [])
+            params,
+            query_map,
+            "employment_types",
+            ",".join(job_config.employment_types or []),
         )
     if source_config.pagination.page_size_param:
         params[source_config.pagination.page_size_param] = str(
@@ -159,15 +178,29 @@ def build_request(
     if source_config.pagination.type == "offset" and source_config.pagination.page_param:
         params[source_config.pagination.page_param] = "0"
 
-    headers: dict[str, str] = {"Accept": "application/json", "User-Agent": "Kaziro/1.0"}
+    headers: dict[str, str] = {
+        "Accept": "application/json",
+        "User-Agent": "Kaziro/1.0",
+    }
     for configured_header in source_config.request_headers:
         header_value = configured_header.value
-        if configured_header.value_env_var:
+        if (
+            _is_rapidapi(source_config)
+            and configured_header.name.lower() == "x-rapidapi-host"
+            and configured_header.value_env_var
+        ):
+            header_value = urlsplit(str(source_config.base_url)).netloc.split("@")[-1].split(":")[0]
+        elif configured_header.value_env_var:
             header_value = get_configured_env(configured_header.value_env_var)
         if header_value:
             headers[configured_header.name] = header_value
 
-    credential = get_configured_env(source_config.auth.credential_env_var or "")
+    credential_env_var = (
+        "RAPIDAPI_KEY"
+        if _is_rapidapi(source_config) and source_config.auth.type != "none"
+        else source_config.auth.credential_env_var or ""
+    )
+    credential = get_configured_env(credential_env_var)
     if source_config.auth.type == "bearer" and credential:
         headers["Authorization"] = f"Bearer {credential}"
     elif (
@@ -232,7 +265,13 @@ def _redact_request_url(url: str, source_config: SourceProviderConfig) -> str:
         for key, value in parse_qsl(parsed.query, keep_blank_values=True)
     ]
     return urlunsplit(
-        (parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment)
+        (
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            urlencode(query),
+            parsed.fragment,
+        )
     )
 
 
@@ -338,6 +377,17 @@ def _set_param(
     provider_name = query_map.get(logical_name)
     if provider_name and value not in (None, ""):
         params[provider_name] = str(value)
+
+
+def _is_rapidapi(source_config: SourceProviderConfig) -> bool:
+    if "rapidapi.com" in urlsplit(str(source_config.base_url)).netloc.lower():
+        return True
+    if (
+        source_config.auth.header_name
+        and source_config.auth.header_name.lower() == "x-rapidapi-key"
+    ):
+        return True
+    return any(header.name.lower() == "x-rapidapi-host" for header in source_config.request_headers)
 
 
 __all__ = [

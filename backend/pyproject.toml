@@ -4,46 +4,59 @@ version = "0.1.0"
 description = "Kaziro API built with Django, Django Ninja, Celery, and LangGraph."
 readme = "README.md"
 requires-python = ">=3.14,<3.15"
-license = { text = "Proprietary" }
 authors = [{ name = "Denis Ngugi Gathondu" }]
 
 dependencies = [
-    "celery[redis]>=5.6,<6.0",
-    "django>=6.0,<7.0",
-    "django-cors-headers>=4.9.0,<5.0",
-    "django-ninja>=1.6.2,<2.0",
-    "dj-database-url>=3.0,<4.0",
-    "langgraph>=0.2",
-    "pydantic[email]>=2.10,<3.0",
-    "psycopg[binary]>=3.2,<4.0",
-    "pyjwt[crypto]>=2.10,<3.0",
-    "python-dotenv>=1.0,<2.0",
-    "redis>=6.0,<6.5",
-    "pydantic-settings>=2.14.1",
-    "pgvector>=0.4.1,<0.5",
-    "pypdf>=6.0,<7.0",
-    "reportlab>=4.4,<5.0",
-    "structlog>=24.4",
-    "resend[async]>=2.30.1",
-    "uvicorn>=0.49.0",
-    "django-asgi-lifespan>=0.5.2",
-    "whitenoise>=6.12.0",
+  "celery[redis]>=5.6,<6.0",
+  "dj-database-url>=3.0,<4.0",
+  "django>=6.0,<7.0",
+  "django-asgi-lifespan>=0.5.2",
+  "django-cors-headers>=4.9.0,<5.0",
+  "django-ninja>=1.6.2,<2.0",
+  "langgraph>=0.2",
+  "pgvector>=0.4.1,<0.5",
+  "psycopg[binary]>=3.2,<4.0",
+  "pydantic-settings>=2.14.1",
+  "pydantic[email]>=2.10,<3.0",
+  "pyjwt[crypto]>=2.10,<3.0",
+  "pypdf>=6.0,<7.0",
+  "python-dotenv>=1.0,<2.0",
+  "redis>=6.0,<6.5",
+  "reportlab>=4.4,<5.0",
+  "resend[async]>=2.30.1",
+  "structlog>=24.4",
+  "uvicorn>=0.49.0",
+  "whitenoise>=6.12.0",
 ]
 
 [dependency-groups]
 dev = [
-    "celery-types>=0.26.0",
-    "django-stubs>=6.0",
-    "mypy>=2.1.0",
-    "pre-commit>=4.6.0",
-    "pyrefly>=1.1.1",
-    "pytest>=9.0.3",
-    "pytest-django>=4.12",
-    "ruff>=0.15.16",
+  "celery-types>=0.26.0",
+  "django-stubs[compatible-mypy]>=6.1,<7.0",
+  "mypy>=2.1,<2.4",
+  "pre-commit>=4.6.0",
+  "pyrefly>=1.1.1",
+  "pytest>=9.0.3",
+  "pytest-django>=4.12",
+  "ruff>=0.15.16",
 ]
 
-[tool.uv]
-package = false
+[tool.django-stubs]
+django_settings_module = "config.settings"
+
+[tool.mypy]
+python_version = "3.14"
+plugins = ["mypy_django_plugin.main"]
+exclude = "(?x)(^|[\\\\/])(tests|migrations)([\\\\/]|$)|(^|[\\\\/])\\.venv([\\\\/]|$)"
+
+[tool.pyrefly]
+python-version = "3.14.0"
+preset = "legacy"
+
+[tool.pytest.ini_options]
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+DJANGO_SETTINGS_MODULE = "config.settings"
 
 [tool.ruff]
 line-length = 100
@@ -59,19 +72,5 @@ quote-style = "double"
 indent-style = "space"
 line-ending = "lf"
 
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings"
-python_files = ["test_*.py", "*_test.py"]
-testpaths = ["tests"]
-
-[tool.mypy]
-python_version = "3.14"
-plugins = ["mypy_django_plugin.main"]
-exclude = "(?x)(^|[\\\\/])(tests|migrations)([\\\\/]|$)|(^|[\\\\/])\\.venv([\\\\/]|$)"
-
-[tool.pyrefly]
-python-version = "3.14.0"
-preset = "legacy"
-
-[tool.django-stubs]
-django_settings_module = "config.settings"
+[tool.uv]
+package = false

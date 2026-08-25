@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from apps.core.exceptions import UpstreamError
@@ -53,8 +54,9 @@ def _normalize_discovery_response(response: dict[str, Any]) -> DiscoveryResult:
             "Job source discovery returned an invalid payload.",
             code="job_source_discovery_invalid_payload",
         )
+    normalized_draft = _normalize_rapidapi_draft(draft, response)
     try:
-        config = validate_provider_config(draft).model_dump(mode="json")
+        config = validate_provider_config(normalized_draft).model_dump(mode="json")
     except ValueError as exc:
         log.warning(
             "job_source.discovery_invalid_draft",
@@ -86,6 +88,65 @@ def _normalize_discovery_response(response: dict[str, Any]) -> DiscoveryResult:
         evidence_urls=[str(item) for item in evidence],
         metadata=metadata,
     )
+
+
+def _normalize_rapidapi_draft(draft: dict[str, Any], response: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(draft)
+    base_url = str(normalized.get("base_url") or "")
+    if not _is_rapidapi_draft(normalized, base_url):
+        return normalized
+
+    auth = dict(normalized.get("auth") or {})
+    if auth.get("type") != "none":
+        auth["credential_env_var"] = "RAPIDAPI_KEY"
+        normalized["auth"] = auth
+
+    host = _discovered_rapidapi_host(draft, response, base_url)
+    if not host:
+        return normalized
+    headers = [dict(header) for header in normalized.get("request_headers", [])]
+    host_header = next(
+        (header for header in headers if str(header.get("name", "")).lower() == "x-rapidapi-host"),
+        None,
+    )
+    if host_header is None:
+        headers.append({"name": "X-RapidAPI-Host", "value": host})
+    else:
+        host_header.pop("value_env_var", None)
+        host_header["value"] = host
+    normalized["request_headers"] = headers
+    return normalized
+
+
+def _is_rapidapi_draft(draft: dict[str, Any], base_url: str) -> bool:
+    if "rapidapi.com" in urlsplit(base_url).netloc.lower():
+        return True
+    auth = draft.get("auth")
+    if isinstance(auth, dict) and str(auth.get("header_name", "")).lower() == "x-rapidapi-key":
+        return True
+    return any(
+        isinstance(header, dict) and str(header.get("name", "")).lower() == "x-rapidapi-host"
+        for header in draft.get("request_headers", [])
+    )
+
+
+def _discovered_rapidapi_host(
+    draft: dict[str, Any], response: dict[str, Any], base_url: str
+) -> str:
+    for source in (draft, response):
+        for key in ("host", "api_host", "rapidapi_host"):
+            value = source.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    for header in draft.get("request_headers", []):
+        if not isinstance(header, dict):
+            continue
+        if str(header.get("name", "")).lower() != "x-rapidapi-host":
+            continue
+        value = header.get("value")
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return urlsplit(base_url).netloc.split("@")[-1].split(":")[0]
 
 
 async def _post_json(url: str, payload: dict[str, object], *, timeout: int) -> dict[str, Any]:
