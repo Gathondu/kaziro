@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
-
-from django.test import AsyncClient, Client, TransactionTestCase
-from django.utils import timezone
 
 from apps.accounts.email import EmailDeliveryResult
 from apps.accounts.models import User
@@ -21,9 +19,14 @@ from apps.jobs.models import (
 )
 from apps.notifications.models import Notification
 from apps.notifications.tasks import create_notification_task
+from apps.pipeline.tasks import _enqueue_active_pipelines
+from django.test import AsyncClient, Client, TransactionTestCase
+from django.utils import timezone
 
 
-def post_json(client: Client, path: str, payload: dict[str, object], **extra: Any):
+def post_json(
+    client: Client, path: str, payload: dict[str, object], **extra: Any
+):
     return client.post(
         path,
         data=json.dumps(payload),
@@ -32,7 +35,9 @@ def post_json(client: Client, path: str, payload: dict[str, object], **extra: An
     )
 
 
-async def async_post_json(client: AsyncClient, path: str, payload: dict[str, object], **extra: Any):
+async def async_post_json(
+    client: AsyncClient, path: str, payload: dict[str, object], **extra: Any
+):
     return await client.post(
         path,
         data=json.dumps(payload),
@@ -41,7 +46,9 @@ async def async_post_json(client: AsyncClient, path: str, payload: dict[str, obj
     )
 
 
-def put_json(client: Client, path: str, payload: dict[str, object], **extra: Any):
+def put_json(
+    client: Client, path: str, payload: dict[str, object], **extra: Any
+):
     return client.put(
         path,
         data=json.dumps(payload),
@@ -50,7 +57,9 @@ def put_json(client: Client, path: str, payload: dict[str, object], **extra: Any
     )
 
 
-async def async_put_json(client: AsyncClient, path: str, payload: dict[str, object], **extra: Any):
+async def async_put_json(
+    client: AsyncClient, path: str, payload: dict[str, object], **extra: Any
+):
     return await client.put(
         path,
         data=json.dumps(payload),
@@ -71,7 +80,9 @@ class AuthProfileNotificationTests(TransactionTestCase):
     async def test_signup_confirmation_login_and_me_flow(self) -> None:
         with patch(
             "apps.accounts.services.send_confirmation_email",
-            return_value=EmailDeliveryResult(sent=True, provider_id="email_123"),
+            return_value=EmailDeliveryResult(
+                sent=True, provider_id="email_123"
+            ),
         ) as send_email:
             signup_response = await async_post_json(
                 self.async_client,
@@ -97,7 +108,10 @@ class AuthProfileNotificationTests(TransactionTestCase):
             },
         )
         assert login_before_confirm.status_code == 403
-        assert login_before_confirm.json()["error"]["code"] == "email_not_confirmed"
+        assert (
+            login_before_confirm.json()["error"]["code"]
+            == "email_not_confirmed"
+        )
 
         confirmation_url = send_email.call_args.kwargs["confirmation_url"]
         token = parse_qs(urlparse(confirmation_url).query)["token"][0]
@@ -152,7 +166,9 @@ class AuthProfileNotificationTests(TransactionTestCase):
         assert config_response.status_code == 200
         config_id = config_response.json()["data"]["id"]
 
-        with patch("apps.jobs.services.run_pipeline_for_config.delay") as enqueue_pipeline:
+        with patch(
+            "apps.jobs.services.run_pipeline_for_config.delay"
+        ) as enqueue_pipeline:
             enqueue_pipeline.return_value.id = "pipeline-task-1"
             run_response = await async_post_json(
                 self.async_client,
@@ -220,8 +236,12 @@ class AuthProfileNotificationTests(TransactionTestCase):
         assert "Connection" not in response.headers
         response.close()
 
-    async def test_job_source_admin_flow_requires_validated_draft(self) -> None:
-        staff = await self._confirmed_user(email="staff@example.com", is_staff=True)
+    async def test_job_source_admin_flow_requires_validated_draft(
+        self,
+    ) -> None:
+        staff = await self._confirmed_user(
+            email="staff@example.com", is_staff=True
+        )
         token = issue_token_pair(staff).access_token
 
         provider_response = await async_post_json(
@@ -284,7 +304,9 @@ class AuthProfileNotificationTests(TransactionTestCase):
         provider = await JobSourceProvider.objects.aget(id=provider_id)
         assert provider.status == ProviderStatus.ACTIVE
 
-    async def test_approved_provider_fetch_stores_and_dedupes_raw_jobs(self) -> None:
+    async def test_approved_provider_fetch_stores_and_dedupes_raw_jobs(
+        self,
+    ) -> None:
         user = await self._confirmed_user(email="fetch@example.com")
         config = await self._job_config(user)
         provider = await JobSourceProvider.objects.acreate(
@@ -354,6 +376,88 @@ class AuthProfileNotificationTests(TransactionTestCase):
         stored = await RawJob.objects.aget(provider=provider)
         assert stored.external_job_id.startswith("url:")
 
+    async def test_scheduler_enqueues_each_matching_active_job_config(
+        self,
+    ) -> None:
+        daily_user = await self._confirmed_user(
+            email="daily@example.com", username="Daily"
+        )
+        inactive_user = await self._confirmed_user(
+            email="inactive@example.com", username="Inactive"
+        )
+        weekly_user = await self._confirmed_user(
+            email="weekly@example.com", username="Weekly"
+        )
+        daily_config = await self._job_config(daily_user)
+        inactive_config = await self._job_config(inactive_user)
+        weekly_config = await self._job_config(weekly_user)
+        inactive_config.is_active = False
+        await inactive_config.asave(update_fields=["is_active", "updated_at"])
+        weekly_config.fetch_schedule_cron = "0 6 * * 1"
+        await weekly_config.asave(
+            update_fields=["fetch_schedule_cron", "updated_at"]
+        )
+
+        with (
+            patch("apps.pipeline.tasks.datetime") as datetime_class,
+            patch(
+                "apps.pipeline.tasks.run_pipeline_for_config.delay"
+            ) as enqueue_pipeline,
+        ):
+            datetime_class.now.return_value = datetime(
+                2026, 8, 25, 6, tzinfo=UTC
+            )
+            result = await _enqueue_active_pipelines()
+
+        assert result == {"queued": 1, "skipped": 1}
+        enqueue_pipeline.assert_called_once_with(
+            str(daily_config.id), str(daily_user.id)
+        )
+
+    async def test_config_fetch_runs_against_all_active_approved_providers(
+        self,
+    ) -> None:
+        user = await self._confirmed_user(email="multi-provider@example.com")
+        config = await self._job_config(user)
+        provider_configs = {
+            "fixture-one": "https://api-one.example.com",
+            "fixture-two": "https://api-two.example.com",
+        }
+        for slug, base_url in provider_configs.items():
+            provider = await JobSourceProvider.objects.acreate(
+                slug=slug,
+                display_name=slug,
+                docs_url=f"{base_url}/docs",
+                status=ProviderStatus.ACTIVE,
+            )
+            await JobSourceConfigDraft.objects.acreate(
+                provider=provider,
+                status=DraftStatus.APPROVED,
+                config={
+                    "base_url": base_url,
+                    "endpoint_path": "/jobs",
+                    "auth": {"type": "none"},
+                    "response_mapping": {"external_id": "id"},
+                },
+            )
+
+        with patch(
+            "apps.jobs.fetcher._get_json",
+            side_effect=[
+                (200, {"jobs": [{"id": "job-one", "title": "Engineer"}]}, {}),
+                (200, {"jobs": [{"id": "job-two", "title": "Designer"}]}, {}),
+            ],
+        ) as get_json:
+            stored = await fetcher.fetch_jobs_for_config(config)
+
+        assert len(stored) == 2
+        # pyrefly: ignore [missing-attribute]
+        assert {job.provider.slug for job in stored} == {
+            "fixture-one",
+            "fixture-two",
+        }
+        assert get_json.call_count == 2
+
     def test_protected_routes_return_envelope_401(self) -> None:
         response = self.client.get("/api/v1/profile")
         assert response.status_code == 401
@@ -363,12 +467,13 @@ class AuthProfileNotificationTests(TransactionTestCase):
         self,
         email: str = "confirmed@example.com",
         *,
+        username: str = "Jamie",
         is_staff: bool = False,
     ) -> User:
         return await User.objects.acreate(
             email=email,
             password="strong-password-123",
-            username="Jamie",
+            username=username,
             is_active=True,
             is_staff=is_staff,
             email_confirmed_at=timezone.now(),

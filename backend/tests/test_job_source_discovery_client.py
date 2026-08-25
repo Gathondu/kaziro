@@ -4,9 +4,6 @@ from io import BytesIO
 from unittest.mock import AsyncMock, patch
 from urllib.error import HTTPError
 
-from asgiref.sync import async_to_sync
-from django.test import SimpleTestCase, TransactionTestCase
-
 from apps.core.exceptions import UpstreamError
 from apps.jobs.discovery_client import (
     DiscoveryResult,
@@ -15,10 +12,16 @@ from apps.jobs.discovery_client import (
 )
 from apps.jobs.models import (
     DiscoveryRunStatus,
+    DraftStatus,
+    JobSourceConfigDraft,
     JobSourceDiscoveryRun,
     JobSourceProvider,
+    ProviderStatus,
 )
+from apps.jobs.repositories import active_provider_drafts
 from apps.jobs.tasks import _discover_provider
+from asgiref.sync import async_to_sync
+from django.test import SimpleTestCase, TransactionTestCase
 
 
 class JobSourceDiscoveryClientTests(SimpleTestCase):
@@ -161,20 +164,27 @@ class JobSourceDiscoveryClientTests(SimpleTestCase):
 
         assert (
             # pyrefly: ignore [bad-index]
-            result.config["auth"]["credential_env_var"] == "EXAMPLE_API_TOKEN"
+            result.config["auth"]["credential_env_var"]
+            == "EXAMPLE_API_TOKEN"
         )
 
     def test_rejects_response_without_nested_draft(self) -> None:
         with self.assertRaises(UpstreamError):
-            _normalize_discovery_response({"base_url": "https://api.example.com"})
+            _normalize_discovery_response(
+                {"base_url": "https://api.example.com"}
+            )
 
     def test_rejects_invalid_nested_draft(self) -> None:
         with self.assertRaises(UpstreamError):
-            _normalize_discovery_response({"draft": {"endpoint_path": "/jobs"}})
+            _normalize_discovery_response(
+                {"draft": {"endpoint_path": "/jobs"}}
+            )
 
     def test_maps_timeout_to_safe_upstream_error(self) -> None:
         with (
-            patch("apps.jobs.discovery_client.urlopen", side_effect=TimeoutError),
+            patch(
+                "apps.jobs.discovery_client.urlopen", side_effect=TimeoutError
+            ),
             self.assertRaises(UpstreamError),
         ):
             _post_json_sync("http://scrapper:3100/discover", {}, 1)
@@ -205,7 +215,9 @@ class JobSourceDiscoveryTaskTests(TransactionTestCase):
             display_name="Example Jobs",
             docs_url="https://example.com/docs",
         )
-        self.discovery_run = JobSourceDiscoveryRun.objects.create(provider=self.provider)
+        self.discovery_run = JobSourceDiscoveryRun.objects.create(
+            provider=self.provider
+        )
 
     def test_successful_run_links_generated_draft_and_metadata(self) -> None:
         result = DiscoveryResult(
@@ -254,3 +266,49 @@ class JobSourceDiscoveryTaskTests(TransactionTestCase):
         assert self.discovery_run.status == DiscoveryRunStatus.FAILED
         assert self.discovery_run.error_message == "scraper unavailable"
         assert self.discovery_run.completed_at is not None
+
+    async def test_active_provider_drafts_selects_all_active_approved_providers(
+        self,
+    ) -> None:
+        active_provider = await JobSourceProvider.objects.acreate(
+            slug="active-jobs",
+            display_name="Active Jobs",
+            docs_url="https://active.example.com/docs",
+            status=ProviderStatus.ACTIVE,
+        )
+        inactive_provider = await JobSourceProvider.objects.acreate(
+            slug="inactive-jobs",
+            display_name="Inactive Jobs",
+            docs_url="https://inactive.example.com/docs",
+            status=ProviderStatus.DISABLED,
+        )
+        unapproved_provider = await JobSourceProvider.objects.acreate(
+            slug="unapproved-jobs",
+            display_name="Unapproved Jobs",
+            docs_url="https://unapproved.example.com/docs",
+            status=ProviderStatus.ACTIVE,
+        )
+        config = {
+            "base_url": "https://api.example.com",
+            "endpoint_path": "/jobs",
+            "auth": {"type": "none"},
+        }
+        await JobSourceConfigDraft.objects.acreate(
+            provider=active_provider,
+            config=config,
+            status=DraftStatus.APPROVED,
+        )
+        await JobSourceConfigDraft.objects.acreate(
+            provider=inactive_provider,
+            config=config,
+            status=DraftStatus.APPROVED,
+        )
+        await JobSourceConfigDraft.objects.acreate(
+            provider=unapproved_provider,
+            config=config,
+            status=DraftStatus.VALIDATED,
+        )
+
+        drafts = await active_provider_drafts()
+
+        assert [draft.provider.slug for draft in drafts] == ["active-jobs"]
