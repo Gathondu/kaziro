@@ -1,7 +1,7 @@
 # Deployment
 
 **Status**: Active
-**Last updated**: 2026-06-29
+**Last updated**: 2026-09-10
 
 Kaziro deploys the backend and workers as Docker services. The frontend is a
 Next.js app intended for Vercel.
@@ -22,6 +22,25 @@ Services:
 - `frontend`
 
 Host commands are available through the root `Makefile`.
+
+### Dev-container hot reload
+
+The `backend`, `worker`, `beat`, and `frontend` services bind-mount source
+code from the host, so containers run the working tree instead of the
+image snapshot:
+
+- `backend`, `worker`, `beat`: `./backend` at `/app`. The virtualenv lives
+  at `/venv` (outside `/app`), so the mount cannot shadow it.
+- `frontend`: `./frontend` at `/app`, with an anonymous volume preserving
+  the container's `node_modules`.
+
+On startup the `backend` service runs `python manage.py migrate --noinput`
+and then serves Uvicorn with `--reload` (watching `apps/` and `config/`).
+The `frontend` service runs `next dev`, which provides Fast Refresh.
+Editing files on the host reloads the API and frontend automatically.
+Celery code is mounted too, but the processes do not auto-reload — run
+`docker compose restart worker beat` after backend changes. Dependency
+changes require a rebuild: `docker compose up --build`.
 
 ## Backend Production
 

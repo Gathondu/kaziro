@@ -2,12 +2,13 @@ FROM node:22-slim AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV CI=true
 
 WORKDIR /app
 
 RUN corepack enable
 
-COPY frontend/package.json frontend/pnpm-lock.yaml* ./
+COPY frontend/package.json frontend/pnpm-lock.yaml* frontend/pnpm-workspace.yaml* ./
 
 FROM base AS deps
 RUN pnpm install --frozen-lockfile || pnpm install

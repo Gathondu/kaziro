@@ -63,6 +63,14 @@ services:
       - .env
     environment:
       <<: *backend-env
+    volumes:
+      - ./backend:/app
+    # Apply migrations on startup, then serve with hot reload.
+    # Reload dirs exclude the host .venv and other non-source files.
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+      uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+      --reload-dir /app/apps --reload-dir /app/config --timeout-graceful-shutdown 2"
     ports:
       - "8000:8000"
     depends_on:
@@ -71,10 +79,10 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "uv", "run", "python", "manage.py", "check" ]
+      test: [ "CMD", "python", "manage.py", "check" ]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
       start_period: 20s
 
   worker:
@@ -87,7 +95,9 @@ services:
       - .env
     environment:
       <<: *backend-env
-    command: [ "uv", "run", "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "default,parser,evaluator,research,document,maintenance,notification,discovery" ]
+    volumes:
+      - ./backend:/app
+    command: [ "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "default,parser,evaluator,research,document,maintenance,notification,discovery" ]
     depends_on:
       redis:
         condition: service_healthy
@@ -102,7 +112,9 @@ services:
       - .env
     environment:
       <<: *backend-env
-    command: [ "uv", "run", "celery", "-A", "config.celery:app", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule" ]
+    volumes:
+      - ./backend:/app
+    command: [ "celery", "-A", "config.celery:app", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule" ]
     depends_on:
       redis:
         condition: service_healthy
@@ -117,6 +129,11 @@ services:
       - .env
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      CI: "true"
+    volumes:
+      - ./frontend:/app
+      # Keep the container's installed node_modules; hides the host's copy.
+      - /app/node_modules
     ports:
       - "3000:3000"
     depends_on:

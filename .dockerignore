@@ -1,0 +1,36 @@
+# Root dockerignore - mirrors infra/docker/.dockerignore plus service specifics
+**/.git
+**/.gitignore
+**/.idea
+**/.vscode
+**/.DS_Store
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.tox
+**/.coverage
+**/.env
+**/.env.*
+**/node_modules
+**/.venv
+**/.svelte-kit
+**/.vercel
+**/.next
+**/build
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+**/*.log
+docs/**
+PLAN.md
+README.md
+agents/**
+# Backend specific
+backend/.venv
+backend/db.sqlite3
+backend/.python-version
+# Frontend specific
+frontend/.next
+frontend/node_modules
