@@ -1,0 +1,9 @@
+{
+  "name": "kaziro",
+  "build": { "dockerfile": "Dockerfile" },
+  "runArgs": ["--privileged"],
+  "remoteUser": "dng",
+  "forwardPorts": [3000, 8000, 5432, 6379],
+  "postStartCommand": "sudo /usr/local/share/docker-init.sh",
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}

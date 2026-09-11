@@ -145,3 +145,11 @@ clean: ## Remove caches, build artifacts, and coverage reports.
 install: ## Install backend and frontend dependencies.
 	cd $(BACKEND_DIR) && $(UV) sync
 	cd $(FRONTEND_DIR) && $(PNPM) install
+
+.PHONY: env
+env: ## Generate .env from 1Password (Development vault, kaziro item).
+	op inject -i .env.op.tpl -o .env
+
+.PHONY: sync-dotfiles
+sync-dotfiles: ## Pull latest dotfiles into the DevPod workspace.
+	devpod ssh kaziro -- 'git -C ~/dotfiles pull --rebase && ~/dotfiles/install.sh'
