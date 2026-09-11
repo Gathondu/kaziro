@@ -65,6 +65,45 @@ Full local stack:
 docker compose up --build
 ```
 
+## Development Container (DevPod)
+
+The repo ships a devcontainer (`.devcontainer/`) replicating the omarchy
+terminal environment on an Arch base: zsh + antidote, starship, nvim, atuin,
+lazygit, btop, fastfetch, mise-managed tools, herdr, and docker-in-docker.
+Personal configs and opencode skills come from the private
+[Gathondu/dotfiles](https://github.com/Gathondu/dotfiles) repo, installed by
+`post-create.sh`.
+
+```bash
+devpod up kaziro --recreate   # (re)build the workspace
+devpod ssh kaziro             # zsh shell; docker compose up --build works inside
+```
+
+Environment secrets resolve from 1Password. Drop the service-account token
+(scoped to the "Development" vault) at `~/.config/op/token` inside the
+workspace once, then generate `.env`:
+
+```bash
+scp <token-file> kaziro.devpod:/home/dng/.config/op/token
+devpod ssh kaziro -- 'chmod 600 ~/.config/op/token'
+devpod ssh kaziro -- 'make env'   # op inject -i .env.op.tpl -o .env
+```
+
+Skill or config changes made locally sync into the workspace with:
+
+```bash
+make sync-dotfiles
+```
+
+Notes:
+
+- Commit signing is forwarded to the host's 1Password via DevPod's Git SSH
+  signature forwarding (`GIT_SSH_SIGNATURE_FORWARDING=true`).
+- The docker daemon runs inside the workspace container; `host.docker.internal`
+  points at the workspace, not your laptop — override the scrapper URLs in
+  `.env` if it runs on your machine.
+- One-time inside the workspace: `opencode auth login`.
+
 ## Common Commands
 
 ```bash

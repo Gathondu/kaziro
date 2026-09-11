@@ -121,6 +121,18 @@ psql: ## Open a psql shell against the dev Postgres container.
 redis-cli: ## Open a redis-cli shell against the dev Redis container.
 	$(COMPOSE) exec redis redis-cli
 
+# Extra goals after `make manage` are the management command and its args.
+ifneq ($(filter manage,$(firstword $(MAKECMDGOALS))),)
+  MANAGE_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  # Swallow the extra goals so make doesn't error on "unknown target".
+  %:
+	@:
+endif
+
+.PHONY: manage
+manage: ## Run a Django management command: make manage shell
+	$(COMPOSE) exec backend python manage.py $(MANAGE_ARGS)
+
 .PHONY: clean
 clean: ## Remove caches, build artifacts, and coverage reports.
 	rm -rf $(BACKEND_DIR)/.pytest_cache $(BACKEND_DIR)/.ruff_cache $(BACKEND_DIR)/.mypy_cache
