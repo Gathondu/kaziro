@@ -1,9 +1,10 @@
 {
   "name": "kaziro",
   "build": { "dockerfile": "Dockerfile" },
-  "runArgs": ["--privileged"],
+  "runArgs": ["--privileged", "--add-host=host.docker.internal:host-gateway"],
   "remoteUser": "dng",
   "forwardPorts": [3000, 8000, 5432, 6379],
-  "postStartCommand": "sudo /usr/local/share/docker-init.sh",
+  "mounts": ["source=kaziro-dind,target=/var/lib/docker,type=volume"],
+  "postStartCommand": "sudo sh /workspaces/kaziro/.devcontainer/docker-init.sh",
   "postCreateCommand": "bash .devcontainer/post-create.sh"
 }

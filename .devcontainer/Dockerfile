@@ -18,7 +18,7 @@ RUN pacman-key --init \
 
 # --- omarchy base toolset + docker + 1Password CLI ---
 RUN pacman -S --needed --noconfirm \
-      zsh git rsync curl sudo openssh make \
+      zsh git rsync curl sudo openssh make less \
       starship fzf zoxide eza bat fd neovim atuin lazygit btop fastfetch gum yay \
       docker docker-compose docker-buildx \
       1password-cli \

@@ -5,7 +5,7 @@
 set -euo pipefail
 
 echo "==> start dockerd (docker-in-docker)"
-sudo /usr/local/share/docker-init.sh
+sudo sh /workspaces/kaziro/.devcontainer/docker-init.sh
 
 echo "==> create 1Password CLI config dir (700)"
 mkdir -p "$HOME/.config/op"

@@ -102,6 +102,11 @@ Notes:
 - The docker daemon runs inside the workspace container; `host.docker.internal`
   points at the workspace, not your laptop — override the scrapper URLs in
   `.env` if it runs on your machine.
+- Docker-in-docker needs a real filesystem for `/var/lib/docker` (the named
+  `kaziro-dind` volume) — the kernel forbids overlay-on-overlay. The inner
+  daemon also pins `bip`/address pools to 172.24–172.25 so nested networks
+  never collide with the host's docker0 (172.17.0.0/16); see
+  `.devcontainer/docker-init.sh`.
 - One-time inside the workspace: `opencode auth login`.
 
 ## Common Commands
