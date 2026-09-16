@@ -26,7 +26,21 @@ dev-detached: ## Boot the full local stack in the background.
 	$(COMPOSE) up --build -d
 
 .PHONY: down
-down: ## Stop the stack and wipe named volumes.
+down: ## Stop the stack. Named volumes (Postgres + Redis) are kept.
+	$(COMPOSE) down
+
+.PHONY: recreate
+recreate: ## Rebuild images and recreate containers. Volumes are kept.
+	$(COMPOSE) up -d --build --force-recreate --remove-orphans
+
+.PHONY: wipe-volumes
+wipe-volumes: ## Delete named volumes (DESTROYS Postgres AND Redis data). Requires CONFIRM=yes.
+	@test "$(CONFIRM)" = "yes" || { \
+		echo "Refusing to delete ALL data volumes (Postgres + Redis)." >&2; \
+		echo "Re-run as: make wipe-volumes CONFIRM=yes" >&2; \
+		echo "To delete only one: docker volume rm kaziro_postgres_data" >&2; \
+		exit 1; \
+	}
 	$(COMPOSE) down -v
 
 .PHONY: logs

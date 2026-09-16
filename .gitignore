@@ -10,6 +10,7 @@
 .env.*
 !.env.example
 !*.env.example
+!.env.op.tpl
 
 # Anything that smells like a key
 *.pem

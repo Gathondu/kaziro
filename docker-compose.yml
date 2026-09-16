@@ -1,7 +1,9 @@
 # Local-dev orchestration for Kaziro.
 #
 # Start everything: `make dev` or `docker compose up --build`.
-# Stop and wipe volumes: `make down` or `docker compose down -v`.
+# Stop (keeps data): `make down` or `docker compose down`.
+# Rebuild and recreate containers (keeps data): `make recreate`.
+# Stop and wipe volumes (DESTROYS data): make wipe-volumes CONFIRM=yes
 
 name: kaziro
 
@@ -17,6 +19,17 @@ x-backend-env: &backend-env
   CELERY_RESULT_BACKEND: redis://redis:6379/2
   JOB_SOURCE_DISCOVERY_URL: ${JOB_SOURCE_DISCOVERY_URL:-http://host.docker.internal:3100}
   SCRAPPER_COMPANY_RESEARCH_URL: ${SCRAPPER_COMPANY_RESEARCH_URL:-http://host.docker.internal:3100}
+
+# Docker-in-docker: the devcontainer's own `--add-host=host.docker.internal:...`
+# lands in the workspace's /etc/hosts only, so it never reaches containers the
+# *inner* daemon starts. Map it explicitly here.
+#
+# 172.17.0.1 is the workspace's eth0 gateway, i.e. the machine running DevPod
+# (your laptop) — not the inner bridge. `host-gateway` is wrong in this nested
+# setup: it resolves to docker-init.sh's pinned inner bridge (172.24.0.1), which
+# is the workspace container itself.
+x-extra-hosts: &extra-hosts
+  host.docker.internal: ${DOCKER_HOST_GATEWAY:-172.17.0.1}
 
 services:
   postgres:
@@ -65,6 +78,7 @@ services:
       <<: *backend-env
     volumes:
       - ./backend:/app
+    extra_hosts: *extra-hosts
     # Apply migrations on startup, then serve with hot reload.
     # Reload dirs exclude the host .venv and other non-source files.
     command: >
@@ -97,6 +111,7 @@ services:
       <<: *backend-env
     volumes:
       - ./backend:/app
+    extra_hosts: *extra-hosts
     command: [ "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "default,parser,evaluator,research,document,maintenance,notification,discovery" ]
     depends_on:
       redis:
