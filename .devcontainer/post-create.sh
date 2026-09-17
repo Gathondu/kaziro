@@ -5,19 +5,28 @@
 set -euo pipefail
 
 echo "==> start dockerd (docker-in-docker)"
-sudo sh /workspaces/kaziro/.devcontainer/docker-init.sh
+sudo /usr/local/share/docker-init.sh
 
 echo "==> create 1Password CLI config dir (700)"
 mkdir -p "$HOME/.config/op"
 chmod 700 "$HOME/.config/op"
 
+echo "==> ensure SSH agent forwarding in ~/.ssh/config"
+mkdir -p "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
+if ! grep -q "ForwardAgent yes" "$HOME/.ssh/config" 2>/dev/null; then
+  printf 'Host *\n  ForwardAgent yes\n' >> "$HOME/.ssh/config"
+fi
+chmod 600 "$HOME/.ssh/config"
+
 echo "==> herdr opencode integration"
 herdr integration install opencode
 
-if [ -f "$HOME/.dotfiles/install.sh" ] || [ -f "$HOME/dotfiles/install.sh" ]; then
+# Dotfiles are cloned and installed by DevPod via DOTFILES_URL + DOTFILES_SCRIPT
+# in ~/.devpod/config.yaml. Just run the self-check.
+if [ -f "$HOME/.dotfiles/install.sh" ]; then
   echo "==> self-check"
-  ( cd "$HOME/.dotfiles" 2>/dev/null || cd "$HOME/dotfiles"; ./install.sh --check )
+  ( cd "$HOME/.dotfiles" && ./install.sh --check )
 else
-  echo "(i) Dotfiles not installed yet — start the workspace with:" >&2
-  echo "    devpod up kaziro --dotfiles https://github.com/Gathondu/dotfiles.git" >&2
+  echo "(i) Dotfiles not installed yet — check DOTFILES_URL in devpod config" >&2
 fi

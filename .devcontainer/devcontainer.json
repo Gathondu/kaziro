@@ -1,10 +1,17 @@
 {
   "name": "kaziro",
   "build": { "dockerfile": "Dockerfile" },
-  "runArgs": ["--privileged", "--add-host=host.docker.internal:host-gateway"],
+  "runArgs": [
+    "--privileged",
+    "--add-host=host.docker.internal:host-gateway",
+    "--volume=/home/dng/.1password/agent.sock:/home/dng/.1password/agent.sock"
+  ],
+  "containerEnv": {
+    "SSH_AUTH_SOCK": "/home/dng/.1password/agent.sock"
+  },
   "remoteUser": "dng",
   "forwardPorts": [3000, 8000, 5432, 6379],
   "mounts": ["source=kaziro-dind,target=/var/lib/docker,type=volume"],
-  "postStartCommand": "sudo sh /workspaces/kaziro/.devcontainer/docker-init.sh",
+  "postStartCommand": "sudo /usr/local/share/docker-init.sh",
   "postCreateCommand": "bash .devcontainer/post-create.sh"
 }
