@@ -36,3 +36,11 @@ if [ -f "$HOME/.dotfiles/install.sh" ]; then
 else
   echo "(i) Dotfiles not installed yet — check DOTFILES_URL in devpod config" >&2
 fi
+
+echo "==> ensure dockerd auto-starts on every shell login"
+# postStartCommand only fires on container creation, not host restarts.
+# The dotfiles install may overwrite .zshrc, so inject this line last.
+LINE='sudo /usr/local/share/docker-init.sh >/dev/null 2>&1 &'
+if ! grep -qF "$LINE" "$HOME/.zshrc" 2>/dev/null; then
+  printf '\n# Start docker-in-docker (idempotent — no-ops if already running)\n%s\n' "$LINE" >> "$HOME/.zshrc"
+fi
