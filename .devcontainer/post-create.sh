@@ -12,8 +12,14 @@ mkdir -p "$HOME/.config/op"
 chmod 700 "$HOME/.config/op"
 
 echo "==> export OP_SERVICE_ACCOUNT_TOKEN in ~/.zshenv"
-if [[ -f "$HOME/.config/op/token" ]]; then
-  printf 'export OP_SERVICE_ACCOUNT_TOKEN="$(cat "$HOME/.config/op/token")"\n' > "$HOME/.zshenv"
+LINE='export OP_SERVICE_ACCOUNT_TOKEN="$(cat "$HOME/.config/op/token")"'
+if [ ! -f "$HOME/.zshenv" ]; then
+  printf '%s\n' "$LINE" > "$HOME/.zshenv"
+  chmod 600 "$HOME/.zshenv"
+elif grep -qF "$LINE" "$HOME/.zshenv" 2>/dev/null; then
+  echo "    OP_SERVICE_ACCOUNT_TOKEN already set in ~/.zshenv — skipping"
+else
+  printf '%s\n' "$LINE" >> "$HOME/.zshenv"
   chmod 600 "$HOME/.zshenv"
 fi
 
