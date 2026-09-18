@@ -23,6 +23,7 @@ RUN pacman -S --needed --noconfirm \
       docker docker-compose docker-buildx \
       1password-cli \
       omarchy-settings herdr mise-bin \
+      wl-clipboard xclip \
     && ssh-keyscan -t ed25519 github.com >> /etc/ssh/ssh_known_hosts 2>/dev/null \
     && pacman -Scc --noconfirm
 
