@@ -234,6 +234,7 @@ def _get_json(
     url: str, headers: dict[str, str], timeout: int
 ) -> tuple[int, object, dict[str, str]]:
     request = Request(url, method="GET", headers=headers)
+    log.info('validate.provider.url', url=request)
     try:
         with urlopen(request, timeout=timeout) as response:
             payload = _decode_response_payload(response.read())
