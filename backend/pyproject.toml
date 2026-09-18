@@ -39,6 +39,7 @@ dev = [
   "pytest>=9.0.3",
   "pytest-django>=4.12",
   "ruff>=0.15.16",
+  "watchdog>=6.0.0",
 ]
 
 [tool.django-stubs]

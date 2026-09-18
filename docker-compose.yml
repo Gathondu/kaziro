@@ -112,7 +112,13 @@ services:
     volumes:
       - ./backend:/app
     extra_hosts: *extra-hosts
-    command: [ "celery", "-A", "config.celery:app", "worker", "--loglevel=info", "--concurrency=2", "-Q", "default,parser,evaluator,research,document,maintenance,notification,discovery" ]
+    # Auto-restart on file changes (dev only). Watches the same dirs as the backend.
+    command: >
+      watchmedo auto-restart
+      --directory=/app/apps --directory=/app/config
+      --pattern=*.py
+      -- celery -A config.celery:app worker --loglevel=info --concurrency=2
+      -Q default,parser,evaluator,research,document,maintenance,notification,discovery
     depends_on:
       redis:
         condition: service_healthy
@@ -129,7 +135,12 @@ services:
       <<: *backend-env
     volumes:
       - ./backend:/app
-    command: [ "celery", "-A", "config.celery:app", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule" ]
+    # Auto-restart on file changes (dev only). Watches the same dirs as the backend.
+    command: >
+      watchmedo auto-restart
+      --directory=/app/apps --directory=/app/config
+      --pattern=*.py
+      -- celery -A config.celery:app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
     depends_on:
       redis:
         condition: service_healthy
