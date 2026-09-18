@@ -23,6 +23,12 @@ else
   chmod 600 "$HOME/.zshenv"
 fi
 
+echo "==> remove DevPod's gpg.ssh.program from ~/.gitconfig (dotfiles version wins)"
+if [ -f "$HOME/.gitconfig" ] && grep -q 'devpod-ssh-signature' "$HOME/.gitconfig" 2>/dev/null; then
+  git config --global --unset gpg.ssh.program 2>/dev/null || true
+  git config --global --remove-section gpg.ssh 2>/dev/null || true
+fi
+
 echo "==> ensure SSH agent forwarding in ~/.ssh/config"
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
