@@ -11,6 +11,12 @@ echo "==> create 1Password CLI config dir (700)"
 mkdir -p "$HOME/.config/op"
 chmod 700 "$HOME/.config/op"
 
+echo "==> export OP_SERVICE_ACCOUNT_TOKEN in ~/.zshenv"
+if [[ -f "$HOME/.config/op/token" ]]; then
+  printf 'export OP_SERVICE_ACCOUNT_TOKEN="$(cat "$HOME/.config/op/token")"\n' > "$HOME/.zshenv"
+  chmod 600 "$HOME/.zshenv"
+fi
+
 echo "==> ensure SSH agent forwarding in ~/.ssh/config"
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
